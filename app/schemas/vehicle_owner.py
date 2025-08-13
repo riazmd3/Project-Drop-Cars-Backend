@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Annotated
 from uuid import UUID
 from datetime import datetime
+from fastapi import Form
 
 # --- Regex pattern for Indian mobile numbers ---
 indian_phone_pattern = r'^(?:\+91)?[6-9]\d{9}$'
@@ -35,6 +36,55 @@ class VehicleOwnerBase(BaseModel):
     owner_profile_status: bool = False
     driver_profile: bool = False
     car_profile: bool = False
+
+
+# --- Form Schema for validation without image ---
+class VehicleOwnerForm(BaseModel):
+    organization_id: Optional[str] = None
+
+    full_name: Annotated[str, Field(min_length=3, max_length=100)]
+
+    primary_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Indian mobile number, with optional +91 country code"
+    )]
+
+    secondary_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Indian mobile number, with optional +91 country code"
+    )]
+
+    gpay_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Indian mobile number, with optional +91 country code"
+    )]
+
+    password: str
+    address: str
+    aadhar_number: str
+
+    @classmethod
+    def as_form(
+        cls,
+        full_name: str = Form(...),
+        primary_number: str = Form(...),
+        secondary_number: str = Form(...),
+        password: str = Form(...),
+        address: str = Form(...),
+        gpay_number: str = Form(...),
+        aadhar_number: str = Form(...),
+        organization_id: Optional[str] = Form(None),
+    ):
+        return cls(
+            full_name=full_name,
+            primary_number=primary_number,
+            secondary_number=secondary_number,
+            password=password,
+            address=address,
+            gpay_number=gpay_number,
+            aadhar_number=aadhar_number,
+            organization_id=organization_id,
+        )
 
 
 # --- Output Schema ---

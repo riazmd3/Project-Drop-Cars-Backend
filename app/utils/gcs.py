@@ -20,3 +20,19 @@ def upload_image_to_gcs(file: UploadFile, folder: str = "vehicle_owner_details/a
 
     # If your bucket is public, this will be accessible
     return f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{filename}"
+
+
+def delete_gcs_file_by_url(public_url: str) -> None:
+    """Delete a GCS object given its public URL. No error is raised if delete fails."""
+    try:
+        prefix = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/"
+        if not public_url.startswith(prefix):
+            return
+        blob_name = public_url[len(prefix):]
+        if not blob_name:
+            return
+        blob = bucket.blob(blob_name)
+        blob.delete()
+    except Exception:
+        # Best-effort cleanup; ignore failures
+        return

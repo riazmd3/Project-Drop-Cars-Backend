@@ -2,11 +2,12 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.vehicle_owner import VehicleOwnerCredentials
 from app.models.vehicle_owner_details import VehicleOwnerDetails
-from app.schemas.vehicle_owner import VehicleOwnerBase
+from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm
 from app.core.security import get_password_hash, verify_password
 from typing import Optional
+from uuid import UUID
 
-def create_user(db: Session, user_in: VehicleOwnerBase) -> VehicleOwnerCredentials:
+def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentials:
     # Check for duplicate primary number in main vehicle_owner table
     existing_user = db.query(VehicleOwnerCredentials).filter(
         VehicleOwnerCredentials.primary_number == user_in.primary_number
@@ -31,7 +32,7 @@ def create_user(db: Session, user_in: VehicleOwnerBase) -> VehicleOwnerCredentia
     db.add(credentials)
     db.flush()  # Important: So we get credentials.id before commit
 
-    # Step 3: Create details object
+    # Step 3: Create details object (without aadhar_front_img initially)
     details = VehicleOwnerDetails(
         vehicle_owner_id=credentials.id,
         organization_id=user_in.organization_id,
@@ -41,7 +42,7 @@ def create_user(db: Session, user_in: VehicleOwnerBase) -> VehicleOwnerCredentia
         wallet_balance=0,
         gpay_number=user_in.gpay_number,
         aadhar_number=user_in.aadhar_number,
-        aadhar_front_img=user_in.aadhar_front_img,
+        aadhar_front_img=None,  # Will be updated after GCS upload
         adress=user_in.address
     )
 
@@ -50,6 +51,22 @@ def create_user(db: Session, user_in: VehicleOwnerBase) -> VehicleOwnerCredentia
     db.refresh(credentials)
 
     return credentials
+
+
+def update_aadhar_image(db: Session, vehicle_owner_id: UUID, aadhar_img_url: str) -> VehicleOwnerDetails:
+    """Update the aadhar_front_img URL for an existing vehicle owner"""
+    details = db.query(VehicleOwnerDetails).filter(
+        VehicleOwnerDetails.vehicle_owner_id == vehicle_owner_id
+    ).first()
+    
+    if not details:
+        raise HTTPException(status_code=404, detail="Vehicle owner details not found")
+    
+    details.aadhar_front_img = aadhar_img_url
+    db.commit()
+    db.refresh(details)
+    
+    return details
 
 # def create_user(db: Session, user_in: VehicleOwnerBase) -> VehicleOwner:
 #     existing_user = db.query(VehicleOwner).filter(VehicleOwner.mobile_number == user_in.mobile_number).first()
