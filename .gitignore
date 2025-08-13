@@ -10,3 +10,6 @@ venv/
 
 # Optional: macOS system files
 .DS_Store
+
+#GCS Credentials
+app/core/drop-cars-468718-d08441443ada.json
