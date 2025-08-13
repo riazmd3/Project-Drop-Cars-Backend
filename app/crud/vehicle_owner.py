@@ -14,7 +14,41 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
     ).first()
 
     if existing_user:
-        raise HTTPException(status_code=400, detail="Mobile number already registered")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Mobile number {user_in.primary_number} is already registered. Please use a different number."
+        )
+
+    # Check for duplicate secondary number
+    if user_in.secondary_number:
+        existing_secondary = db.query(VehicleOwnerDetails).filter(
+            VehicleOwnerDetails.secondary_number == user_in.secondary_number
+        ).first()
+        if existing_secondary:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Secondary mobile number {user_in.secondary_number} is already registered. Please use a different number."
+            )
+
+    # Check for duplicate GPay number
+    existing_gpay = db.query(VehicleOwnerDetails).filter(
+        VehicleOwnerDetails.gpay_number == user_in.gpay_number
+    ).first()
+    if existing_gpay:
+        raise HTTPException(
+            status_code=400,
+            detail=f"GPay number {user_in.gpay_number} is already registered. Please use a different number."
+        )
+
+    # Check for duplicate Aadhar number
+    existing_aadhar = db.query(VehicleOwnerDetails).filter(
+        VehicleOwnerDetails.aadhar_number == user_in.aadhar_number
+    ).first()
+    if existing_aadhar:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Aadhar number {user_in.aadhar_number} is already registered. Please use a different number."
+        )
 
     # Step 1: Hash password
     hashed_password = get_password_hash(user_in.password)
@@ -60,7 +94,10 @@ def update_aadhar_image(db: Session, vehicle_owner_id: UUID, aadhar_img_url: str
     ).first()
     
     if not details:
-        raise HTTPException(status_code=404, detail="Vehicle owner details not found")
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Vehicle owner details not found for ID: {vehicle_owner_id}"
+        )
     
     details.aadhar_front_img = aadhar_img_url
     db.commit()

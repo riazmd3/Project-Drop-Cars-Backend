@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, Annotated
 from uuid import UUID
 from datetime import datetime
@@ -42,38 +42,69 @@ class VehicleOwnerBase(BaseModel):
 class VehicleOwnerForm(BaseModel):
     organization_id: Optional[str] = None
 
-    full_name: Annotated[str, Field(min_length=3, max_length=100)]
+    full_name: Annotated[str, Field(
+        min_length=3, 
+        max_length=100,
+        description="Full name must be between 3 and 100 characters"
+    )]
 
     primary_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Indian mobile number, with optional +91 country code"
+        description="Primary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
     )]
 
     secondary_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Indian mobile number, with optional +91 country code"
+        description="Secondary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
     )]
 
     gpay_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Indian mobile number, with optional +91 country code"
+        description="GPay number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
     )]
 
-    password: str
-    address: str
-    aadhar_number: str
+    password: Annotated[str, Field(
+        min_length=6,
+        description="Password must be at least 6 characters long"
+    )]
+    
+    address: Annotated[str, Field(
+        min_length=10,
+        description="Address must be at least 10 characters long"
+    )]
+    
+    aadhar_number: Annotated[str, Field(
+        min_length=12,
+        max_length=12,
+        description="Aadhar number must be exactly 12 digits"
+    )]
+
+    @validator('aadhar_number')
+    def validate_aadhar_number(cls, v):
+        if not v.isdigit():
+            raise ValueError('Aadhar number must contain only digits')
+        if len(v) != 12:
+            raise ValueError('Aadhar number must be exactly 12 digits')
+        return v
+
+    @validator('primary_number', 'secondary_number', 'gpay_number')
+    def validate_phone_numbers(cls, v):
+        import re
+        if not re.match(indian_phone_pattern, v):
+            raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
+        return v
 
     @classmethod
     def as_form(
         cls,
-        full_name: str = Form(...),
-        primary_number: str = Form(...),
-        secondary_number: str = Form(...),
-        password: str = Form(...),
-        address: str = Form(...),
-        gpay_number: str = Form(...),
-        aadhar_number: str = Form(...),
-        organization_id: Optional[str] = Form(None),
+        full_name: str = Form(..., description="Full name (3-100 characters)"),
+        primary_number: str = Form(..., description="Primary mobile number"),
+        secondary_number: str = Form(..., description="Secondary mobile number"),
+        password: str = Form(..., description="Password (min 6 characters)"),
+        address: str = Form(..., description="Address (min 10 characters)"),
+        gpay_number: str = Form(..., description="GPay mobile number"),
+        aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
+        organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
         return cls(
             full_name=full_name,
