@@ -9,7 +9,7 @@ GCS_BUCKET_NAME = "drop-cars-files"
 client = storage.Client.from_service_account_json(GCS_CREDENTIALS)
 bucket = client.bucket(GCS_BUCKET_NAME)
 
-def upload_image_to_gcs(file: UploadFile, folder: str = "aadhar") -> str:
+def upload_image_to_gcs(file: UploadFile, folder: str = "vehicle_owner_details/aadhar") -> str:
     ext = os.path.splitext(file.filename)[-1]
     filename = f"{folder}/{uuid.uuid4()}{ext}"
 
