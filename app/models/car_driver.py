@@ -1,18 +1,29 @@
 # models/car_driver.py
-from sqlalchemy import Column, String, Integer, TIMESTAMP
+from sqlalchemy import Column, String, Integer, TIMESTAMP, func, Boolean, Enum as SqlEnum
+from sqlalchemy.dialects.postgresql import UUID
 import app.database.session as Base
+import uuid
+import enum
+class AccountStatusEnum(enum.Enum):
+    ONLINE = "ONLINE"
+    DRIVING = "DRIVING"
+    BLOCKED = "BLOCKED"
+
 class CarDriver(Base):
     __tablename__ = "car_driver"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     organization_id = Column(String)
     full_name = Column(String, nullable=False)
-    login_number = Column(String, nullable=False, unique=True)
-    contact_number = Column(String, nullable=False, unique=True)
-    alternate_number = Column(String, nullable=False, unique=True)
+    primary_number = Column(String, nullable=False, unique=True)
+    secondary_number = Column(String, nullable=False, unique=True)
     hashed_password = Column(String, nullable=False)
-    aadhar_number = Column(String, nullable=False, unique=True)
-    aadhar_img_url = Column(String)  # GCS public/signed URL
-    address = Column(String)
-    driver_status = Column(String)  # Online, Driving, Blocked
-    created_at = Column(TIMESTAMP)
+    licence_number = Column(String, nullable=False, unique=True)
+    licence_front_img = Column(String, nullable=False, unique=True)
+    adress = Column(String, nullable=False)
+    driver_status = Column(
+        SqlEnum(AccountStatusEnum, name="account_status_enum"),
+        default=AccountStatusEnum.BLOCKED,
+        nullable=False
+    )  # Online, Driving, Blocked
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
