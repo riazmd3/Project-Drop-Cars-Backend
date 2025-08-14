@@ -24,11 +24,11 @@ class CarDetails(Base):
     car_type = Column(SqlEnum(CarTypeEnum,name="car_type_enum"),nullable=False)  # sedan, suv, muv, innova
     car_number = Column(String, nullable=False, unique=True)
     
-    rc_front_img_url = Column(String, nullable=False, unique=True)     # GCS public URL
-    rc_back_img_url = Column(String, nullable=False, unique=True)      # GCS public URL
-    insurance_img_url = Column(String , nullable=False, unique=True)  # GCS public URL
-    fc_img_url = Column(String, nullable=False, unique=True)  # GCS public URL
-    car_img_url = Column(String, nullable=False, unique=True)  # GCS public URL
+    rc_front_img_url = Column(String, nullable=True, unique=True)     # GCS public URL
+    rc_back_img_url = Column(String, nullable=True, unique=True)      # GCS public URL
+    insurance_img_url = Column(String , nullable=True, unique=True)  # GCS public URL
+    fc_img_url = Column(String, nullable=True, unique=True)  # GCS public URL
+    car_img_url = Column(String, nullable=True, unique=True)  # GCS public URL
     
     car_status = Column(
         SqlEnum(CarStatusEnum, name="car_status_enum"),

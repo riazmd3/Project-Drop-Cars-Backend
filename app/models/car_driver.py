@@ -19,10 +19,10 @@ class CarDriver(Base):
     secondary_number = Column(String, nullable=False, unique=True)
     hashed_password = Column(String, nullable=False)
     licence_number = Column(String, nullable=False, unique=True)
-    licence_front_img = Column(String, nullable=False, unique=True)
+    licence_front_img = Column(String, nullable=True, unique=True)
     adress = Column(String, nullable=False)
     driver_status = Column(
-        SqlEnum(AccountStatusEnum, name="account_status_enum"),
+        SqlEnum(AccountStatusEnum, name="driver_status_enum"),
         default=AccountStatusEnum.BLOCKED,
         nullable=False
     )  # Online, Driving, Blocked
