@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.vehicle_owner import VehicleOwnerCredentials
 from app.models.vehicle_owner_details import VehicleOwnerDetails
-from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm
+from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm, UserLogin
 from app.core.security import get_password_hash, verify_password
 from typing import Optional
 from uuid import UUID
@@ -124,14 +124,16 @@ def update_aadhar_image(db: Session, vehicle_owner_id: UUID, aadhar_img_url: str
 # def get_user(db: Session, user_id: int) -> Optional[User]:
 #     return db.query(User).filter(User.id == user_id).first()
 
-# def get_user_by_mobile(db: Session, mobile_number: str) -> Optional[User]:
-#     return db.query(User).filter(User.mobile_number == mobile_number).first()
+def get_user_by_mobile(db: Session, mobile_number: str) -> Optional[VehicleOwnerCredentials]:
+    return db.query(VehicleOwnerCredentials).filter(VehicleOwnerCredentials.primary_number == mobile_number).first()
 
-# def authenticate_user(db: Session, login_data: UserLogin) -> Optional[User]:
-#     user = get_user_by_mobile(db, login_data.mobile_number)
-#     if not user or not verify_password(login_data.password, user.hashed_password):
-#         return None
-#     return user
+
+def authenticate_user(db: Session, login_data: UserLogin) -> Optional[VehicleOwnerCredentials]:
+    user = get_user_by_mobile(db, login_data.mobile_number)
+    if not user or not verify_password(login_data.password, user.hashed_password):
+        return None
+    return user
+
 
 # def update_user(db: Session, user_id: int, user_update: UserUpdate) -> User:
 #     user = get_user(db, user_id)

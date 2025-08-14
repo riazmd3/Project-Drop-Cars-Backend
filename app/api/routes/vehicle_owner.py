@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm
-from app.crud.vehicle_owner import create_user, update_aadhar_image
+from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm, UserLogin
+from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticate_user
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url  # Utility functions
+from app.core.security import create_access_token
 
 router = APIRouter()
 
@@ -73,10 +74,10 @@ async def signup(
     }
 
 
-# @router.post("/vehicleowner/login")
-# def login(user: UserLogin, db: Session = Depends(get_db)):
-#     db_user = authenticate_user(db, user.mobile_number, user.password)
-#     if not db_user:
-#         raise HTTPException(status_code=400, detail="Invalid credentials")
-#     access_token = create_access_token({"sub": str(db_user.id)})
-#     return {"access_token": access_token, "token_type": "bearer"}
+@router.post("/vehicleowner/login")
+def login(user: UserLogin, db: Session = Depends(get_db)):
+    db_user = authenticate_user(db, user)
+    if not db_user:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+    access_token = create_access_token({"sub": str(db_user.id)})
+    return {"access_token": access_token, "token_type": "bearer"}
