@@ -143,3 +143,8 @@ class VehicleOwnerOut(VehicleOwnerBase):
                 "created_at": "2025-08-13T12:00:00Z"
             }
         }
+# schemas.py
+
+class UserLogin(BaseModel):
+    mobile_number: str  # still mobile_number in the API
+    password: str
