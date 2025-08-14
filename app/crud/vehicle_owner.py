@@ -135,6 +135,27 @@ def authenticate_user(db: Session, login_data: UserLogin) -> Optional[VehicleOwn
     return user
 
 
+def get_vehicle_owner_counts(db: Session, vehicle_owner_id: UUID, organization_id: str):
+    """Get counts of car_driver and car_details records for a vehicle owner"""
+    from app.models.car_driver import CarDriver
+    from app.models.car_details import CarDetails
+    
+    # Count car_driver records with matching organization_id
+    car_driver_count = db.query(CarDriver).filter(
+        CarDriver.organization_id == organization_id
+    ).count()
+    
+    # Count car_details records with matching organization_id
+    car_details_count = db.query(CarDetails).filter(
+        CarDetails.organization_id == organization_id
+    ).count()
+    
+    return {
+        "car_driver_count": car_driver_count,
+        "car_details_count": car_details_count
+    }
+
+
 # def update_user(db: Session, user_id: int, user_update: UserUpdate) -> User:
 #     user = get_user(db, user_id)
 #     if not user:

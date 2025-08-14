@@ -1,7 +1,7 @@
 # models/car_driver.py
 from sqlalchemy import Column, String, Integer, TIMESTAMP, func, Boolean, Enum as SqlEnum
 from sqlalchemy.dialects.postgresql import UUID
-import app.database.session as Base
+from app.database.session import Base
 import uuid
 import enum
 class AccountStatusEnum(enum.Enum):

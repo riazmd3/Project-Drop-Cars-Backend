@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, TIMESTAMP, Integer, func, Enum as SqlEnum
 import uuid
 import enum
 from sqlalchemy.dialects.postgresql import UUID
-import app.database.session as Base
+from app.database.session import Base
 
 class CarStatusEnum(enum.Enum):
     ONLINE = "ONLINE"

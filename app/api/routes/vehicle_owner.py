@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm, UserLogin
-from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticate_user
+from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticate_user, get_vehicle_owner_counts
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url  # Utility functions
 from app.core.security import create_access_token
@@ -79,5 +79,17 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = authenticate_user(db, user)
     if not db_user:
         raise HTTPException(status_code=400, detail="Invalid credentials")
+    
+    # Get counts of related records
+    counts = get_vehicle_owner_counts(db, db_user.id, db_user.organization_id)
+    
+    # Create access token
     access_token = create_access_token({"sub": str(db_user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+    
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "account_status": db_user.account_status.value,
+        "car_driver_count": counts["car_driver_count"],
+        "car_details_count": counts["car_details_count"]
+    }

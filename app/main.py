@@ -2,6 +2,10 @@ from fastapi import FastAPI
 # from app.api.routes import vendor,driver, vehicle_owner
 from app.api.routes import vehicle_owner
 import app.models.admin
+import app.models.car_driver
+import app.models.vehicle_owner
+import app.models.vehicle_owner_details
+import app.models.car_details
 from app.database.session import Base, engine
 
 # Create DB tables
