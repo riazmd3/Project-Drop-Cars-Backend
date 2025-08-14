@@ -140,14 +140,14 @@ def get_vehicle_owner_counts(db: Session, vehicle_owner_id: UUID, organization_i
     from app.models.car_driver import CarDriver
     from app.models.car_details import CarDetails
     
-    # Count car_driver records with matching organization_id
+    # Count car_driver records with matching vehicle_owner_id
     car_driver_count = db.query(CarDriver).filter(
-        CarDriver.organization_id == organization_id
+        CarDriver.vehicle_owner_id == vehicle_owner_id
     ).count()
     
-    # Count car_details records with matching organization_id
+    # Count car_details records with matching vehicle_owner_id
     car_details_count = db.query(CarDetails).filter(
-        CarDetails.organization_id == organization_id
+        CarDetails.vehicle_owner_id == vehicle_owner_id
     ).count()
     
     return {

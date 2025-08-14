@@ -47,6 +47,7 @@ def create_car_driver(db: Session, driver_data: CarDriverForm) -> CarDriver:
 
     # Create car driver object
     car_driver = CarDriver(
+        vehicle_owner_id=driver_data.vehicle_owner_id,
         organization_id=driver_data.organization_id,
         full_name=driver_data.full_name,
         primary_number=driver_data.primary_number,

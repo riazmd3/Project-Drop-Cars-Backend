@@ -1,5 +1,5 @@
 # models/car_driver.py
-from sqlalchemy import Column, String, Integer, TIMESTAMP, func, Boolean, Enum as SqlEnum
+from sqlalchemy import Column, String, Integer, TIMESTAMP, func, Boolean, Enum as SqlEnum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from app.database.session import Base
 import uuid
@@ -13,6 +13,7 @@ class CarDriver(Base):
     __tablename__ = "car_driver"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
+    vehicle_owner_id = Column(UUID(as_uuid=True), ForeignKey("vehicle_owner.id"), nullable=False)
     organization_id = Column(String)
     full_name = Column(String, nullable=False)
     primary_number = Column(String, nullable=False, unique=True)

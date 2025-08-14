@@ -21,6 +21,7 @@ def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
 
     # Create car details object
     car_details = CarDetails(
+        vehicle_owner_id=car_data.vehicle_owner_id,
         organization_id=car_data.organization_id,
         car_name=car_data.car_name,
         car_type=car_data.car_type,

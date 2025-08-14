@@ -1,5 +1,5 @@
 # models/car_details.py
-from sqlalchemy import Column, String, TIMESTAMP, Integer, func, Enum as SqlEnum
+from sqlalchemy import Column, String, TIMESTAMP, Integer, func, Enum as SqlEnum, ForeignKey
 import uuid
 import enum
 from sqlalchemy.dialects.postgresql import UUID
@@ -19,6 +19,7 @@ class CarDetails(Base):
     __tablename__ = "car_details"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
+    vehicle_owner_id = Column(UUID(as_uuid=True), ForeignKey("vehicle_owner.id"), nullable=False)
     organization_id = Column(String)
     car_name = Column(String, nullable=False)
     car_type = Column(SqlEnum(CarTypeEnum,name="car_type_enum"),nullable=False)  # sedan, suv, muv, innova
