@@ -19,7 +19,7 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
             detail=f"Mobile number {user_in.primary_number} is already registered. Please use a different number."
         )
 
-    # Check for duplicate secondary number
+    # Check for duplicate secondary number (only if provided)
     if user_in.secondary_number:
         existing_secondary = db.query(VehicleOwnerDetails).filter(
             VehicleOwnerDetails.secondary_number == user_in.secondary_number
@@ -30,15 +30,7 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
                 detail=f"Secondary mobile number {user_in.secondary_number} is already registered. Please use a different number."
             )
 
-    # Check for duplicate GPay number
-    existing_gpay = db.query(VehicleOwnerDetails).filter(
-        VehicleOwnerDetails.gpay_number == user_in.gpay_number
-    ).first()
-    if existing_gpay:
-        raise HTTPException(
-            status_code=400,
-            detail=f"GPay number {user_in.gpay_number} is already registered. Please use a different number."
-        )
+
 
     # Check for duplicate Aadhar number
     existing_aadhar = db.query(VehicleOwnerDetails).filter(
@@ -74,7 +66,6 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
         primary_number=user_in.primary_number,
         secondary_number=user_in.secondary_number,
         wallet_balance=0,
-        gpay_number=user_in.gpay_number,
         aadhar_number=user_in.aadhar_number,
         aadhar_front_img=None,  # Will be updated after GCS upload
         adress=user_in.address
@@ -123,6 +114,15 @@ def update_aadhar_image(db: Session, vehicle_owner_id: UUID, aadhar_img_url: str
 
 # def get_user(db: Session, user_id: int) -> Optional[User]:
 #     return db.query(User).filter(User.id == user_id).first()
+
+def get_vehicle_owner_by_id(db: Session, vehicle_owner_id: str) -> Optional[VehicleOwnerCredentials]:
+    """Get vehicle owner by ID"""
+    try:
+        owner_uuid = UUID(vehicle_owner_id)
+        return db.query(VehicleOwnerCredentials).filter(VehicleOwnerCredentials.id == owner_uuid).first()
+    except ValueError:
+        return None
+
 
 def get_user_by_mobile(db: Session, mobile_number: str) -> Optional[VehicleOwnerCredentials]:
     return db.query(VehicleOwnerCredentials).filter(VehicleOwnerCredentials.primary_number == mobile_number).first()

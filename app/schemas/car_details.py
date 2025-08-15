@@ -11,7 +11,7 @@ class CarTypeEnum(str, Enum):
     INNOVA = "INNOVA"
 
 class CarDetailsForm(BaseModel):
-    vehicle_owner_id: UUID = Field(..., description="Vehicle owner ID")
+    vehicle_owner_id: Optional[UUID] = Field(None, description="Vehicle owner ID (auto-set from token)")
     organization_id: Optional[str] = None
     
     car_name: Annotated[str, Field(
@@ -40,14 +40,14 @@ class CarDetailsForm(BaseModel):
     @classmethod
     def as_form(
         cls,
-        vehicle_owner_id: str = Form(..., description="Vehicle owner ID"),
+        vehicle_owner_id: Optional[str] = Form(None, description="Vehicle owner ID (auto-set from token)"),
         car_name: str = Form(..., description="Car name (2-100 characters)"),
         car_type: CarTypeEnum = Form(..., description="Car type: SEDAN, SUV, or INNOVA"),
         car_number: str = Form(..., description="Car registration number"),
         organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
         return cls(
-            vehicle_owner_id=UUID(vehicle_owner_id),
+            vehicle_owner_id=UUID(vehicle_owner_id) if vehicle_owner_id else None,
             car_name=car_name,
             car_type=car_type,
             car_number=car_number,

@@ -4,6 +4,8 @@ from app.schemas.car_driver import CarDriverForm, CarDriverOut, CarDriverSignupR
 from app.crud.car_driver import create_car_driver, update_driver_license_image
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url
+from app.core.security import get_current_user
+from app.models.vehicle_owner import VehicleOwnerCredentials
 from typing import List
 
 router = APIRouter()
@@ -12,6 +14,7 @@ router = APIRouter()
 async def signup_car_driver(
     driver_form: CarDriverForm = Depends(CarDriverForm.as_form),
     licence_front_img: UploadFile = File(..., description="License front image file"),
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -34,6 +37,11 @@ async def signup_car_driver(
         )
     
     # Step 2: Create car driver in database first (without image)
+    # Set vehicle_owner_id and organization_id from authenticated user
+    driver_form.vehicle_owner_id = current_user.id
+    if not driver_form.organization_id:
+        driver_form.organization_id = current_user.organization_id
+    
     try:
         db_driver = create_car_driver(db, driver_form)
     except HTTPException:
@@ -77,8 +85,12 @@ async def signup_car_driver(
     }
 
 @router.get("/cardriver/{driver_id}", response_model=CarDriverOut)
-def get_car_driver(driver_id: str, db: Session = Depends(get_db)):
-    """Get car driver by ID"""
+def get_car_driver(
+    driver_id: str, 
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get car driver by ID (only for authenticated vehicle owner)"""
     from app.crud.car_driver import get_driver_by_id
     from uuid import UUID
     
@@ -91,23 +103,43 @@ def get_car_driver(driver_id: str, db: Session = Depends(get_db)):
     if not driver:
         raise HTTPException(status_code=404, detail="Car driver not found")
     
+    # Verify that the driver belongs to the authenticated vehicle owner
+    if driver.vehicle_owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only view your own drivers.")
+    
     return driver
 
 @router.get("/cardriver/organization/{organization_id}", response_model=List[CarDriverOut])
-def get_drivers_by_organization(organization_id: str, db: Session = Depends(get_db)):
-    """Get all drivers for a specific organization"""
+def get_drivers_by_organization(
+    organization_id: str, 
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all drivers for a specific organization (only for authenticated vehicle owner)"""
     from app.crud.car_driver import get_drivers_by_organization
+    
+    # Verify that the organization_id matches the authenticated user's organization
+    if organization_id != current_user.organization_id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only view drivers from your own organization.")
     
     drivers = get_drivers_by_organization(db, organization_id)
     return drivers
 
 @router.get("/cardriver/mobile/{mobile_number}", response_model=CarDriverOut)
-def get_driver_by_mobile(mobile_number: str, db: Session = Depends(get_db)):
-    """Get car driver by mobile number (primary or secondary)"""
+def get_driver_by_mobile(
+    mobile_number: str, 
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get car driver by mobile number (only for authenticated vehicle owner)"""
     from app.crud.car_driver import get_driver_by_mobile
     
     driver = get_driver_by_mobile(db, mobile_number)
     if not driver:
         raise HTTPException(status_code=404, detail="Car driver not found with this mobile number")
+    
+    # Verify that the driver belongs to the authenticated vehicle owner
+    if driver.vehicle_owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only view your own drivers.")
     
     return driver

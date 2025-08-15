@@ -14,7 +14,7 @@ class AccountStatusEnum(str, Enum):
     BLOCKED = "BLOCKED"
 
 class CarDriverForm(BaseModel):
-    vehicle_owner_id: UUID = Field(..., description="Vehicle owner ID")
+    vehicle_owner_id: Optional[UUID] = Field(None, description="Vehicle owner ID (auto-set from token)")
     organization_id: Optional[str] = None
     
     full_name: Annotated[str, Field(
@@ -65,7 +65,7 @@ class CarDriverForm(BaseModel):
     @classmethod
     def as_form(
         cls,
-        vehicle_owner_id: str = Form(..., description="Vehicle owner ID"),
+        vehicle_owner_id: Optional[str] = Form(None, description="Vehicle owner ID (auto-set from token)"),
         full_name: str = Form(..., description="Full name (3-100 characters)"),
         primary_number: str = Form(..., description="Primary mobile number"),
         secondary_number: str = Form(..., description="Secondary mobile number"),
@@ -75,7 +75,7 @@ class CarDriverForm(BaseModel):
         organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
         return cls(
-            vehicle_owner_id=UUID(vehicle_owner_id),
+            vehicle_owner_id=UUID(vehicle_owner_id) if vehicle_owner_id else None,
             full_name=full_name,
             primary_number=primary_number,
             secondary_number=secondary_number,
