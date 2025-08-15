@@ -18,15 +18,10 @@ class VehicleOwnerBase(BaseModel):
         description="Indian mobile number, with optional +91 country code"
     )]
 
-    secondary_number: Annotated[str, Field(
+    secondary_number: Optional[Annotated[str, Field(
         pattern=indian_phone_pattern,
         description="Indian mobile number, with optional +91 country code"
-    )]
-
-    gpay_number: Annotated[str, Field(
-        pattern=indian_phone_pattern,
-        description="Indian mobile number, with optional +91 country code"
-    )]
+    )]] = None
 
     password: str
     address: str
@@ -53,15 +48,10 @@ class VehicleOwnerForm(BaseModel):
         description="Primary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
     )]
 
-    secondary_number: Annotated[str, Field(
+    secondary_number: Optional[Annotated[str, Field(
         pattern=indian_phone_pattern,
         description="Secondary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
-    )]
-
-    gpay_number: Annotated[str, Field(
-        pattern=indian_phone_pattern,
-        description="GPay number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
-    )]
+    )]] = None
 
     password: Annotated[str, Field(
         min_length=6,
@@ -87,8 +77,10 @@ class VehicleOwnerForm(BaseModel):
             raise ValueError('Aadhar number must be exactly 12 digits')
         return v
 
-    @validator('primary_number', 'secondary_number', 'gpay_number')
+    @validator('primary_number', 'secondary_number')
     def validate_phone_numbers(cls, v):
+        if v is None:  # Allow None for secondary_number
+            return v
         import re
         if not re.match(indian_phone_pattern, v):
             raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
@@ -99,10 +91,9 @@ class VehicleOwnerForm(BaseModel):
         cls,
         full_name: str = Form(..., description="Full name (3-100 characters)"),
         primary_number: str = Form(..., description="Primary mobile number"),
-        secondary_number: str = Form(..., description="Secondary mobile number"),
+        secondary_number: Optional[str] = Form(None, description="Secondary mobile number (optional)"),
         password: str = Form(..., description="Password (min 6 characters)"),
         address: str = Form(..., description="Address (min 10 characters)"),
-        gpay_number: str = Form(..., description="GPay mobile number"),
         aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
         organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
@@ -112,7 +103,6 @@ class VehicleOwnerForm(BaseModel):
             secondary_number=secondary_number,
             password=password,
             address=address,
-            gpay_number=gpay_number,
             aadhar_number=aadhar_number,
             organization_id=organization_id,
         )
@@ -132,7 +122,6 @@ class VehicleOwnerOut(VehicleOwnerBase):
                 "full_name": "Jane Doe",
                 "primary_number": "+919876543210",
                 "secondary_number": "+919876543211",
-                "gpay_number": "+919876543212",
                 "password": "secret123",
                 "address": "123 Main Street, Mumbai",
                 "aadhar_number": "123456789012",

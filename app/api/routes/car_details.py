@@ -4,6 +4,8 @@ from app.schemas.car_details import CarDetailsForm, CarDetailsOut, CarDetailsSig
 from app.crud.car_details import create_car_details, update_car_images
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url
+from app.core.security import get_current_user
+from app.models.vehicle_owner import VehicleOwnerCredentials
 from typing import List
 
 router = APIRouter()
@@ -16,6 +18,7 @@ async def signup_car_details(
     insurance_img: UploadFile = File(..., description="Insurance image file"),
     fc_img: UploadFile = File(..., description="FC image file"),
     car_img: UploadFile = File(..., description="Car image file"),
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -47,6 +50,11 @@ async def signup_car_details(
             )
     
     # Step 2: Create car details in database first (without images)
+    # Set vehicle_owner_id and organization_id from authenticated user
+    car_form.vehicle_owner_id = current_user.id
+    if not car_form.organization_id:
+        car_form.organization_id = current_user.organization_id
+    
     try:
         db_car = create_car_details(db, car_form)
     except HTTPException:
@@ -109,8 +117,12 @@ async def signup_car_details(
     }
 
 @router.get("/cardetails/{car_id}", response_model=CarDetailsOut)
-def get_car_details(car_id: str, db: Session = Depends(get_db)):
-    """Get car details by ID"""
+def get_car_details(
+    car_id: str, 
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get car details by ID (only for authenticated vehicle owner)"""
     from app.crud.car_details import get_car_by_id
     from uuid import UUID
     
@@ -123,12 +135,24 @@ def get_car_details(car_id: str, db: Session = Depends(get_db)):
     if not car:
         raise HTTPException(status_code=404, detail="Car details not found")
     
+    # Verify that the car belongs to the authenticated vehicle owner
+    if car.vehicle_owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only view your own cars.")
+    
     return car
 
 @router.get("/cardetails/organization/{organization_id}", response_model=List[CarDetailsOut])
-def get_cars_by_organization(organization_id: str, db: Session = Depends(get_db)):
-    """Get all cars for a specific organization"""
+def get_cars_by_organization(
+    organization_id: str, 
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get all cars for a specific organization (only for authenticated vehicle owner)"""
     from app.crud.car_details import get_cars_by_organization
+    
+    # Verify that the organization_id matches the authenticated user's organization
+    if organization_id != current_user.organization_id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only view cars from your own organization.")
     
     cars = get_cars_by_organization(db, organization_id)
     return cars
