@@ -1,0 +1,174 @@
+from pydantic import BaseModel, Field, validator
+from typing import Optional, Annotated
+from uuid import UUID
+from datetime import datetime
+from fastapi import Form
+
+# --- Regex pattern for Indian mobile numbers ---
+indian_phone_pattern = r'^(?:\+91)?[6-9]\d{9}$'
+
+# --- Base Schema ---
+class VendorBase(BaseModel):
+    organization_id: Optional[str] = None
+    full_name: Annotated[str, Field(min_length=3, max_length=100)]
+    primary_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Indian mobile number, with optional +91 country code"
+    )]
+    secondary_number: Optional[Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Indian mobile number, with optional +91 country code"
+    )]] = None
+    password: str
+    address: str
+    aadhar_number: str
+    gpay_number: str
+    wallet_balance: int = 0
+
+# --- Form Schema for validation without image ---
+class VendorSignupForm(BaseModel):
+    organization_id: Optional[str] = None
+    full_name: Annotated[str, Field(
+        min_length=3, 
+        max_length=100,
+        description="Full name must be between 3 and 100 characters"
+    )]
+    primary_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Primary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
+    )]
+    secondary_number: Optional[Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Secondary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
+    )]] = None
+    password: Annotated[str, Field(
+        min_length=6,
+        description="Password must be at least 6 characters long"
+    )]
+    address: Annotated[str, Field(
+        min_length=10,
+        description="Address must be at least 10 characters long"
+    )]
+    aadhar_number: Annotated[str, Field(
+        min_length=12,
+        max_length=12,
+        description="Aadhar number must be exactly 12 digits"
+    )]
+    gpay_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="GPay number must be a valid Indian mobile number"
+    )]
+
+    @validator('aadhar_number')
+    def validate_aadhar_number(cls, v):
+        if not v.isdigit():
+            raise ValueError('Aadhar number must contain only digits')
+        if len(v) != 12:
+            raise ValueError('Aadhar number must be exactly 12 digits')
+        return v
+
+    @validator('primary_number', 'secondary_number', 'gpay_number')
+    def validate_phone_numbers(cls, v):
+        if v is None:  # Allow None for secondary_number
+            return v
+        import re
+        if not re.match(indian_phone_pattern, v):
+            raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
+        return v
+
+    @classmethod
+    def as_form(
+        cls,
+        full_name: str = Form(..., description="Full name (3-100 characters)"),
+        primary_number: str = Form(..., description="Primary mobile number"),
+        secondary_number: Optional[str] = Form(None, description="Secondary mobile number (optional)"),
+        password: str = Form(..., description="Password (min 6 characters)"),
+        address: str = Form(..., description="Address (min 10 characters)"),
+        aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
+        gpay_number: str = Form(..., description="GPay number"),
+        organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
+    ):
+        return cls(
+            full_name=full_name,
+            primary_number=primary_number,
+            secondary_number=secondary_number,
+            password=password,
+            address=address,
+            aadhar_number=aadhar_number,
+            gpay_number=gpay_number,
+            organization_id=organization_id,
+        )
+
+# --- Signin Schema ---
+class VendorSignin(BaseModel):
+    primary_number: str
+    password: str
+
+    @validator('primary_number')
+    def validate_phone_number(cls, v):
+        import re
+        if not re.match(indian_phone_pattern, v):
+            raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
+        return v
+
+# --- Output Schema ---
+class VendorOut(BaseModel):
+    id: UUID
+    organization_id: Optional[str]
+    full_name: str
+    primary_number: str
+    secondary_number: Optional[str]
+    gpay_number: str
+    wallet_balance: int
+    aadhar_number: str
+    aadhar_front_img: Optional[str]
+    address: str
+    account_status: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+        json_schema_extra = {
+            "example": {
+                "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                "organization_id": "org_123",
+                "full_name": "John Doe",
+                "primary_number": "+919876543210",
+                "secondary_number": "+919876543211",
+                "gpay_number": "+919876543212",
+                "wallet_balance": 0,
+                "aadhar_number": "123456789012",
+                "aadhar_front_img": "https://storage.googleapis.com/drop-cars-files/vendor_details/aadhar/uuid.jpg",
+                "address": "123 Main Street, Mumbai",
+                "account_status": "Pending",
+                "created_at": "2025-08-13T12:00:00Z"
+            }
+        }
+
+# --- Token Response Schema ---
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    vendor: VendorOut
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "vendor": {
+                    "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                    "organization_id": "org_123",
+                    "full_name": "John Doe",
+                    "primary_number": "+919876543210",
+                    "secondary_number": "+919876543211",
+                    "gpay_number": "+919876543212",
+                    "wallet_balance": 0,
+                    "aadhar_number": "123456789012",
+                    "aadhar_front_img": "https://storage.googleapis.com/drop-cars-files/vendor_details/aadhar/uuid.jpg",
+                    "address": "123 Main Street, Mumbai",
+                    "account_status": "Pending",
+                    "created_at": "2025-08-13T12:00:00Z"
+                }
+            }
+        }

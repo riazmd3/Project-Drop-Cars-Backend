@@ -1,4 +1,4 @@
-# models/vehicle_owner.py
+# models/vendor.py
 from sqlalchemy import Column, String, TIMESTAMP, Integer, func, Boolean, Enum as SqlEnum
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -10,7 +10,7 @@ class AccountStatusEnum(enum.Enum):
     INACTIVE = "Inactive"
     PENDING = "Pending"
     
-class VehicleOwnerCredentials(Base):
+class VendorCredentials(Base):
     __tablename__ = "vendor"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
