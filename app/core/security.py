@@ -70,3 +70,30 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         )
     
     return user
+
+def get_current_vendor(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Get current authenticated vendor from token"""
+    # Import here to avoid circular import
+    from app.crud.vendor import get_vendor_by_id
+    
+    token = credentials.credentials
+    payload = verify_token(token)
+    vendor_id = payload.get("sub")
+    
+    if vendor_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Get vendor from database
+    vendor = get_vendor_by_id(db, vendor_id)
+    if vendor is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Vendor not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return vendor
