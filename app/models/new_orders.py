@@ -1,4 +1,4 @@
-# models/vendor_details.py
+# models/new_orders.py
 from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -20,7 +20,7 @@ class CarTypeEnum(enum.Enum):
     INNOVA_CRYSTA = "Innova Crysta"
 
 
-class VendorDetails(Base):
+class NewOrder(Base):
     __tablename__ = "new_orders"
 
     order_id  = Column(Integer, primary_key=True, autoincrement=True)
