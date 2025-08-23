@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List, Dict
 
 from app.database.session import get_db
 from app.core.security import get_current_vendor
@@ -9,9 +9,9 @@ from app.schemas.new_orders import (
     OnewayQuoteResponse,
     OnewayConfirmRequest,
     OnewayConfirmResponse,
-    FareBreakdown,
+    FareBreakdown,NewOrderResponse
 )
-from app.crud.new_orders import calculate_oneway_fare, create_oneway_order
+from app.crud.new_orders import calculate_oneway_fare, create_oneway_order, get_pending_all_city_orders
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 
 
@@ -111,4 +111,6 @@ async def oneway_confirm(
             detail=f"Failed to confirm order: {str(e)}",
         )
 
-
+@router.get("/pending-all", response_model=List[NewOrderResponse])
+def get_pending_all_orders(db: Session = Depends(get_db)):
+    return get_pending_all_city_orders(db)

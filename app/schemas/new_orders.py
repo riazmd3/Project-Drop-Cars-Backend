@@ -82,4 +82,30 @@ class OnewayConfirmResponse(BaseModel):
     pick_near_city: str
     fare: FareBreakdown
 
+class NewOrderResponse(BaseModel):
+    order_id: int
+    vendor_id: UUID
+    trip_type: OrderType
+    car_type: CarType
+    pickup_drop_location: Dict[str, str]
+    start_date_time: datetime
+    customer_name: str
+    customer_number: str
+    cost_per_km: int
+    extra_cost_per_km: int
+    driver_allowance: int
+    extra_driver_allowance: int
+    permit_charges: int
+    extra_permit_charges: int
+    hill_charges: int
+    toll_charges: int
+    pickup_notes: Optional[str]
+    trip_status: str
+    pick_near_city: str
+    trip_distance: int
+    trip_time: str
+    platform_fees_percent: int
+    created_at: datetime
 
+    class Config:
+        orm_mode = True

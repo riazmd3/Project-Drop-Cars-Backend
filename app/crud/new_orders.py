@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from app.models.new_orders import NewOrder, OrderTypeEnum, CarTypeEnum
 from app.utils.maps import get_distance_km_between_locations
@@ -84,7 +84,7 @@ def create_oneway_order(
         trip_distance = trip_distance,
         trip_time = trip_time,
         platform_fees_percent = 10,
-        trip_status="CONFIRMED",
+        trip_status="PENDING",
         pick_near_city=pick_near_city,
     )
 
@@ -94,3 +94,8 @@ def create_oneway_order(
     return new_order
 
 
+def get_pending_all_city_orders(db: Session) -> List[NewOrder]:
+    return db.query(NewOrder).filter(
+        NewOrder.trip_status == "PENDING",
+        NewOrder.pick_near_city == "ALL"
+    ).all()
