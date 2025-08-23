@@ -97,3 +97,7 @@ def get_current_vendor(credentials: HTTPAuthorizationCredentials = Depends(secur
         )
     
     return vendor
+def get_current_vehicleOwner_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    token = credentials.credentials
+    payload = verify_token(token)
+    return payload.get("sub")  # This should be the vehicle_owner_id

@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm, UserLogin
-from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticate_user, get_vehicle_owner_counts
+from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm, UserLogin, VehicleOwnerDetailsResponse
+from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticate_user, get_vehicle_owner_counts, get_vehicle_owner_by_id
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url  # Utility functions
-from app.core.security import create_access_token
+from app.core.security import create_access_token, get_current_vehicleOwner_id
 
 router = APIRouter()
 
@@ -93,3 +93,16 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "car_driver_count": counts["car_driver_count"],
         "car_details_count": counts["car_details_count"]
     }
+
+@router.get("/vehicle-owner/me", response_model=VehicleOwnerDetailsResponse)
+def get_my_vehicle_owner_details(
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    owner = get_vehicle_owner_by_id(db, vehicle_owner_id)
+    if not owner:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle owner not found"
+        )
+    return owner

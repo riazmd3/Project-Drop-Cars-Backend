@@ -68,7 +68,7 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
         wallet_balance=0,
         aadhar_number=user_in.aadhar_number,
         aadhar_front_img=None,  # Will be updated after GCS upload
-        adress=user_in.address
+        address=user_in.address
     )
 
     db.add(details)
@@ -179,3 +179,7 @@ def get_vehicle_owner_counts(db: Session, vehicle_owner_id: UUID, organization_i
 #         raise HTTPException(status_code=404, detail="User not found")
 #     db.delete(user)
 #     db.commit()
+def get_vehicle_owner_by_id(db: Session, vehicle_owner_id: UUID):
+    return db.query(VehicleOwnerDetails).filter(
+        VehicleOwnerDetails.vehicle_owner_id == vehicle_owner_id
+    ).first()

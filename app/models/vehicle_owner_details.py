@@ -17,7 +17,7 @@ class VehicleOwnerDetails(Base):
     wallet_balance = Column(Integer, nullable=False, default=0)
     aadhar_number = Column(String, unique=True, nullable=False)
     aadhar_front_img = Column(String, unique=True, nullable=True)
-    adress = Column(String, nullable=False)
+    address = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     # owner_profile_status = Column(Boolean, nullable=False, default=False)
     # driver_profile = Column(Boolean, nullable=False, default=False)
