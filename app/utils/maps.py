@@ -45,7 +45,8 @@ def get_distance_km_between_locations(origin: str, destination: str) -> float:
         raise MapsApiError(f"Route not found: {element.get('status')}")
 
     distance_meters = element["distance"]["value"]
+    duration_text = element["duration"]["text"]
     distance_km = float(distance_meters) / 1000.0
-    return distance_km
+    return round(distance_km),duration_text
 
 

@@ -1,14 +1,15 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field,field_validator
 from typing import Any, List, Optional, Union, Literal, Dict
 from uuid import UUID
 from datetime import datetime
+from enum import Enum
 
 
-class OrderType(str):
+class OrderType(str,Enum):
     ONEWAY = "Oneway"
 
 
-class CarType(str):
+class CarType(str,Enum):
     HATCHBACK = "Hatchback"
     SEDAN = "Sedan"
     NEW_SEDAN = "New Sedan"
@@ -19,15 +20,8 @@ class CarType(str):
 
 class OnewayQuoteRequest(BaseModel):
     vendor_id: UUID
-    trip_type: Literal[OrderType.ONEWAY] = Field(default=OrderType.ONEWAY)
-    car_type: Literal[
-        CarType.HATCHBACK,
-        CarType.SEDAN,
-        CarType.NEW_SEDAN,
-        CarType.SUV,
-        CarType.INNOVA,
-        CarType.INNOVA_CRYSTA,
-    ]
+    trip_type: OrderType = Field(default=OrderType.ONEWAY)
+    car_type: CarType
     pickup_drop_location: Dict[str, str] = Field(
         description="Object mapping indices to location names, e.g. {\"0\": \"Chennai\", \"1\": \"Bangalore\"}"
     )
@@ -39,11 +33,12 @@ class OnewayQuoteRequest(BaseModel):
     driver_allowance: int
     extra_driver_allowance: int
     permit_charges: int
+    extra_permit_charges: int
     hill_charges: int
     toll_charges: int
     pickup_notes: Optional[str] = None
 
-    @validator("pickup_drop_location")
+    @field_validator("pickup_drop_location")
     def validate_locations(cls, v: Dict[str, str]):
         if not isinstance(v, dict) or len(v.keys()) < 2:
             raise ValueError("pickup_drop_location must be an object with at least two indices: source (0) and destination (last)")
@@ -66,6 +61,7 @@ class OnewayConfirmRequest(OnewayQuoteRequest):
 
 class FareBreakdown(BaseModel):
     total_km: float
+    trip_time: str
     base_km_amount: int
     driver_allowance: int
     extra_driver_allowance: int
@@ -86,4 +82,30 @@ class OnewayConfirmResponse(BaseModel):
     pick_near_city: str
     fare: FareBreakdown
 
+class NewOrderResponse(BaseModel):
+    order_id: int
+    vendor_id: UUID
+    trip_type: OrderType
+    car_type: CarType
+    pickup_drop_location: Dict[str, str]
+    start_date_time: datetime
+    customer_name: str
+    customer_number: str
+    cost_per_km: int
+    extra_cost_per_km: int
+    driver_allowance: int
+    extra_driver_allowance: int
+    permit_charges: int
+    extra_permit_charges: int
+    hill_charges: int
+    toll_charges: int
+    pickup_notes: Optional[str]
+    trip_status: str
+    pick_near_city: str
+    trip_distance: int
+    trip_time: str
+    platform_fees_percent: int
+    created_at: datetime
 
+    class Config:
+        orm_mode = True

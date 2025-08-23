@@ -137,3 +137,19 @@ class VehicleOwnerOut(VehicleOwnerBase):
 class UserLogin(BaseModel):
     mobile_number: str  # still mobile_number in the API
     password: str
+    
+class VehicleOwnerDetailsResponse(BaseModel):
+    id: UUID
+    vehicle_owner_id: UUID
+    organization_id: Optional[str]
+    full_name: str
+    primary_number: str
+    secondary_number: Optional[str]
+    wallet_balance: int
+    aadhar_number: str
+    aadhar_front_img: Optional[str]
+    address: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True

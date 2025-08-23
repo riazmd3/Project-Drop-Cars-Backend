@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List, Dict
 
 from app.database.session import get_db
 from app.core.security import get_current_vendor
@@ -9,9 +9,9 @@ from app.schemas.new_orders import (
     OnewayQuoteResponse,
     OnewayConfirmRequest,
     OnewayConfirmResponse,
-    FareBreakdown,
+    FareBreakdown,NewOrderResponse
 )
-from app.crud.new_orders import calculate_oneway_fare, create_oneway_order
+from app.crud.new_orders import calculate_oneway_fare, create_oneway_order, get_pending_all_city_orders
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 
 
@@ -27,6 +27,7 @@ async def oneway_quote(payload: OnewayQuoteRequest):
             payload.driver_allowance,
             payload.extra_driver_allowance,
             payload.permit_charges,
+            payload.extra_permit_charges,
             payload.hill_charges,
             payload.toll_charges,
         )
@@ -58,7 +59,18 @@ async def oneway_confirm(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="near_city is required when send_to is NEAR_CITY",
             )
-
+            
+        fare = calculate_oneway_fare(
+            payload.pickup_drop_location,
+            payload.cost_per_km,
+            payload.driver_allowance,
+            payload.extra_driver_allowance,
+            payload.permit_charges,
+            payload.extra_permit_charges,
+            payload.hill_charges,
+            payload.toll_charges,
+        )
+        
         # Persist order
         new_order = create_oneway_order(
             db,
@@ -74,20 +86,16 @@ async def oneway_confirm(
             driver_allowance=payload.driver_allowance,
             extra_driver_allowance=payload.extra_driver_allowance,
             permit_charges=payload.permit_charges,
+            extra_permit_charges=payload.extra_permit_charges,
             hill_charges=payload.hill_charges,
             toll_charges=payload.toll_charges,
             pickup_notes=payload.pickup_notes or "",
+            trip_distance = fare["total_km"],
+            trip_time = fare["trip_time"],
+            platform_fees_percent = 10,
             pick_near_city=pick_near_city,
         )
-        fare = calculate_oneway_fare(
-            payload.pickup_drop_location,
-            payload.cost_per_km,
-            payload.driver_allowance,
-            payload.extra_driver_allowance,
-            payload.permit_charges,
-            payload.hill_charges,
-            payload.toll_charges,
-        )
+        print(fare)
 
         return OnewayConfirmResponse(
             order_id=new_order.order_id,
@@ -103,4 +111,6 @@ async def oneway_confirm(
             detail=f"Failed to confirm order: {str(e)}",
         )
 
-
+@router.get("/pending-all", response_model=List[NewOrderResponse])
+def get_pending_all_orders(db: Session = Depends(get_db)):
+    return get_pending_all_city_orders(db)
