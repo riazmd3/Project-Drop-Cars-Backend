@@ -33,6 +33,7 @@ class OnewayQuoteRequest(BaseModel):
     driver_allowance: int
     extra_driver_allowance: int
     permit_charges: int
+    extra_permit_charges: int
     hill_charges: int
     toll_charges: int
     pickup_notes: Optional[str] = None
@@ -60,6 +61,7 @@ class OnewayConfirmRequest(OnewayQuoteRequest):
 
 class FareBreakdown(BaseModel):
     total_km: float
+    trip_time: str
     base_km_amount: int
     driver_allowance: int
     extra_driver_allowance: int

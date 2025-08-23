@@ -42,11 +42,15 @@ class NewOrder(Base):
     driver_allowance = Column(Integer, nullable=False)
     extra_driver_allowance = Column(Integer, nullable=False)
     permit_charges = Column(Integer, nullable=False)
+    extra_permit_charges = Column(Integer, nullable=False)
     hill_charges = Column(Integer, nullable=False)
     toll_charges = Column(Integer, nullable=False)
     pickup_notes = Column(String, nullable=True)
     trip_status = Column(String, nullable=False)
     pick_near_city = Column(String, nullable=False)
+    trip_distance = Column(Integer,nullable=False)
+    trip_time = Column(String, nullable=False)
+    platform_fees_percent = Column(Integer,nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     
     

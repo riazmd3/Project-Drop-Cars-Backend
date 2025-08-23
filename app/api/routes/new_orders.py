@@ -27,6 +27,7 @@ async def oneway_quote(payload: OnewayQuoteRequest):
             payload.driver_allowance,
             payload.extra_driver_allowance,
             payload.permit_charges,
+            payload.extra_permit_charges,
             payload.hill_charges,
             payload.toll_charges,
         )
@@ -58,7 +59,18 @@ async def oneway_confirm(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="near_city is required when send_to is NEAR_CITY",
             )
-
+            
+        fare = calculate_oneway_fare(
+            payload.pickup_drop_location,
+            payload.cost_per_km,
+            payload.driver_allowance,
+            payload.extra_driver_allowance,
+            payload.permit_charges,
+            payload.extra_permit_charges,
+            payload.hill_charges,
+            payload.toll_charges,
+        )
+        
         # Persist order
         new_order = create_oneway_order(
             db,
@@ -74,20 +86,16 @@ async def oneway_confirm(
             driver_allowance=payload.driver_allowance,
             extra_driver_allowance=payload.extra_driver_allowance,
             permit_charges=payload.permit_charges,
+            extra_permit_charges=payload.extra_permit_charges,
             hill_charges=payload.hill_charges,
             toll_charges=payload.toll_charges,
             pickup_notes=payload.pickup_notes or "",
+            trip_distance = fare["total_km"],
+            trip_time = fare["trip_time"],
+            platform_fees_percent = 10,
             pick_near_city=pick_near_city,
         )
-        fare = calculate_oneway_fare(
-            payload.pickup_drop_location,
-            payload.cost_per_km,
-            payload.driver_allowance,
-            payload.extra_driver_allowance,
-            payload.permit_charges,
-            payload.hill_charges,
-            payload.toll_charges,
-        )
+        print(fare)
 
         return OnewayConfirmResponse(
             order_id=new_order.order_id,
