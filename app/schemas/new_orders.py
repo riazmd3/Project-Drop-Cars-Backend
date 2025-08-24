@@ -104,6 +104,8 @@ class NewOrderResponse(BaseModel):
     pick_near_city: str
     trip_distance: int
     trip_time: str
+    estimated_price: int
+    vendor_price: int
     platform_fees_percent: int
     created_at: datetime
 

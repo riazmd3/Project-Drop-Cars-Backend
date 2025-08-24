@@ -51,6 +51,8 @@ class NewOrder(Base):
     trip_distance = Column(Integer,nullable=False)
     trip_time = Column(String, nullable=False)
     platform_fees_percent = Column(Integer,nullable=False)
+    estimated_price = Column(Integer, nullable=True)
+    vendor_price  = Column(Integer, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     
     

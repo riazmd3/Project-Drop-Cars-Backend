@@ -85,6 +85,8 @@ def create_oneway_order(
         trip_time = trip_time,
         platform_fees_percent = 10,
         trip_status="PENDING",
+        estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges,
+        vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges,
         pick_near_city=pick_near_city,
     )
 
@@ -99,3 +101,6 @@ def get_pending_all_city_orders(db: Session) -> List[NewOrder]:
         NewOrder.trip_status == "PENDING",
         NewOrder.pick_near_city == "ALL"
     ).all()
+    
+def get_orders_by_vendor_id(db: Session, vendor_id: UUID) -> List[NewOrder]:
+    return db.query(NewOrder).filter(NewOrder.vendor_id == vendor_id).order_by(NewOrder.created_at.desc()).all()

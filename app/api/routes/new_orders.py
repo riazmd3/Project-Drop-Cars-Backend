@@ -11,7 +11,7 @@ from app.schemas.new_orders import (
     OnewayConfirmResponse,
     FareBreakdown,NewOrderResponse
 )
-from app.crud.new_orders import calculate_oneway_fare, create_oneway_order, get_pending_all_city_orders
+from app.crud.new_orders import calculate_oneway_fare, create_oneway_order, get_pending_all_city_orders, get_orders_by_vendor_id
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 
 
@@ -114,3 +114,10 @@ async def oneway_confirm(
 @router.get("/pending-all", response_model=List[NewOrderResponse])
 def get_pending_all_orders(db: Session = Depends(get_db)):
     return get_pending_all_city_orders(db)
+
+@router.get("/vendor", response_model=List[NewOrderResponse])
+def get_vendor_orders(
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor)
+):
+    return get_orders_by_vendor_id(db, current_vendor.id)
