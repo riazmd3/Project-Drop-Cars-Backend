@@ -38,7 +38,7 @@ async def signup_car_driver(
     
     # Step 2: Create car driver in database first (without image)
     # Set vehicle_owner_id and organization_id from authenticated user
-    driver_form.vehicle_owner_id = current_user.id
+    driver_form.vehicle_owner_id = driver_form.vehicle_owner_id
     if not driver_form.organization_id:
         driver_form.organization_id = current_user.organization_id
     
