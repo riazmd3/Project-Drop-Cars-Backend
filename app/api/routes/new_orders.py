@@ -126,9 +126,10 @@ def get_vendor_orders(
 
 
 @router.get("/vendor/with-assignments", response_model=List[OrderAssignmentWithOrderDetails])
-def get_vendor_orders_with_assignments(
+def get_vendor_orders_with_assignmentss(
     db: Session = Depends(get_db),
     current_vendor=Depends(get_current_vendor)
 ):
     """Get all orders for the authenticated vendor with their latest assignment details"""
+    print("current_vendor", current_vendor.id)
     return get_vendor_orders_with_assignments(db, str(current_vendor.id))

@@ -86,6 +86,7 @@ def complete_assignment(db: Session, assignment_id: int) -> Optional[OrderAssign
 def get_vendor_orders_with_assignments(db: Session, vendor_id: str) -> List[dict]:
     """Get all orders for a vendor with their latest assignment details"""
     # Get all orders for the vendor
+    print("vendor_id......", vendor_id)
     orders = db.query(NewOrder).filter(NewOrder.vendor_id == vendor_id).all()
     
     result = []

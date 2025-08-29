@@ -189,7 +189,7 @@ async def complete_assignment_endpoint(
         )
     
     # Check if the current user is the vehicle owner of this assignment
-    if str(assignment.vehicle_owner_id) != str(current_user.id):
+    if str(assignment.vehicle_owner_id) != str(current_user.vehicle_owner_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to complete this assignment"
