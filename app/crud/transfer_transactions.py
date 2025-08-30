@@ -1,5 +1,6 @@
 # crud/transfer_transactions.py
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from fastapi import HTTPException, status
 from app.models.transfer_transactions import TransferTransactions, TransferStatusEnum
 from app.models.vendor_details import VendorDetails
@@ -201,7 +202,7 @@ def get_transfer_statistics(db: Session, vendor_id: str):
         TransferTransactions.vendor_id == vendor_id_str,
         TransferTransactions.status == TransferStatusEnum.APPROVED
     ).with_entities(
-        db.func.sum(TransferTransactions.requested_amount)
+        func.sum(TransferTransactions.requested_amount)
     ).scalar() or 0
     
     return {
