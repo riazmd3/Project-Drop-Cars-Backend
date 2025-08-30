@@ -24,6 +24,7 @@ GET /api/orders/vehicle_owner/pending
 Retrieves pending orders for the authenticated vehicle owner based on business rules:
 1. Orders that are not in the assignment table (never assigned)
 2. Orders that have been cancelled in the assignment table (available for reassignment)
+3. Orders with trip_status != "CANCELLED" (exclude cancelled orders)
 
 ### Authentication
 - Requires Bearer token
@@ -230,7 +231,8 @@ Retrieves all cars with "ONLINE" status for the authenticated vehicle owner.
 ### Pending Orders Logic
 1. **Rule 1**: Orders not in assignment table are shown as pending
 2. **Rule 2**: Orders with cancelled assignments are shown as pending (available for reassignment)
-3. Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT shown as pending
+3. **Rule 3**: Orders with trip_status "CANCELLED" are excluded from pending orders
+4. Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT shown as pending
 
 ### Duplicate Prevention Logic
 1. Before creating a new assignment, check if order already has an active assignment

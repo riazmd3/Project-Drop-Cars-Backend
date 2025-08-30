@@ -155,22 +155,31 @@ def get_vendor_orders_with_assignments(db: Session, vendor_id: str) -> List[dict
 def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> List[dict]:
     """
     Get pending orders for a vehicle owner based on business rules:
-    1. Orders that are not in assignment table
-    2. Orders that are cancelled in assignment table
-    """
-    from sqlalchemy import and_, or_, not_
+    1. Orders that are not in assignment table (never assigned)
+    2. Orders that are cancelled in assignment table (latest assignment status is CANCELLED)
+    3. Orders with trip_status != "CANCELLED" (exclude cancelled orders)
     
-    # Get all orders
-    all_orders = db.query(NewOrder).all()
+    Business Logic:
+    - Compare new_orders table with order_assignments table
+    - For each order, get the latest assignment record (most recent created_at)
+    - If no assignment exists, order is available
+    - If latest assignment is CANCELLED, order is available for reassignment
+    - If latest assignment is active (PENDING, ASSIGNED, COMPLETED, DRIVING), order is not available
+    """
+    from sqlalchemy import and_, or_, not_, desc
+    
+    # Get all orders excluding cancelled ones
+    all_orders = db.query(NewOrder).filter(NewOrder.trip_status != "CANCELLED").all()
     pending_orders = []
     
     for order in all_orders:
-        # Check if order exists in assignment table
-        existing_assignment = db.query(OrderAssignment).filter(
+        # Get the latest assignment for this order (most recent created_at)
+        # This ensures we compare with the most recent assignment status
+        latest_assignment = db.query(OrderAssignment).filter(
             OrderAssignment.order_id == order.order_id
-        ).first()
+        ).order_by(desc(OrderAssignment.created_at)).first()
         
-        if not existing_assignment:
+        if not latest_assignment:
             # Rule 1: Order not in assignment table - should be available
             pending_orders.append({
                 "id": None,  # No assignment ID
@@ -183,72 +192,74 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
                 "expires_at": None,
                 "cancelled_at": None,
                 "completed_at": None,
-                "created_at": order.created_at,
+                "created_at": order.created_at or datetime.utcnow(),  # Fallback to current time if None
                 # Order details
                 "vendor_id": order.vendor_id,
-                "trip_type": order.trip_type.value,
-                "car_type": order.car_type.value,
-                "pickup_drop_location": order.pickup_drop_location,
-                "start_date_time": order.start_date_time,
-                "customer_name": order.customer_name,
-                "customer_number": order.customer_number,
-                "cost_per_km": order.cost_per_km,
-                "extra_cost_per_km": order.extra_cost_per_km,
-                "driver_allowance": order.driver_allowance,
-                "extra_driver_allowance": order.extra_driver_allowance,
-                "permit_charges": order.permit_charges,
-                "extra_permit_charges": order.extra_permit_charges,
-                "hill_charges": order.hill_charges,
-                "toll_charges": order.toll_charges,
+                "trip_type": order.trip_type.value if order.trip_type else "Unknown",
+                "car_type": order.car_type.value if order.car_type else "Unknown",
+                "pickup_drop_location": order.pickup_drop_location or {},
+                "start_date_time": order.start_date_time or datetime.utcnow(),
+                "customer_name": order.customer_name or "Unknown",
+                "customer_number": order.customer_number or "Unknown",
+                "cost_per_km": order.cost_per_km or 0,
+                "extra_cost_per_km": order.extra_cost_per_km or 0,
+                "driver_allowance": order.driver_allowance or 0,
+                "extra_driver_allowance": order.extra_driver_allowance or 0,
+                "permit_charges": order.permit_charges or 0,
+                "extra_permit_charges": order.extra_permit_charges or 0,
+                "hill_charges": order.hill_charges or 0,
+                "toll_charges": order.toll_charges or 0,
                 "pickup_notes": order.pickup_notes,
-                "trip_status": order.trip_status,
-                "pick_near_city": order.pick_near_city,
-                "trip_distance": order.trip_distance,
-                "trip_time": order.trip_time,
-                "platform_fees_percent": order.platform_fees_percent,
+                "trip_status": order.trip_status or "Unknown",
+                "pick_near_city": order.pick_near_city or "Unknown",
+                "trip_distance": order.trip_distance or 0,
+                "trip_time": order.trip_time or "Unknown",
+                "platform_fees_percent": order.platform_fees_percent or 0,
                 "estimated_price": order.estimated_price,
                 "vendor_price": order.vendor_price,
-                "order_created_at": order.created_at
+                "order_created_at": order.created_at or datetime.utcnow()
             })
-        elif existing_assignment.assignment_status == AssignmentStatusEnum.CANCELLED:
+        elif latest_assignment.assignment_status == AssignmentStatusEnum.CANCELLED:
             # Rule 2: Order is cancelled in assignment table - should be available
             pending_orders.append({
-                "id": existing_assignment.id,
+                "id": latest_assignment.id,
                 "order_id": order.order_id,
                 "vehicle_owner_id": vehicle_owner_id,
-                "driver_id": existing_assignment.driver_id,
-                "car_id": existing_assignment.car_id,
+                "driver_id": latest_assignment.driver_id,
+                "car_id": latest_assignment.car_id,
                 "assignment_status": AssignmentStatusEnum.PENDING,  # Show as pending for new assignment
-                "assigned_at": existing_assignment.assigned_at,
-                "expires_at": existing_assignment.expires_at,
-                "cancelled_at": existing_assignment.cancelled_at,
-                "completed_at": existing_assignment.completed_at,
-                "created_at": existing_assignment.created_at,
+                "assigned_at": latest_assignment.assigned_at,
+                "expires_at": latest_assignment.expires_at,
+                "cancelled_at": latest_assignment.cancelled_at,
+                "completed_at": latest_assignment.completed_at,
+                "created_at": latest_assignment.created_at or datetime.utcnow(),
                 # Order details
                 "vendor_id": order.vendor_id,
-                "trip_type": order.trip_type.value,
-                "car_type": order.car_type.value,
-                "pickup_drop_location": order.pickup_drop_location,
-                "start_date_time": order.start_date_time,
-                "customer_name": order.customer_name,
-                "customer_number": order.customer_number,
-                "cost_per_km": order.cost_per_km,
-                "extra_cost_per_km": order.extra_cost_per_km,
-                "driver_allowance": order.driver_allowance,
-                "extra_driver_allowance": order.extra_driver_allowance,
-                "permit_charges": order.permit_charges,
-                "extra_permit_charges": order.extra_permit_charges,
-                "hill_charges": order.hill_charges,
-                "toll_charges": order.toll_charges,
+                "trip_type": order.trip_type.value if order.trip_type else "Unknown",
+                "car_type": order.car_type.value if order.car_type else "Unknown",
+                "pickup_drop_location": order.pickup_drop_location or {},
+                "start_date_time": order.start_date_time or datetime.utcnow(),
+                "customer_name": order.customer_name or "Unknown",
+                "customer_number": order.customer_number or "Unknown",
+                "cost_per_km": order.cost_per_km or 0,
+                "extra_cost_per_km": order.extra_cost_per_km or 0,
+                "driver_allowance": order.driver_allowance or 0,
+                "extra_driver_allowance": order.extra_driver_allowance or 0,
+                "permit_charges": order.permit_charges or 0,
+                "extra_permit_charges": order.extra_permit_charges or 0,
+                "hill_charges": order.hill_charges or 0,
+                "toll_charges": order.toll_charges or 0,
                 "pickup_notes": order.pickup_notes,
-                "trip_status": order.trip_status,
-                "pick_near_city": order.pick_near_city,
-                "trip_distance": order.trip_distance,
-                "trip_time": order.trip_time,
-                "platform_fees_percent": order.platform_fees_percent,
+                "trip_status": order.trip_status or "Unknown",
+                "pick_near_city": order.pick_near_city or "Unknown",
+                "trip_distance": order.trip_distance or 0,
+                "trip_time": order.trip_time or "Unknown",
+                "platform_fees_percent": order.platform_fees_percent or 0,
                 "estimated_price": order.estimated_price,
                 "vendor_price": order.vendor_price,
-                "order_created_at": order.created_at
+                "order_created_at": order.created_at or datetime.utcnow()
             })
+        # Note: Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT included
+        # as they are not available for new assignments
     
     return pending_orders

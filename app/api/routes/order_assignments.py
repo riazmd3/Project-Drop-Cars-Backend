@@ -59,12 +59,23 @@ async def get_pending_orders_for_vehicle_owner(
     current_user=Depends(get_current_user)
 ):
     """Get pending orders for the authenticated vehicle owner based on business rules"""
-    # Get vehicle_owner_id from the authenticated user
-    vehicle_owner_id = str(current_user.vehicle_owner_id)
-    
-    from app.crud.order_assignments import get_pending_orders_for_vehicle_owner
-    pending_orders = get_pending_orders_for_vehicle_owner(db, vehicle_owner_id)
-    return pending_orders
+    try:
+        # Get vehicle_owner_id from the authenticated user
+        vehicle_owner_id = str(current_user.vehicle_owner_id)
+        
+        from app.crud.order_assignments import get_pending_orders_for_vehicle_owner
+        pending_orders = get_pending_orders_for_vehicle_owner(db, vehicle_owner_id)
+        
+        # Log the number of orders found for debugging
+        print(f"Found {len(pending_orders)} pending orders for vehicle owner {vehicle_owner_id}")
+        
+        return pending_orders
+    except Exception as e:
+        print(f"Error in get_pending_orders_for_vehicle_owner: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 
 @router.post("/acceptorder", response_model=OrderAssignmentResponse, status_code=status.HTTP_201_CREATED)

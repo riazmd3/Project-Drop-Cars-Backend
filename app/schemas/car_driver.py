@@ -120,3 +120,20 @@ class CarDriverSignupResponse(BaseModel):
     driver_id: str
     license_img_url: str
     status: str
+
+class CarDriverSigninRequest(BaseModel):
+    primary_number: str = Field(..., description="Primary mobile number")
+    password: str = Field(..., description="Password")
+
+class CarDriverSigninResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    driver_id: str
+    full_name: str
+    primary_number: str
+    driver_status: AccountStatusEnum
+
+class DriverStatusUpdateResponse(BaseModel):
+    message: str
+    driver_id: str
+    new_status: AccountStatusEnum
