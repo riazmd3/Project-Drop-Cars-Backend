@@ -41,7 +41,7 @@ async def request_transfer(
         - Transfer transaction details with pending status
     """
     try:
-        vendor_id = str(current_vendor.get("sub"))
+        vendor_id = str(current_vendor.id)
         
         # Create transfer request
         transfer_transaction = create_transfer_request(db, vendor_id, transfer_data)
@@ -70,7 +70,7 @@ async def get_balance(
         - Total balance (wallet + bank)
     """
     try:
-        vendor_id = str(current_vendor.get("sub"))
+        vendor_id = str(current_vendor.id)
         
         # Get vendor balance
         vendor_details = get_vendor_balance(db, vendor_id)
@@ -105,7 +105,7 @@ async def get_transfer_history(
         - Total count of transactions
     """
     try:
-        vendor_id = str(current_vendor.get("sub"))
+        vendor_id = str(current_vendor.id)
         
         # Get transfer history
         transactions, total_count = get_vendor_transfer_history(db, vendor_id, skip, limit)
@@ -125,7 +125,7 @@ async def get_transfer_history(
 
 @router.get("/transfer/statistics")
 async def get_transfer_statistics(
-    current_vendor: dict = Depends(get_current_vendor),
+    current_vendor = Depends(get_current_vendor),
     db: Session = Depends(get_db)
 ):
     """
@@ -138,7 +138,7 @@ async def get_transfer_statistics(
         - Total amount transferred
     """
     try:
-        vendor_id = str(current_vendor.get("sub"))
+        vendor_id = str(current_vendor.id)
         
         # Get transfer statistics
         statistics = get_transfer_statistics(db, vendor_id)

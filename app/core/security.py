@@ -95,7 +95,6 @@ def get_current_vendor(credentials: HTTPAuthorizationCredentials = Depends(secur
             detail="Vendor not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     return vendor
 def get_current_vehicleOwner_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     token = credentials.credentials
