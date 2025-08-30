@@ -22,4 +22,5 @@ app.include_router(car_details.router, prefix="/api/users", tags=["CarDetails"])
 app.include_router(car_driver.router, prefix="/api/users", tags=["CarDriver"])
 app.include_router(new_orders.router, prefix="/api/orders", tags=["NewOrders"])
 app.include_router(order_assignments.router, prefix="/api/assignments", tags=["OrderAssignments"])
+app.include_router(order_assignments.router, prefix="/api/orders", tags=["OrderAssignments"])
 
