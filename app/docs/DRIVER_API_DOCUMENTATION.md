@@ -185,8 +185,9 @@ Authorization: Bearer <access_token>
 
 **Business Rules for Pending Orders:**
 1. **Orders not in assignment table**: Orders that have never been assigned to any vehicle owner
-2. **Orders with cancelled assignments**: Orders that were previously assigned but the assignment status is "CANCELLED"
+2. **Orders with cancelled assignments**: Orders that were previously assigned but the latest assignment status is "CANCELLED"
 3. **Exclude cancelled orders**: Orders with trip_status "CANCELLED" are not returned
+4. **Latest assignment comparison**: For each order, compares with the most recent assignment record (ordered by created_at)
 
 **Order Status Values:**
 - `trip_status`: PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
@@ -315,3 +316,5 @@ Currently, no rate limiting is implemented. Consider implementing rate limiting 
 - Mobile numbers should follow Indian format (+91XXXXXXXXXX or XXXXXXXXXX)
 - Driver status changes are immediate and affect order assignment eligibility
 - Pending orders are filtered based on business rules to ensure only available orders are shown
+- **Enhanced Business Logic**: The system now compares each order with the latest assignment record (most recent created_at) to ensure accurate status determination
+- **Data Safety**: Added fallback values for potentially null fields to prevent API errors
