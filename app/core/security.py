@@ -101,3 +101,35 @@ def get_current_vehicleOwner_id(credentials: HTTPAuthorizationCredentials = Depe
     token = credentials.credentials
     payload = verify_token(token)
     return payload.get("sub")  # This should be the vehicle_owner_id
+
+def get_current_driver(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Get current authenticated driver from token"""
+    # Import here to avoid circular import
+    from app.crud.car_driver import get_driver_by_id
+    
+    token = credentials.credentials
+    payload = verify_token(token)
+    driver_id = payload.get("sub")
+    
+    if driver_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Get driver from database
+    driver = get_driver_by_id(db, driver_id)
+    if driver is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Driver not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return driver
+
+def get_current_driver_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    token = credentials.credentials
+    payload = verify_token(token)
+    return payload.get("sub")  # This should be the driver_id

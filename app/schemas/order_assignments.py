@@ -31,7 +31,7 @@ class OrderAssignmentStatusUpdate(BaseModel):
 
 class OrderAssignmentWithOrderDetails(BaseModel):
     # Order assignment details
-    id: int
+    id: Optional[int] = None
     order_id: int
     vehicle_owner_id: UUID4
     driver_id: Optional[UUID4] = None

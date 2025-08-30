@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.car_driver import CarDriverForm, CarDriverOut, CarDriverSignupResponse
+from app.schemas.car_driver import CarDriverForm, CarDriverOut, CarDriverSignupResponse, CarDriverSigninResponse, CarDriverSigninRequest, DriverStatusUpdateResponse
 from app.crud.car_driver import create_car_driver, update_driver_license_image
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url
 from app.core.security import get_current_user
 from app.models.vehicle_owner import VehicleOwnerCredentials
 from typing import List
+from app.models.car_driver import CarDriver
+from app.core.security import get_current_driver
 
 router = APIRouter()
 
@@ -82,6 +84,87 @@ async def signup_car_driver(
         "driver_id": str(db_driver.id), 
         "license_img_url": license_img_url,
         "status": "success"
+    }
+
+@router.post("/cardriver/signin", response_model=CarDriverSigninResponse)
+async def signin_car_driver(
+    signin_data: CarDriverSigninRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Driver signin with primary number and password.
+    Returns access token if credentials are correct.
+    """
+    from app.crud.car_driver import authenticate_driver
+    from app.core.security import create_access_token
+    from app.models.car_driver import AccountStatusEnum
+    
+    # Authenticate driver
+    driver = authenticate_driver(db, signin_data.primary_number, signin_data.password)
+    
+    if not driver:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid primary number or password"
+        )
+    
+    # Check if driver is blocked
+    if driver.driver_status == AccountStatusEnum.BLOCKED:
+        raise HTTPException(
+            status_code=403,
+            detail="Account is blocked. Please contact your vehicle owner."
+        )
+    
+    # Create access token with driver ID as payload
+    access_token = create_access_token(data={"sub": str(driver.id)})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "driver_id": str(driver.id),
+        "full_name": driver.full_name,
+        "primary_number": driver.primary_number,
+        "driver_status": driver.driver_status
+    }
+
+@router.put("/cardriver/online", response_model=DriverStatusUpdateResponse)
+async def set_driver_online(
+    current_driver: CarDriver = Depends(get_current_driver),
+    db: Session = Depends(get_db),
+):
+    """
+    Set driver status to ONLINE.
+    Requires valid bearer token authentication.
+    """
+    from app.crud.car_driver import update_driver_status
+    from app.models.car_driver import AccountStatusEnum
+    
+    updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.ONLINE)
+    
+    return {
+        "message": "Driver status updated to ONLINE successfully",
+        "driver_id": str(updated_driver.id),
+        "new_status": updated_driver.driver_status
+    }
+
+@router.put("/cardriver/offline", response_model=DriverStatusUpdateResponse)
+async def set_driver_offline(
+    current_driver: CarDriver = Depends(get_current_driver),
+    db: Session = Depends(get_db),
+):
+    """
+    Set driver status to BLOCKED (offline).
+    Requires valid bearer token authentication.
+    """
+    from app.crud.car_driver import update_driver_status
+    from app.models.car_driver import AccountStatusEnum
+    
+    updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.BLOCKED)
+    
+    return {
+        "message": "Driver status updated to OFFLINE successfully",
+        "driver_id": str(updated_driver.id),
+        "new_status": updated_driver.driver_status
     }
 
 @router.get("/cardriver/{driver_id}", response_model=CarDriverOut)
