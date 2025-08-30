@@ -175,27 +175,30 @@ def get_transfer_statistics(db: Session, vendor_id: str):
     """
     Get transfer statistics for a vendor
     """
+    # Convert vendor_id to string if it's a UUID
+    vendor_id_str = str(vendor_id)
+    
     # Get total approved transfers
     total_approved = db.query(TransferTransactions).filter(
-        TransferTransactions.vendor_id == vendor_id,
+        TransferTransactions.vendor_id == vendor_id_str,
         TransferTransactions.status == TransferStatusEnum.APPROVED
     ).count()
     
     # Get total rejected transfers
     total_rejected = db.query(TransferTransactions).filter(
-        TransferTransactions.vendor_id == vendor_id,
+        TransferTransactions.vendor_id == vendor_id_str,
         TransferTransactions.status == TransferStatusEnum.REJECTED
     ).count()
     
     # Get total pending transfers
     total_pending = db.query(TransferTransactions).filter(
-        TransferTransactions.vendor_id == vendor_id,
+        TransferTransactions.vendor_id == vendor_id_str,
         TransferTransactions.status == TransferStatusEnum.PENDING
     ).count()
     
     # Get total amount transferred
     total_transferred = db.query(TransferTransactions).filter(
-        TransferTransactions.vendor_id == vendor_id,
+        TransferTransactions.vendor_id == vendor_id_str,
         TransferTransactions.status == TransferStatusEnum.APPROVED
     ).with_entities(
         db.func.sum(TransferTransactions.requested_amount)

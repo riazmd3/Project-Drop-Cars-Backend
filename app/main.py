@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions
+from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin
 import app.models.admin
 import app.models.car_driver
 import app.models.vehicle_owner
@@ -25,4 +25,5 @@ app.include_router(new_orders.router, prefix="/api/orders", tags=["NewOrders"])
 app.include_router(order_assignments.router, prefix="/api/assignments", tags=["OrderAssignments"])
 app.include_router(order_assignments.router, prefix="/api/orders", tags=["OrderAssignments"])
 app.include_router(transfer_transactions.router, prefix="/api", tags=["TransferTransactions"])
+app.include_router(admin.router, prefix="/api", tags=["Admin"])
 

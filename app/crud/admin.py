@@ -23,15 +23,20 @@ def get_admin_by_phone(db: Session, phone: str):
         Admin.phone == phone
     ).first()
 
-def create_admin(db: Session, username: str, hashed_password: str, role: str, email: str, phone: str, organization_id: str):
+def get_admin_by_email(db: Session, email: str):
+    """Get admin by email address"""
+    return db.query(Admin).filter(
+        Admin.email == email
+    ).first()
+
+def create_admin(db: Session, username: str, hashed_password: str, role: str, email: str, phone: str):
     """Create a new admin"""
     admin = Admin(
         username=username,
         password=hashed_password,
         role=role,
         email=email,
-        phone=phone,
-        organization_id=organization_id
+        phone=phone
     )
     
     try:
