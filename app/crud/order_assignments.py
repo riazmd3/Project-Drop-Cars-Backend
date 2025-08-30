@@ -157,11 +157,12 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
     Get pending orders for a vehicle owner based on business rules:
     1. Orders that are not in assignment table
     2. Orders that are cancelled in assignment table
+    3. Orders with trip_status != "CANCELLED"
     """
     from sqlalchemy import and_, or_, not_
     
-    # Get all orders
-    all_orders = db.query(NewOrder).all()
+    # Get all orders excluding cancelled ones
+    all_orders = db.query(NewOrder).filter(NewOrder.trip_status != "CANCELLED").all()
     pending_orders = []
     
     for order in all_orders:

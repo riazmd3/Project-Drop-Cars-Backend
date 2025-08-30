@@ -109,3 +109,33 @@ def get_available_drivers(db: Session, vehicle_owner_id: str) -> List[CarDriver]
         CarDriver.vehicle_owner_id == vehicle_owner_id,
         CarDriver.driver_status == AccountStatusEnum.ONLINE
     ).all()
+
+def authenticate_driver(db: Session, primary_number: str, password: str) -> Optional[CarDriver]:
+    """Authenticate driver by primary number and password"""
+    from app.core.security import verify_password
+    
+    driver = db.query(CarDriver).filter(CarDriver.primary_number == primary_number).first()
+    
+    if not driver:
+        return None
+    
+    if not verify_password(password, driver.hashed_password):
+        return None
+    
+    return driver
+
+def update_driver_status(db: Session, driver_id: UUID, new_status: AccountStatusEnum) -> CarDriver:
+    """Update driver's online/offline status"""
+    driver = db.query(CarDriver).filter(CarDriver.id == driver_id).first()
+    
+    if not driver:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Driver not found for ID: {driver_id}"
+        )
+    
+    driver.driver_status = new_status
+    db.commit()
+    db.refresh(driver)
+    
+    return driver
