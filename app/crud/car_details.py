@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.car_details import CarDetails
 from app.schemas.car_details import CarDetailsForm
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
@@ -75,3 +75,15 @@ def get_car_by_id(db: Session, car_id: UUID) -> Optional[CarDetails]:
 def get_cars_by_organization(db: Session, organization_id: str) -> list[CarDetails]:
     """Get all cars for a specific organization"""
     return db.query(CarDetails).filter(CarDetails.organization_id == organization_id).all()
+
+def get_car_detail_by_id(db: Session, car_id: UUID) -> Optional[CarDetails]:
+    return db.query(CarDetails).filter(CarDetails.id == car_id).first()
+
+
+def get_available_cars(db: Session, vehicle_owner_id: str) -> List[CarDetails]:
+    """Get all available cars with ONLINE status for a vehicle owner"""
+    from app.models.car_details import CarStatusEnum
+    return db.query(CarDetails).filter(
+        CarDetails.vehicle_owner_id == vehicle_owner_id,
+        CarDetails.car_status == CarStatusEnum.ONLINE
+    ).all()

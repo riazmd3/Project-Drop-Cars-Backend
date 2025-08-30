@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from app.models.car_driver import CarDriver, AccountStatusEnum
 from app.schemas.car_driver import CarDriverForm
 from app.core.security import get_password_hash
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
 def create_car_driver(db: Session, driver_data: CarDriverForm) -> CarDriver:
@@ -97,3 +97,15 @@ def get_driver_by_mobile(db: Session, mobile_number: str) -> Optional[CarDriver]
         (CarDriver.primary_number == mobile_number) | 
         (CarDriver.secondary_number == mobile_number)
     ).first()
+
+def get_drivers_by_vehicleOwner_id(db: Session, vehicle_owner_id: str) -> List[CarDriver]:
+    return db.query(CarDriver).filter(CarDriver.vehicle_owner_id == vehicle_owner_id).all()
+
+
+def get_available_drivers(db: Session, vehicle_owner_id: str) -> List[CarDriver]:
+    """Get all available drivers with ONLINE status for a vehicle owner"""
+    from app.models.car_driver import AccountStatusEnum
+    return db.query(CarDriver).filter(
+        CarDriver.vehicle_owner_id == vehicle_owner_id,
+        CarDriver.driver_status == AccountStatusEnum.ONLINE
+    ).all()

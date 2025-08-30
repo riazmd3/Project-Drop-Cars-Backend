@@ -12,6 +12,8 @@ from app.schemas.new_orders import (
     FareBreakdown,NewOrderResponse
 )
 from app.crud.new_orders import calculate_oneway_fare, create_oneway_order, get_pending_all_city_orders, get_orders_by_vendor_id
+from app.crud.order_assignments import get_vendor_orders_with_assignments
+from app.schemas.order_assignments import OrderAssignmentWithOrderDetails
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 
 
@@ -121,3 +123,13 @@ def get_vendor_orders(
     current_vendor=Depends(get_current_vendor)
 ):
     return get_orders_by_vendor_id(db, current_vendor.id)
+
+
+@router.get("/vendor/with-assignments", response_model=List[OrderAssignmentWithOrderDetails])
+def get_vendor_orders_with_assignmentss(
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor)
+):
+    """Get all orders for the authenticated vendor with their latest assignment details"""
+    print("current_vendor", current_vendor.id)
+    return get_vendor_orders_with_assignments(db, str(current_vendor.id))
