@@ -46,7 +46,7 @@ class TransferTransactionOut(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_schema_extra = {
             "example": {
                 "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
@@ -71,7 +71,7 @@ class VendorBalanceOut(BaseModel):
     total_balance: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_schema_extra = {
             "example": {
                 "vendor_id": "d290f1ee-6c54-4b01-90e6-d701748f0852",
@@ -87,4 +87,4 @@ class TransferHistoryOut(BaseModel):
     total_count: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

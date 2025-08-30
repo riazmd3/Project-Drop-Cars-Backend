@@ -114,7 +114,7 @@ class VehicleOwnerOut(VehicleOwnerBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_schema_extra = {
             "example": {
                 "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
