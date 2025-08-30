@@ -15,6 +15,7 @@ class VendorDetails(Base):
     primary_number = Column(String, unique=True, nullable=False)
     secondary_number = Column(String, unique=True, nullable=True)
     wallet_balance = Column(Integer, nullable=False, default=0)
+    bank_balance = Column(Integer, nullable=False, default=0)
     gpay_number = Column(String, unique=True, nullable=False)
     aadhar_number = Column(String, unique=True, nullable=False)
     aadhar_front_img = Column(String, unique=True, nullable=True)

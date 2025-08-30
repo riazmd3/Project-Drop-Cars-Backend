@@ -71,7 +71,9 @@ def create_vendor(db: Session, vendor_data: VendorSignupForm, aadhar_image: Uplo
             gpay_number=vendor_data.gpay_number,
             aadhar_number=vendor_data.aadhar_number,
             aadhar_front_img=aadhar_image_url,
-            adress=vendor_data.address
+            adress=vendor_data.address,
+            wallet_balance=0,
+            bank_balance=0
         )
         
         db.add(vendor_details)

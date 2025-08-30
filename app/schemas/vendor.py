@@ -24,6 +24,7 @@ class VendorBase(BaseModel):
     aadhar_number: str
     gpay_number: str
     wallet_balance: int = 0
+    bank_balance: int = 0
 
 # --- Form Schema for validation without image ---
 class VendorSignupForm(BaseModel):
@@ -120,6 +121,7 @@ class VendorOut(BaseModel):
     secondary_number: Optional[str]
     gpay_number: str
     wallet_balance: int
+    bank_balance: int
     aadhar_number: str
     aadhar_front_img: Optional[str]
     address: str
@@ -127,7 +129,7 @@ class VendorOut(BaseModel):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
         json_schema_extra = {
             "example": {
                 "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
@@ -137,6 +139,7 @@ class VendorOut(BaseModel):
                 "secondary_number": "+919876543211",
                 "gpay_number": "+919876543212",
                 "wallet_balance": 0,
+                "bank_balance": 0,
                 "aadhar_number": "123456789012",
                 "aadhar_front_img": "https://storage.googleapis.com/drop-cars-files/vendor_details/aadhar/uuid.jpg",
                 "address": "123 Main Street, Mumbai",

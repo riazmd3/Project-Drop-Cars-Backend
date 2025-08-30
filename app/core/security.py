@@ -95,7 +95,6 @@ def get_current_vendor(credentials: HTTPAuthorizationCredentials = Depends(secur
             detail="Vendor not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     return vendor
 def get_current_vehicleOwner_id(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
     token = credentials.credentials
@@ -133,3 +132,30 @@ def get_current_driver_id(credentials: HTTPAuthorizationCredentials = Depends(se
     token = credentials.credentials
     payload = verify_token(token)
     return payload.get("sub")  # This should be the driver_id
+
+def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
+    """Get current authenticated admin from token"""
+    # Import here to avoid circular import
+    from app.crud.admin import get_admin_by_id
+    
+    token = credentials.credentials
+    payload = verify_token(token)
+    admin_id = payload.get("sub")
+    
+    if admin_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Get admin from database
+    admin = get_admin_by_id(db, admin_id)
+    if admin is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return admin
