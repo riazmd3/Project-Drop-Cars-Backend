@@ -24,6 +24,7 @@ class VendorBase(BaseModel):
     aadhar_number: str
     gpay_number: str
     wallet_balance: int = 0
+    bank_balance: int = 0
 
 # --- Form Schema for validation without image ---
 class VendorSignupForm(BaseModel):
