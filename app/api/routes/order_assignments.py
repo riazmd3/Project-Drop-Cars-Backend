@@ -25,6 +25,48 @@ from app.models.order_assignments import AssignmentStatusEnum
 router = APIRouter()
 
 
+@router.get("/available-drivers")
+async def get_available_drivers(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Get all available drivers with ONLINE status for the authenticated vehicle owner"""
+    # Get vehicle_owner_id from the authenticated user
+    vehicle_owner_id = str(current_user.vehicle_owner_id)
+    
+    from app.crud.car_driver import get_available_drivers
+    available_drivers = get_available_drivers(db, vehicle_owner_id)
+    return available_drivers
+
+
+@router.get("/available-cars")
+async def get_available_cars(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Get all available cars with ONLINE status for the authenticated vehicle owner"""
+    # Get vehicle_owner_id from the authenticated user
+    vehicle_owner_id = str(current_user.vehicle_owner_id)
+    
+    from app.crud.car_details import get_available_cars
+    available_cars = get_available_cars(db, vehicle_owner_id)
+    return available_cars
+
+
+@router.get("/vehicle_owner/pending", response_model=List[OrderAssignmentWithOrderDetails])
+async def get_pending_orders_for_vehicle_owner(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Get pending orders for the authenticated vehicle owner based on business rules"""
+    # Get vehicle_owner_id from the authenticated user
+    vehicle_owner_id = str(current_user.vehicle_owner_id)
+    
+    from app.crud.order_assignments import get_pending_orders_for_vehicle_owner
+    pending_orders = get_pending_orders_for_vehicle_owner(db, vehicle_owner_id)
+    return pending_orders
+
+
 @router.post("/acceptorder", response_model=OrderAssignmentResponse, status_code=status.HTTP_201_CREATED)
 async def accept_order(
     payload: OrderAssignmentCreate,
@@ -93,20 +135,6 @@ async def get_assignments_by_vehicle_owner(
     
     assignments = get_order_assignments_by_vehicle_owner_id(db, vehicle_owner_id)
     return assignments
-
-
-@router.get("/vehicle_owner/pending", response_model=List[OrderAssignmentWithOrderDetails])
-async def get_pending_orders_for_vehicle_owner(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """Get pending orders for the authenticated vehicle owner based on business rules"""
-    # Get vehicle_owner_id from the authenticated user
-    vehicle_owner_id = str(current_user.vehicle_owner_id)
-    
-    from app.crud.order_assignments import get_pending_orders_for_vehicle_owner
-    pending_orders = get_pending_orders_for_vehicle_owner(db, vehicle_owner_id)
-    return pending_orders
 
 
 @router.get("/order/{order_id}", response_model=List[OrderAssignmentResponse])
@@ -218,34 +246,6 @@ async def complete_assignment_endpoint(
         )
     
     return completed_assignment
-
-
-@router.get("/available-drivers")
-async def get_available_drivers(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """Get all available drivers with ONLINE status for the authenticated vehicle owner"""
-    # Get vehicle_owner_id from the authenticated user
-    vehicle_owner_id = str(current_user.vehicle_owner_id)
-    
-    from app.crud.car_driver import get_available_drivers
-    available_drivers = get_available_drivers(db, vehicle_owner_id)
-    return available_drivers
-
-
-@router.get("/available-cars")
-async def get_available_cars(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """Get all available cars with ONLINE status for the authenticated vehicle owner"""
-    # Get vehicle_owner_id from the authenticated user
-    vehicle_owner_id = str(current_user.vehicle_owner_id)
-    
-    from app.crud.car_details import get_available_cars
-    available_cars = get_available_cars(db, vehicle_owner_id)
-    return available_cars
 
 
 
