@@ -28,10 +28,10 @@ class CarDriverForm(BaseModel):
         description="Primary mobile number must be a valid Indian mobile number"
     )]
     
-    secondary_number: Annotated[str, Field(
+    secondary_number: Optional[Annotated[str, Field(
         pattern=indian_phone_pattern,
         description="Secondary mobile number must be a valid Indian mobile number"
-    )]
+    )]]=None
     
     password: Annotated[str, Field(
         min_length=6,
@@ -51,6 +51,8 @@ class CarDriverForm(BaseModel):
 
     @validator('primary_number', 'secondary_number')
     def validate_phone_numbers(cls, v):
+        if v is None:  # Allow None for secondary_number
+            return v
         import re
         if not re.match(indian_phone_pattern, v):
             raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
@@ -68,7 +70,7 @@ class CarDriverForm(BaseModel):
         vehicle_owner_id: Optional[str] = Form(None, description="Vehicle owner ID (auto-set from token)"),
         full_name: str = Form(..., description="Full name (3-100 characters)"),
         primary_number: str = Form(..., description="Primary mobile number"),
-        secondary_number: str = Form(..., description="Secondary mobile number"),
+        secondary_number: Optional[str] = Form(None, description="Secondary mobile number"),
         password: str = Form(..., description="Password (min 6 characters)"),
         licence_number: str = Form(..., description="License number"),
         adress: str = Form(..., description="Address (min 10 characters)"),

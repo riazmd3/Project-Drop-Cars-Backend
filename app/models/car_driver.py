@@ -17,7 +17,7 @@ class CarDriver(Base):
     organization_id = Column(String)
     full_name = Column(String, nullable=False)
     primary_number = Column(String, nullable=False, unique=True)
-    secondary_number = Column(String, nullable=False, unique=True)
+    secondary_number = Column(String, nullable=True, unique=True)
     hashed_password = Column(String, nullable=False)
     licence_number = Column(String, nullable=False, unique=True)
     licence_front_img = Column(String, nullable=True, unique=True)
