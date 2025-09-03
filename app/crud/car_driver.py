@@ -25,11 +25,6 @@ def create_car_driver(db: Session, driver_data: CarDriverForm) -> CarDriver:
         CarDriver.secondary_number == driver_data.secondary_number
     ).first()
 
-    if existing_secondary:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Driver with secondary number {driver_data.secondary_number} is already registered. Please use a different number."
-        )
 
     # Check for duplicate license number
     existing_license = db.query(CarDriver).filter(
