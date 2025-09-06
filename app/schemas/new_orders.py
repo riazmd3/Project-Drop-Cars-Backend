@@ -7,6 +7,8 @@ from enum import Enum
 
 class OrderType(str,Enum):
     ONEWAY = "Oneway"
+    ROUND_TRIP = "Round Trip"
+    MULTY_CITY = "Multy City"
 
 
 class CarType(str,Enum):
@@ -57,6 +59,22 @@ class OnewayConfirmRequest(OnewayQuoteRequest):
     near_city: Optional[str] = Field(
         default=None, description="City name when send_to is NEAR_CITY"
     )
+
+
+class RoundTripQuoteRequest(OnewayQuoteRequest):
+    trip_type: OrderType = Field(default=OrderType.ROUND_TRIP)
+
+
+class RoundTripConfirmRequest(OnewayConfirmRequest):
+    trip_type: OrderType = Field(default=OrderType.ROUND_TRIP)
+
+
+class MulticityQuoteRequest(OnewayQuoteRequest):
+    trip_type: OrderType = Field(default=OrderType.MULTY_CITY)
+
+
+class MulticityConfirmRequest(OnewayConfirmRequest):
+    trip_type: OrderType = Field(default=OrderType.MULTY_CITY)
 
 
 class FareBreakdown(BaseModel):

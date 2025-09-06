@@ -1,4 +1,4 @@
-## New Orders (Oneway) API
+## New Orders API (Oneway, Round Trip, Multicity)
 
 ### Setup
 - Set environment variable: `GOOGLE_MAPS_API_KEY` (required for distance lookups)
@@ -131,11 +131,47 @@ Response body:
 }
 ```
 
+### 3) Create Round Trip Quote (No DB Write)
+- Method: POST
+- URL: `/api/orders/roundtrip/quote`
+- Auth: Not required
+
+Request body: Same as oneway, but `trip_type` should be `"Round Trip"` and `pickup_drop_location` can include multiple indices, e.g. `{ "0": "Chennai", "1": "Bangalore", "2": "Vellore", "3": "Chennai" }`. Distance is calculated across segments (0-1, 1-2, 2-3, ...).
+
+Response: Same shape as oneway quote.
+
+### 4) Confirm Round Trip Order (DB Write)
+- Method: POST
+- URL: `/api/orders/roundtrip/confirm`
+- Auth: Bearer token (Vendor)
+
+Body: Same as roundtrip quote plus `send_to` and `near_city` like oneway.
+
+### 5) Create Multicity Quote (No DB Write)
+- Method: POST
+- URL: `/api/orders/multicity/quote`
+- Auth: Not required
+
+Behavior: Same multisegment distance calculation as roundtrip, but without requiring the last location to match the first.
+
+### 6) Confirm Multicity Order (DB Write)
+- Method: POST
+- URL: `/api/orders/multicity/confirm`
+- Auth: Bearer token (Vendor)
+
+Body: Same as multicity quote plus `send_to` and `near_city`.
+
 ### Model Fields Stored
 - vendor_id, trip_type, car_type, pickup_drop_location, start_date_time, customer_name, customer_number, cost_per_km, extra_cost_per_km, driver_allowance, extra_driver_allowance, permit_charges, hill_charges, toll_charges, pickup_notes, trip_status (set to `CONFIRMED`), pick_near_city.
 
 ### Error Cases
 - 422 when `near_city` missing while `send_to`=`NEAR_CITY`
 - 400 for invalid fare calculation input
+
+### Notes on Distance Calculation for Round Trip and Multicity
+- The `pickup_drop_location` object must have numeric string keys starting from `"0"` in the intended visiting order.
+- Total distance is computed by summing each consecutive segment: (0->1), (1->2), (2->3), ...
+- Example round trip: `{ "0": "Chennai", "1": "Bangalore", "2": "Vellore", "3": "Chennai" }`
+- Example multicity: `{ "0": "Chennai", "1": "Bangalore", "2": "Vellore" }`
 
 

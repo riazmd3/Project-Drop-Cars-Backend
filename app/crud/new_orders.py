@@ -40,6 +40,52 @@ def calculate_oneway_fare(pickup_drop_location: Dict[str, str], cost_per_km: int
     }
 
 
+def _sorted_location_keys(index_map: Dict[str, str]) -> list:
+    return sorted(index_map.keys(), key=lambda k: int(k))
+
+
+def _sum_multisegment_distance_and_duration(index_map: Dict[str, str]) -> (float, str):
+    keys = _sorted_location_keys(index_map)
+    if len(keys) < 2:
+        return 0.0, "0 min"
+    total_km_sum = 0.0
+    duration_parts: List[str] = []
+    for i in range(len(keys) - 1):
+        origin = index_map[keys[i]]
+        destination = index_map[keys[i + 1]]
+        segment_km, segment_duration = get_distance_km_between_locations(origin, destination)
+        total_km_sum += float(segment_km)
+        duration_parts.append(segment_duration)
+    # Join durations; this is indicative for users and avoids complex parsing
+    duration_text = " + ".join(duration_parts)
+    return round(total_km_sum), duration_text
+
+
+def calculate_multisegment_fare(pickup_drop_location: Dict[str, str], cost_per_km: int, driver_allowance: int, extra_driver_allowance: int, permit_charges: int, extra_permit_charges: int, hill_charges: int, toll_charges: int) -> Dict[str, Any]:
+    total_km, duration_text = _sum_multisegment_distance_and_duration(pickup_drop_location)
+    base_km_amount = int(round(total_km * cost_per_km))
+
+    total_amount = base_km_amount \
+        + int(driver_allowance) \
+        + int(extra_driver_allowance) \
+        + int(permit_charges) \
+        + int(hill_charges) \
+        + int(toll_charges)
+
+    return {
+        "total_km": total_km,
+        "trip_time": duration_text,
+        "base_km_amount": base_km_amount,
+        "driver_allowance": int(driver_allowance),
+        "extra_driver_allowance": int(extra_driver_allowance),
+        "permit_charges": int(permit_charges),
+        "extra_permit_charges": int(extra_permit_charges),
+        "hill_charges": int(hill_charges),
+        "toll_charges": int(toll_charges),
+        "total_amount": int(total_amount),
+    }
+
+
 def create_oneway_order(
     db: Session,
     *,
