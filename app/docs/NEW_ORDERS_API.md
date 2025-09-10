@@ -99,6 +99,7 @@ curl -X POST 'http://localhost:8000/api/orders/oneway/confirm' \
         "driver_allowance": 300,
         "extra_driver_allowance": 0,
         "permit_charges": 0,
+        "extra_permit_charges" : 0,
         "hill_charges": 0,
         "toll_charges": 150,
         "pickup_notes": "Handle with care",
