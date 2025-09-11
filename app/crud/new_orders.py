@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 
 from app.models.new_orders import NewOrder, OrderTypeEnum, CarTypeEnum
 from app.utils.maps import get_distance_km_between_locations
+from app.crud.orders import create_master_from_new_order
 
 
 def _origin_and_destination_from_index_map(index_map: Dict[str, str]) -> (str, str):
@@ -139,6 +140,8 @@ def create_oneway_order(
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
+    # Also create/refresh master order row
+    create_master_from_new_order(db, new_order)
     return new_order
 
 
