@@ -43,4 +43,27 @@ GET `/api/orders/all` — returns all orders unified from master `orders` table.
 
 GET `/api/orders/vendor` — returns authenticated vendor's orders from master `orders`.
 
+## Close Order
+
+POST `/api/orders/{order_id}/close`
+
+Consumes multipart/form-data:
+- closed_vendor_price: int (form)
+- closed_driver_price: int (form)
+- commision_amount: int (form)
+- start_km: int (form)
+- end_km: int (form)
+- contact_number: string (form)
+- image: file (UploadFile)
+
+Behavior:
+- Uploads image to GCS via existing `upload_image_to_gcs` util
+- Updates `orders` row with closing prices and `commision_amount`
+- Creates an `end_records` row linked to the order with odometer readings, contact, image URL, and timestamp
+
+Response:
+```json
+{ "order_id": 1, "end_record_id": 10, "img_url": "https://storage.googleapis.com/..." }
+```
+
 

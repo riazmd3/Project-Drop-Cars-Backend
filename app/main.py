@@ -13,6 +13,7 @@ import app.models.orders
 import app.models.order_assignments
 import app.models.transfer_transactions
 from app.database.session import Base, engine
+import app.models.end_records
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)

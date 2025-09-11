@@ -34,6 +34,11 @@ class Order(Base):
     vendor_price = Column(Integer, nullable=True)
     platform_fees_percent = Column(Integer, nullable=True)
 
+    # Closing amounts (set when order is completed)
+    closed_vendor_price = Column(Integer, nullable=True)
+    closed_driver_price = Column(Integer, nullable=True)
+    commision_amount = Column(Integer, nullable=True)
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
 

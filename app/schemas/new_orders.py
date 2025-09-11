@@ -92,6 +92,20 @@ class UnifiedOrder(BaseModel):
         from_attributes = True
 
 
+class CloseOrderRequest(BaseModel):
+    closed_vendor_price: int
+    closed_driver_price: int
+    commision_amount: int
+    start_km: int
+    end_km: int
+    contact_number: str
+
+class CloseOrderResponse(BaseModel):
+    order_id: int
+    end_record_id: int
+    img_url: str
+
+
 class OnewayQuoteRequest(BaseModel):
     vendor_id: UUID
     trip_type: OrderType = Field(default=OrderType.ONEWAY)
