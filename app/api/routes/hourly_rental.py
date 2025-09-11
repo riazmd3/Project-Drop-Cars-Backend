@@ -63,7 +63,7 @@ async def hourly_confirm(
             pickup_notes=payload.pickup_notes or "",
         )
 
-        create_master_from_hourly(db, order)
+        create_master_from_hourly(db, order, pick_near_city=payload.pick_near_city)
 
         return {"order_id": order.id}
     except HTTPException:

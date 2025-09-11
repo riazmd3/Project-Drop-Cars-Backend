@@ -33,7 +33,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
     return master
 
 
-def create_master_from_hourly(db: Session, hourly: HourlyRental) -> Order:
+def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str) -> Order:
     master = Order(
         source=OrderSourceEnum.HOURLY_RENTAL,
         source_order_id=hourly.id,
@@ -44,6 +44,8 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental) -> Order:
         start_date_time=hourly.start_date_time,
         customer_name=hourly.customer_name,
         customer_number=hourly.customer_number,
+        trip_status="PENDING",
+        pick_near_city=pick_near_city,
     )
     db.add(master)
     db.commit()
@@ -79,6 +81,12 @@ def close_order(
 
     # Upload image first
     img_url = upload_image_to_gcs(image_file, folder=image_folder)
+
+    # Validate km for non-hourly orders when trip_distance present
+    if order.trip_distance is not None:
+        distance_delta = int(end_km) - int(start_km)
+        if distance_delta < int(order.trip_distance):
+            raise ValueError("End KM minus Start KM must be greater than or equal to trip distance")
 
     # Update order closing fields
     order.closed_vendor_price = int(closed_vendor_price)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.session import get_db
-from app.core.security import get_current_vendor
+from app.core.security import get_current_vendor, get_current_driver
 from app.schemas.new_orders import UnifiedOrder, CloseOrderResponse
 from app.crud.orders import get_all_orders, get_vendor_orders, close_order
 
@@ -35,7 +35,7 @@ async def close_order_endpoint(
     contact_number: str = Form(...),
     image: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_vendor=Depends(get_current_vendor),
+    current_driver=Depends(get_current_driver),
 ):
     try:
         order, end_record, img_url = close_order(
@@ -44,7 +44,7 @@ async def close_order_endpoint(
             closed_vendor_price=closed_vendor_price,
             closed_driver_price=closed_driver_price,
             commision_amount=commision_amount,
-            driver_id=current_vendor.id,  # if driver closes, replace with driver auth in future
+            driver_id=current_driver.id,
             start_km=start_km,
             end_km=end_km,
             contact_number=contact_number,

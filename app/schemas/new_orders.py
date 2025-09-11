@@ -28,6 +28,7 @@ class RentalOrderRequest(BaseModel):
     pickup_drop_location: Dict[str, str] = Field(
         description="Object mapping indices to location names, e.g. {\"0\": \"Chennai\", \"1\": \"Bangalore\"}"
     )
+    pick_near_city: str
     start_date_time: datetime
     customer_name: str
     customer_number: str
