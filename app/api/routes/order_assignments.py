@@ -87,19 +87,38 @@ async def accept_order(
     """Accept an order and create assignment"""
     try:
         # Get vehicle_owner_id from the authenticated user
-        # print("current_user", current_user)
-
         vehicle_owner_id = str(current_user.vehicle_owner_id)
-        
+
+        # Determine required hold/debit amount (simple minimum hold = 1 rupee for demo)
+        hold_amount = 100  # 1 INR in paise; adjust business rule as needed
+
+        # Debit wallet atomically before assignment
+        from app.crud.wallet import debit_wallet
+        from app.models.wallet_ledger import WalletEntryTypeEnum
+        try:
+            _, _entry = debit_wallet(
+                db,
+                vehicle_owner_id=vehicle_owner_id,
+                amount=hold_amount,
+                reference_id=str(payload.order_id),
+                reference_type="ORDER_ACCEPT",
+                notes="Hold for order acceptance",
+            )
+        except ValueError as ve:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Wallet: {str(ve)}")
+
         # Create the order assignment
         assignment = create_order_assignment(
             db=db,
             order_id=payload.order_id,
             vehicle_owner_id=vehicle_owner_id
         )
+
+        db.commit()
         
         return assignment
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to accept order: {str(e)}"

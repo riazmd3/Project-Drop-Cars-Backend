@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin, hourly_rental, orders
+from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin, hourly_rental, orders, wallet
 import app.models.admin
 import app.models.car_driver
 import app.models.vehicle_owner
@@ -12,6 +12,8 @@ import app.models.hourly_rental
 import app.models.orders
 import app.models.order_assignments
 import app.models.transfer_transactions
+import app.models.wallet_ledger
+import app.models.razorpay_transactions
 from app.database.session import Base, engine
 import app.models.end_records
 
@@ -31,4 +33,5 @@ app.include_router(order_assignments.router, prefix="/api/assignments", tags=["O
 app.include_router(order_assignments.router, prefix="/api/orders", tags=["OrderAssignments"])
 app.include_router(transfer_transactions.router, prefix="/api", tags=["TransferTransactions"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
+app.include_router(wallet.router, prefix="/api", tags=["Wallet"]) 
 
