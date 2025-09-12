@@ -18,6 +18,7 @@ from app.crud.wallet import (
     credit_wallet,
     create_rp_transaction,
     mark_rp_payment_captured,
+    check_rp_payment_already_processed,
 )
 from app.models.wallet_ledger import WalletLedger
 from app.models.razorpay_transactions import RazorpayTransaction
@@ -32,6 +33,7 @@ def create_rp_order(
     db: Session = Depends(get_db),
     vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
 ):
+    print("check")
     client = RazorpayClient()
     try:
         order = client.create_order(amount_paise=payload.amount, currency=payload.currency, notes=payload.notes)
@@ -54,18 +56,32 @@ def verify_rp_payment(
     if not RazorpayClient.verify_signature(payload.rp_order_id, payload.rp_payment_id, payload.rp_signature):
         raise HTTPException(status_code=400, detail="Invalid Razorpay signature")
 
+    # Check if payment already processed (idempotency)
+    if check_rp_payment_already_processed(db, payload.rp_payment_id):
+        # Return existing transaction without processing again
+        txn = db.query(RazorpayTransaction).filter(
+            RazorpayTransaction.rp_payment_id == payload.rp_payment_id
+        ).first()
+        if txn:
+            return txn
+        else:
+            raise HTTPException(status_code=400, detail="Payment already processed but transaction not found")
+
     # Mark captured and credit wallet atomically
     try:
         txn = mark_rp_payment_captured(db, payload.rp_order_id, payload.rp_payment_id, payload.rp_signature)
-        # Credit wallet by amount (Razorpay reports paise; store ledger also in paise for precision)
-        new_balance, _ = credit_wallet(
-            db,
-            vehicle_owner_id=vehicle_owner_id,
-            amount=txn.amount,
-            reference_id=txn.rp_payment_id,
-            reference_type="RAZORPAY_PAYMENT",
-            notes="Wallet top-up via Razorpay",
-        )
+        
+        # Only credit wallet if not already processed
+        if txn.status == RazorpayPaymentStatusEnum.CAPTURED and not check_rp_payment_already_processed(db, payload.rp_payment_id):
+            new_balance, _ = credit_wallet(
+                db,
+                vehicle_owner_id=vehicle_owner_id,
+                amount=txn.amount,
+                reference_id=txn.rp_payment_id,
+                reference_type="RAZORPAY_PAYMENT",
+                notes="Wallet top-up via Razorpay",
+            )
+        
         db.commit()
     except Exception as e:
         db.rollback()

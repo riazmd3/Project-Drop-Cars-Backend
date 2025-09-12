@@ -13,6 +13,7 @@ class RazorpayClient:
         self.key_id = key_id or os.getenv("RAZORPAY_KEY_ID", "")
         self.key_secret = key_secret or os.getenv("RAZORPAY_KEY_SECRET", "")
         self.base_url = "https://api.razorpay.com/v1"
+        print(self.key_id, self.key_secret)
 
     def _auth(self):
         return (self.key_id, self.key_secret)

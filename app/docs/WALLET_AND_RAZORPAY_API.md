@@ -6,14 +6,16 @@ Authentication: Vehicle Owner bearer token.
 
 1) Create Razorpay Order
 - Method: POST
-- Path: `/api/lwalet/razorpay/order`
+- Path: `/api/wallet/razorpay/order`
 - Body:
 ```
 {
-  "amount": 10000,   // in paise (e.g., 100.00 INR)
+  "amount": 10000,
   "currency": "INR",
   "notes": {"purpose": "wallet_topup"}
-
+}
+```
+- Response:
 ```
 {
   "rp_order_id": "order_Example123",

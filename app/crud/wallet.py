@@ -82,11 +82,25 @@ def mark_rp_payment_captured(db: Session, rp_order_id: str, rp_payment_id: str, 
     txn = db.query(RazorpayTransaction).filter(RazorpayTransaction.rp_order_id == rp_order_id).first()
     if not txn:
         raise ValueError("Transaction not found")
+    
+    # Check if already processed (idempotency)
+    if txn.status == RazorpayPaymentStatusEnum.CAPTURED and txn.captured:
+        return txn  # Already processed, return existing transaction
+    
     txn.rp_payment_id = rp_payment_id
     txn.rp_signature = rp_signature
     txn.status = RazorpayPaymentStatusEnum.CAPTURED
     txn.captured = True
     db.add(txn)
     return txn
+
+
+def check_rp_payment_already_processed(db: Session, rp_payment_id: str) -> bool:
+    """Check if a Razorpay payment has already been processed (for idempotency)"""
+    existing_ledger = db.query(WalletLedger).filter(
+        WalletLedger.reference_id == rp_payment_id,
+        WalletLedger.reference_type == "RAZORPAY_PAYMENT"
+    ).first()
+    return existing_ledger is not None
 
 
