@@ -8,6 +8,8 @@ class AccountStatusEnum(enum.Enum):
     ONLINE = "ONLINE"
     DRIVING = "DRIVING"
     BLOCKED = "BLOCKED"
+    PROCESSING = "PROCESSING"
+
 
 class CarDriver(Base):
     __tablename__ = "car_driver"

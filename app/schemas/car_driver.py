@@ -12,6 +12,7 @@ class AccountStatusEnum(str, Enum):
     ONLINE = "ONLINE"
     DRIVING = "DRIVING"
     BLOCKED = "BLOCKED"
+    PROCESSING = "PROCESSING"
 
 class CarDriverForm(BaseModel):
     vehicle_owner_id: Optional[UUID] = Field(None, description="Vehicle owner ID (auto-set from token)")
