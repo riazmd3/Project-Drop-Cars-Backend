@@ -85,5 +85,12 @@ def get_available_cars(db: Session, vehicle_owner_id: str) -> List[CarDetails]:
     from app.models.car_details import CarStatusEnum
     return db.query(CarDetails).filter(
         CarDetails.vehicle_owner_id == vehicle_owner_id,
-        CarDetails.car_status == CarStatusEnum.ONLINE
+        CarDetails.car_status.in_([CarStatusEnum.ONLINE, CarStatusEnum.DRIVING])
+    ).all()
+
+def get_all_cars(db: Session, vehicle_owner_id: str) -> List[CarDetails]:
+    """Get all available cars with ONLINE status for a vehicle owner"""
+    from app.models.car_details import CarStatusEnum
+    return db.query(CarDetails).filter(
+        CarDetails.vehicle_owner_id == vehicle_owner_id
     ).all()

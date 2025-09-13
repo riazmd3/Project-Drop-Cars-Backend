@@ -102,7 +102,7 @@ def get_available_drivers(db: Session, vehicle_owner_id: str) -> List[CarDriver]
     from app.models.car_driver import AccountStatusEnum
     return db.query(CarDriver).filter(
         CarDriver.vehicle_owner_id == vehicle_owner_id,
-        CarDriver.driver_status == AccountStatusEnum.ONLINE
+    CarDriver.driver_status.in_([AccountStatusEnum.ONLINE, AccountStatusEnum.DRIVING])
     ).all()
 
 def authenticate_driver(db: Session, primary_number: str, password: str) -> Optional[CarDriver]:
@@ -134,3 +134,10 @@ def update_driver_status(db: Session, driver_id: UUID, new_status: AccountStatus
     db.refresh(driver)
     
     return driver
+
+def get_all_drivers(db: Session, vehicle_owner_id: str) -> List[CarDriver]:
+    """Get all available drivers with ONLINE status for a vehicle owner"""
+    from app.models.car_driver import AccountStatusEnum
+    return db.query(CarDriver).filter(
+        CarDriver.vehicle_owner_id == vehicle_owner_id
+    ).all()

@@ -9,6 +9,7 @@ class CarStatusEnum(enum.Enum):
     ONLINE = "ONLINE"
     DRIVING = "DRIVING"
     BLOCKED = "BLOCKED"
+    PROCESSING = "PROCESSING"
     
 class CarTypeEnum(enum.Enum):
     SEDAN = "SEDAN"
@@ -33,7 +34,7 @@ class CarDetails(Base):
     
     car_status = Column(
         SqlEnum(CarStatusEnum, name="car_status_enum"),
-        default=CarStatusEnum.BLOCKED,
+        default=CarStatusEnum.PROCESSING,
         nullable=False
     ) 
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
