@@ -102,7 +102,7 @@ def get_available_drivers(db: Session, vehicle_owner_id: str) -> List[CarDriver]
     from app.models.car_driver import AccountStatusEnum
     return db.query(CarDriver).filter(
         CarDriver.vehicle_owner_id == vehicle_owner_id,
-    CarDriver.driver_status.in_([AccountStatusEnum.ONLINE, AccountStatusEnum.DRIVING])
+        CarDriver.driver_status.in_([AccountStatusEnum.ONLINE, AccountStatusEnum.DRIVING])
     ).all()
 
 def authenticate_driver(db: Session, primary_number: str, password: str) -> Optional[CarDriver]:
@@ -134,18 +134,18 @@ def update_driver_status(db: Session, driver_id: UUID, new_status: AccountStatus
     
     # Check if driver is trying to go online
     if new_status == AccountStatusEnum.ONLINE:
-        if current_status != AccountStatusEnum.BLOCKED:
+        if current_status != AccountStatusEnum.OFFLINE:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot set driver to ONLINE. Driver must be OFFLINE (BLOCKED) first. Current status: {current_status.value}"
+                detail=f"Cannot set driver to ONLINE. Driver must be OFFLINE first. Current status: {current_status.value}"
             )
     
     # Check if driver is trying to go offline
-    elif new_status == AccountStatusEnum.BLOCKED:
+    elif new_status == AccountStatusEnum.OFFLINE:
         if current_status not in [AccountStatusEnum.ONLINE, AccountStatusEnum.DRIVING]:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot set driver to OFFLINE (BLOCKED). Driver must be ONLINE or DRIVING first. Current status: {current_status.value}"
+                detail=f"Cannot set driver to OFFLINE. Driver must be ONLINE or DRIVING first. Current status: {current_status.value}"
             )
     
     driver.driver_status = new_status
