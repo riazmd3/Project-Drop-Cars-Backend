@@ -4,8 +4,8 @@ from uuid import UUID
 from datetime import datetime
 from fastapi import Form
 
-# --- Regex pattern for Indian mobile numbers ---
-indian_phone_pattern = r'^(?:\+91)?[6-9]\d{9}$'
+# --- Regex pattern for Indian mobile numbers (10 digits only, starting with 6-9) ---
+indian_phone_pattern = r'^[6-9]\d{9}$'
 
 # --- Base Schema ---
 class VehicleOwnerBase(BaseModel):
@@ -15,12 +15,12 @@ class VehicleOwnerBase(BaseModel):
 
     primary_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Indian mobile number, with optional +91 country code"
+        description="Primary mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
 
     secondary_number: Optional[Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Indian mobile number, with optional +91 country code"
+        description="Secondary mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]] = None
 
     password: str
@@ -45,12 +45,12 @@ class VehicleOwnerForm(BaseModel):
 
     primary_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Primary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
+        description="Primary mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
 
     secondary_number: Optional[Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Secondary mobile number must be a valid Indian mobile number (e.g., +919876543210 or 9876543210)"
+        description="Secondary mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]] = None
 
     password: Annotated[str, Field(
@@ -83,7 +83,7 @@ class VehicleOwnerForm(BaseModel):
             return v
         import re
         if not re.match(indian_phone_pattern, v):
-            raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
+            raise ValueError('Invalid Indian mobile number format. Use 10-digit number starting with 6-9 (e.g., 9876543210)')
         return v
 
     @classmethod
@@ -120,8 +120,8 @@ class VehicleOwnerOut(VehicleOwnerBase):
                 "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
                 "organization_id": "org_123",
                 "full_name": "Jane Doe",
-                "primary_number": "+919876543210",
-                "secondary_number": "+919876543211",
+                "primary_number": "9876543210",
+                "secondary_number": "9876543211",
                 "password": "secret123",
                 "address": "123 Main Street, Mumbai",
                 "aadhar_number": "123456789012",
@@ -135,8 +135,18 @@ class VehicleOwnerOut(VehicleOwnerBase):
 # schemas.py
 
 class UserLogin(BaseModel):
-    mobile_number: str  # still mobile_number in the API
+    mobile_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
     password: str
+    
+    @validator('mobile_number')
+    def validate_mobile_number(cls, v):
+        import re
+        if not re.match(indian_phone_pattern, v):
+            raise ValueError('Invalid Indian mobile number format. Use 10-digit number starting with 6-9 (e.g., 9876543210)')
+        return v
     
 class VehicleOwnerDetailsResponse(BaseModel):
     id: UUID

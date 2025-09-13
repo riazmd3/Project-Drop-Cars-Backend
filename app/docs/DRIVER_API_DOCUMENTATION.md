@@ -95,7 +95,7 @@ Authorization: Bearer <access_token>
 ### 3. Set Driver Offline
 **Endpoint:** `PUT /cardriver/offline`
 
-**Description:** Set driver status to BLOCKED (offline). Requires valid Bearer token authentication.
+**Description:** Set driver status to OFFLINE. Requires valid Bearer token authentication.
 
 **Headers:**
 ```
@@ -242,8 +242,10 @@ Authorization: Bearer <access_token>
 ```python
 class AccountStatusEnum(str, Enum):
     ONLINE = "ONLINE"      # Driver is available for assignments
+    OFFLINE = "OFFLINE"    # Driver is offline/unavailable
     DRIVING = "DRIVING"    # Driver is currently on a trip
-    BLOCKED = "BLOCKED"    # Driver is offline/unavailable
+    BLOCKED = "BLOCKED"    # Driver is blocked by admin
+    PROCESSING = "PROCESSING"  # Driver account is being processed
 ```
 
 ### Assignment Status Enum
