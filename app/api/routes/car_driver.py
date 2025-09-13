@@ -134,7 +134,7 @@ async def set_driver_online(
 ):
     """
     Set driver status to ONLINE.
-    Driver must be currently OFFLINE (BLOCKED) to go online.
+    Driver must be currently OFFLINE to go online.
     Requires valid bearer token authentication.
     """
     from app.crud.car_driver import update_driver_status
@@ -162,7 +162,7 @@ async def set_driver_offline(
     db: Session = Depends(get_db),
 ):
     """
-    Set driver status to BLOCKED (offline).
+    Set driver status to OFFLINE.
     Driver must be currently ONLINE or DRIVING to go offline.
     Requires valid bearer token authentication.
     """
@@ -170,7 +170,7 @@ async def set_driver_offline(
     from app.models.car_driver import AccountStatusEnum
     
     try:
-        updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.BLOCKED)
+        updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.OFFLINE)
         
         return {
             "message": "Driver status updated to OFFLINE successfully",

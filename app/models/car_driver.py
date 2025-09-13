@@ -6,6 +6,7 @@ import uuid
 import enum
 class AccountStatusEnum(enum.Enum):
     ONLINE = "ONLINE"
+    OFFLINE = "OFFLINE"
     DRIVING = "DRIVING"
     BLOCKED = "BLOCKED"
     PROCESSING = "PROCESSING"
@@ -26,7 +27,7 @@ class CarDriver(Base):
     adress = Column(String, nullable=False)
     driver_status = Column(
         SqlEnum(AccountStatusEnum, name="driver_status_enum"),
-        default=AccountStatusEnum.BLOCKED,
+        default=AccountStatusEnum.OFFLINE,
         nullable=False
-    )  # Online, Driving, Blocked
+    )  # Online, Offline, Driving, Blocked, Processing
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)

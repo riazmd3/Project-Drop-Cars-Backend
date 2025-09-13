@@ -10,6 +10,7 @@ indian_phone_pattern = r'^[6-9]\d{9}$'
 
 class AccountStatusEnum(str, Enum):
     ONLINE = "ONLINE"
+    OFFLINE = "OFFLINE"
     DRIVING = "DRIVING"
     BLOCKED = "BLOCKED"
     PROCESSING = "PROCESSING"
@@ -112,7 +113,7 @@ class CarDriverOut(BaseModel):
                 "licence_number": "DL-0123456789",
                 "licence_front_img": "https://example.com/licence_front.jpg",
                 "adress": "123 Main Street, Mumbai",
-                "driver_status": "BLOCKED",
+                "driver_status": "OFFLINE",
                 "created_at": "2025-08-13T12:00:00Z"
             }
         }
