@@ -4,7 +4,7 @@ from app.schemas.vehicle_owner import VehicleOwnerBase, VehicleOwnerForm, UserLo
 from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticate_user, get_vehicle_owner_counts, get_vehicle_owner_by_id
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url  # Utility functions
-from app.core.security import create_access_token, get_current_vehicleOwner_id
+from app.core.security import create_access_token, get_current_vehicleOwner_id,get_current_user
 
 router = APIRouter()
 
@@ -106,3 +106,29 @@ def get_my_vehicle_owner_details(
             detail="Vehicle owner not found"
         )
     return owner
+
+@router.get("/available-cars")
+async def get_all_cars(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Get all available cars with ONLINE status for the authenticated vehicle owner"""
+    # Get vehicle_owner_id from the authenticated user
+    vehicle_owner_id = str(current_user.vehicle_owner_id)
+    
+    from app.crud.car_details import get_all_cars
+    available_cars = get_all_cars(db, vehicle_owner_id)
+    return available_cars
+
+@router.get("/available-drivers")
+async def get_available_drivers(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Get all available drivers with ONLINE status for the authenticated vehicle owner"""
+    # Get vehicle_owner_id from the authenticated user
+    vehicle_owner_id = str(current_user.vehicle_owner_id)
+    
+    from app.crud.car_driver import get_all_drivers
+    available_drivers = get_all_drivers(db, vehicle_owner_id)
+    return available_drivers
