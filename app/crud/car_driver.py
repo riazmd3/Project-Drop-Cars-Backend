@@ -51,7 +51,7 @@ def create_car_driver(db: Session, driver_data: CarDriverForm) -> CarDriver:
         licence_number=driver_data.licence_number,
         licence_front_img=None,  # Will be updated after GCS upload
         adress=driver_data.adress,
-        driver_status=AccountStatusEnum.BLOCKED  # Explicitly set the enum value
+        driver_status=AccountStatusEnum.PROCESSING  # Explicitly set the enum value
     )
 
     db.add(car_driver)
@@ -120,7 +120,7 @@ def authenticate_driver(db: Session, primary_number: str, password: str) -> Opti
     return driver
 
 def update_driver_status(db: Session, driver_id: UUID, new_status: AccountStatusEnum) -> CarDriver:
-    """Update driver's online/offline status"""
+    """Update driver's online/offline status with validation"""
     driver = db.query(CarDriver).filter(CarDriver.id == driver_id).first()
     
     if not driver:
@@ -128,6 +128,25 @@ def update_driver_status(db: Session, driver_id: UUID, new_status: AccountStatus
             status_code=404, 
             detail=f"Driver not found for ID: {driver_id}"
         )
+    
+    # Validate status transitions
+    current_status = driver.driver_status
+    
+    # Check if driver is trying to go online
+    if new_status == AccountStatusEnum.ONLINE:
+        if current_status != AccountStatusEnum.BLOCKED:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot set driver to ONLINE. Driver must be OFFLINE (BLOCKED) first. Current status: {current_status.value}"
+            )
+    
+    # Check if driver is trying to go offline
+    elif new_status == AccountStatusEnum.BLOCKED:
+        if current_status not in [AccountStatusEnum.ONLINE, AccountStatusEnum.DRIVING]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot set driver to OFFLINE (BLOCKED). Driver must be ONLINE or DRIVING first. Current status: {current_status.value}"
+            )
     
     driver.driver_status = new_status
     db.commit()

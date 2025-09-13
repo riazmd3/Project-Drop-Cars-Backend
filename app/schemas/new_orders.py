@@ -1,8 +1,11 @@
-from pydantic import BaseModel, Field,field_validator
-from typing import Any, List, Optional, Union, Literal, Dict
+from pydantic import BaseModel, Field,field_validator, validator
+from typing import Any, List, Optional, Union, Literal, Dict, Annotated
 from uuid import UUID
 from datetime import datetime
 from enum import Enum
+
+# Regex pattern for Indian mobile numbers (10 digits only, starting with 6-9)
+indian_phone_pattern = r'^[6-9]\d{9}$'
 
 
 class OrderType(str,Enum):
@@ -31,7 +34,10 @@ class RentalOrderRequest(BaseModel):
     pick_near_city: str
     start_date_time: datetime
     customer_name: str
-    customer_number: str
+    customer_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
     
     package_hours: int
     
@@ -50,6 +56,13 @@ class RentalOrderRequest(BaseModel):
             sorted([int(k) for k in v.keys()])
         except Exception:
             raise ValueError("pickup_drop_location keys must be numeric strings like '0', '1', ...")
+        return v
+    
+    @validator('customer_number')
+    def validate_customer_number(cls, v):
+        import re
+        if not re.match(indian_phone_pattern, v):
+            raise ValueError('Invalid Indian mobile number format. Use 10-digit number starting with 6-9 (e.g., 9876543210)')
         return v
 
 
@@ -79,7 +92,10 @@ class UnifiedOrder(BaseModel):
     pickup_drop_location: Dict[str, str]
     start_date_time: datetime
     customer_name: str
-    customer_number: str
+    customer_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
     trip_status: Optional[str] = None
     pick_near_city: Optional[str] = None
     trip_distance: Optional[int] = None
@@ -99,7 +115,17 @@ class CloseOrderRequest(BaseModel):
     commision_amount: int
     start_km: int
     end_km: int
-    contact_number: str
+    contact_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Contact mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
+    
+    @validator('contact_number')
+    def validate_contact_number(cls, v):
+        import re
+        if not re.match(indian_phone_pattern, v):
+            raise ValueError('Invalid Indian mobile number format. Use 10-digit number starting with 6-9 (e.g., 9876543210)')
+        return v
 
 class CloseOrderResponse(BaseModel):
     order_id: int
@@ -116,7 +142,10 @@ class OnewayQuoteRequest(BaseModel):
     )
     start_date_time: datetime
     customer_name: str
-    customer_number: str
+    customer_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
     cost_per_km: int
     extra_cost_per_km: int
     driver_allowance: int
@@ -195,7 +224,10 @@ class NewOrderResponse(BaseModel):
     pickup_drop_location: Dict[str, str]
     start_date_time: datetime
     customer_name: str
-    customer_number: str
+    customer_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
     cost_per_km: int
     extra_cost_per_km: int
     driver_allowance: int

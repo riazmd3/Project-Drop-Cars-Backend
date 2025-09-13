@@ -5,8 +5,8 @@ from datetime import datetime
 from fastapi import Form
 from enum import Enum
 
-# Regex pattern for Indian mobile numbers
-indian_phone_pattern = r'^(?:\+91)?[6-9]\d{9}$'
+# Regex pattern for Indian mobile numbers (10 digits only, starting with 6-9)
+indian_phone_pattern = r'^[6-9]\d{9}$'
 
 class AccountStatusEnum(str, Enum):
     ONLINE = "ONLINE"
@@ -26,12 +26,12 @@ class CarDriverForm(BaseModel):
     
     primary_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Primary mobile number must be a valid Indian mobile number"
+        description="Primary mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
     
     secondary_number: Optional[Annotated[str, Field(
         pattern=indian_phone_pattern,
-        description="Secondary mobile number must be a valid Indian mobile number"
+        description="Secondary mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]]=None
     
     password: Annotated[str, Field(
@@ -56,7 +56,7 @@ class CarDriverForm(BaseModel):
             return v
         import re
         if not re.match(indian_phone_pattern, v):
-            raise ValueError('Invalid Indian mobile number format. Use +919876543210 or 9876543210')
+            raise ValueError('Invalid Indian mobile number format. Use 10-digit number starting with 6-9 (e.g., 9876543210)')
         return v
 
     @validator('licence_number')
@@ -107,8 +107,8 @@ class CarDriverOut(BaseModel):
                 "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
                 "organization_id": "org_123",
                 "full_name": "John Doe",
-                "primary_number": "+919876543210",
-                "secondary_number": "+919876543211",
+                "primary_number": "9876543210",
+                "secondary_number": "9876543211",
                 "licence_number": "DL-0123456789",
                 "licence_front_img": "https://example.com/licence_front.jpg",
                 "adress": "123 Main Street, Mumbai",

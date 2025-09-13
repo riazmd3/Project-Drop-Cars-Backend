@@ -8,7 +8,7 @@ from datetime import datetime
 class AdminBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., description="Admin email address")
-    phone: str = Field(..., min_length=10, max_length=10, description="10-digit phone number")
+    phone: str = Field(..., min_length=10, max_length=10, description="10-digit Indian mobile number (starting with 6-9)")
     role: str = Field(..., description="Admin role (Owner, Manager, etc.)")
     organization_id: Optional[str] = None
 
@@ -22,6 +22,8 @@ class AdminSignup(AdminBase):
             raise ValueError('Phone number must contain only digits')
         if len(v) != 10:
             raise ValueError('Phone number must be exactly 10 digits')
+        if not v.startswith(('6', '7', '8', '9')):
+            raise ValueError('Phone number must start with 6, 7, 8, or 9 for Indian mobile numbers')
         return v
 
     @validator('email')
@@ -88,7 +90,7 @@ class AdminTokenResponse(BaseModel):
 class AdminUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     email: Optional[str] = Field(None, description="Admin email address")
-    phone: Optional[str] = Field(None, min_length=10, max_length=10)
+    phone: Optional[str] = Field(None, min_length=10, max_length=10, description="10-digit Indian mobile number (starting with 6-9)")
     role: Optional[str] = Field(None, description="Admin role")
     organization_id: Optional[str] = None
 
@@ -99,6 +101,8 @@ class AdminUpdate(BaseModel):
                 raise ValueError('Phone number must contain only digits')
             if len(v) != 10:
                 raise ValueError('Phone number must be exactly 10 digits')
+            if not v.startswith(('6', '7', '8', '9')):
+                raise ValueError('Phone number must start with 6, 7, 8, or 9 for Indian mobile numbers')
         return v
 
     @validator('email')

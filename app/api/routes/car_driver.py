@@ -134,18 +134,27 @@ async def set_driver_online(
 ):
     """
     Set driver status to ONLINE.
+    Driver must be currently OFFLINE (BLOCKED) to go online.
     Requires valid bearer token authentication.
     """
     from app.crud.car_driver import update_driver_status
     from app.models.car_driver import AccountStatusEnum
     
-    updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.ONLINE)
-    
-    return {
-        "message": "Driver status updated to ONLINE successfully",
-        "driver_id": str(updated_driver.id),
-        "new_status": updated_driver.driver_status
-    }
+    try:
+        updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.ONLINE)
+        
+        return {
+            "message": "Driver status updated to ONLINE successfully",
+            "driver_id": str(updated_driver.id),
+            "new_status": updated_driver.driver_status
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update driver status: {str(e)}"
+        )
 
 @router.put("/cardriver/offline", response_model=DriverStatusUpdateResponse)
 async def set_driver_offline(
@@ -154,18 +163,27 @@ async def set_driver_offline(
 ):
     """
     Set driver status to BLOCKED (offline).
+    Driver must be currently ONLINE or DRIVING to go offline.
     Requires valid bearer token authentication.
     """
     from app.crud.car_driver import update_driver_status
     from app.models.car_driver import AccountStatusEnum
     
-    updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.BLOCKED)
-    
-    return {
-        "message": "Driver status updated to OFFLINE successfully",
-        "driver_id": str(updated_driver.id),
-        "new_status": updated_driver.driver_status
-    }
+    try:
+        updated_driver = update_driver_status(db, current_driver.id, AccountStatusEnum.BLOCKED)
+        
+        return {
+            "message": "Driver status updated to OFFLINE successfully",
+            "driver_id": str(updated_driver.id),
+            "new_status": updated_driver.driver_status
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update driver status: {str(e)}"
+        )
 
 @router.get("/cardriver/{driver_id}", response_model=CarDriverOut)
 def get_car_driver(
