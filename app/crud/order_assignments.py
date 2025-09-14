@@ -289,7 +289,8 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
     """Get all ASSIGNED orders for a specific driver"""
     assignments = db.query(OrderAssignment).filter(
         OrderAssignment.driver_id == driver_id,
-        OrderAssignment.assignment_status == AssignmentStatusEnum.ASSIGNED
+        # OrderAssignment.assignment_status == AssignmentStatusEnum.ASSIGNED
+        OrderAssignment.assignment_status.in_([AssignmentStatusEnum.ASSIGNED, AssignmentStatusEnum.DRIVING])
     ).order_by(desc(OrderAssignment.assigned_at)).all()
     
     result = []
