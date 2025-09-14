@@ -78,7 +78,7 @@ async def oneway_confirm(
         )
         
         # Persist order
-        new_order = create_oneway_order(
+        new_order, master_order_id = create_oneway_order(
             db,
             vendor_id=vendor_id,
             trip_type=OrderTypeEnum.ONEWAY,
@@ -104,7 +104,7 @@ async def oneway_confirm(
         print(fare)
 
         return OnewayConfirmResponse(
-            order_id=new_order.order_id,
+            order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
             fare=FareBreakdown(**fare),
@@ -168,7 +168,7 @@ async def roundtrip_confirm(
             payload.toll_charges,
         )
 
-        new_order = create_oneway_order(
+        new_order, master_order_id = create_oneway_order(
             db,
             vendor_id=vendor_id,
             trip_type=OrderTypeEnum.ROUND_TRIP,
@@ -193,7 +193,7 @@ async def roundtrip_confirm(
         )
 
         return OnewayConfirmResponse(
-            order_id=new_order.order_id,
+            order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
             fare=FareBreakdown(**fare),
@@ -257,7 +257,7 @@ async def multicity_confirm(
             payload.toll_charges,
         )
 
-        new_order = create_oneway_order(
+        new_order, master_order_id = create_oneway_order(
             db,
             vendor_id=vendor_id,
             trip_type=OrderTypeEnum.MULTY_CITY,
@@ -282,7 +282,7 @@ async def multicity_confirm(
         )
 
         return OnewayConfirmResponse(
-            order_id=new_order.order_id,
+            order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
             fare=FareBreakdown(**fare),

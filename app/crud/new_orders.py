@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 from app.models.new_orders import NewOrder, OrderTypeEnum, CarTypeEnum
 from app.utils.maps import get_distance_km_between_locations
@@ -110,7 +110,7 @@ def create_oneway_order(
     trip_time = str,
     platform_fees_percent = int,
     pick_near_city: str,
-) -> NewOrder:
+) -> Tuple[NewOrder, int]:
     new_order = NewOrder(
         vendor_id=vendor_id,
         trip_type=trip_type,
@@ -141,8 +141,8 @@ def create_oneway_order(
     db.commit()
     db.refresh(new_order)
     # Also create/refresh master order row
-    create_master_from_new_order(db, new_order)
-    return new_order
+    master_order = create_master_from_new_order(db, new_order)
+    return new_order, master_order.id
 
 
 def get_pending_all_city_orders(db: Session) -> List[NewOrder]:

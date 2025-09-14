@@ -19,12 +19,12 @@ def test_vendor_signup():
     # Test data
     signup_data = {
         "full_name": "Test Vendor",
-        "primary_number": "+919876543213",
-        "secondary_number": "+919876543214",
+        "primary_number": "9876543213",
+        "secondary_number": "9876543214",
         "password": "test123",
         "address": "Test Address, Test City, Test State 123456",
         "aadhar_number": "111111111111",
-        "gpay_number": "+919876543215",
+        "gpay_number": "9876543215",
         "organization_id": "TEST_ORG_001"
     }
     
@@ -70,7 +70,7 @@ def test_vendor_signin():
     
     # Test data
     signin_data = {
-        "primary_number": "+919876543213",
+        "primary_number": "9876543213",
         "password": "test123"
     }
     
@@ -103,12 +103,12 @@ def test_vendor_signup_without_image():
     # Test data
     signup_data = {
         "full_name": "Test Vendor No Image",
-        "primary_number": "+919876543216",
-        "secondary_number": "+919876543217",
+        "primary_number": "9876543216",
+        "secondary_number": "9876543217",
         "password": "test123",
         "address": "Test Address No Image, Test City, Test State 123456",
         "aadhar_number": "222222222222",
-        "gpay_number": "+919876543218",
+        "gpay_number": "9876543218",
         "organization_id": "TEST_ORG_002"
     }
     
@@ -140,11 +140,11 @@ def test_duplicate_vendor():
     # Test data (same as first test)
     signup_data = {
         "full_name": "Test Vendor Duplicate",
-        "primary_number": "+919876543213",  # Same number as first test
+        "primary_number": "9876543213",  # Same number as first test
         "password": "test123",
         "address": "Test Address Duplicate, Test City, Test State 123456",
         "aadhar_number": "333333333333",
-        "gpay_number": "+919876543219",
+        "gpay_number": "9876543219",
         "organization_id": "TEST_ORG_003"
     }
     
