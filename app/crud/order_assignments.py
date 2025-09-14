@@ -46,7 +46,8 @@ def get_order_assignment_by_id(db: Session, assignment_id: int) -> Optional[Orde
 def get_order_assignments_by_vehicle_owner_id(db: Session, vehicle_owner_id: str) -> List[OrderAssignment]:
     """Get all order assignments for a specific vehicle owner"""
     return db.query(OrderAssignment).filter(
-        OrderAssignment.vehicle_owner_id == vehicle_owner_id
+        OrderAssignment.vehicle_owner_id == vehicle_owner_id,
+        OrderAssignment.assignment_status.in_([AssignmentStatusEnum.ASSIGNED, AssignmentStatusEnum.PENDING])
     ).order_by(desc(OrderAssignment.created_at)).all()
 
 

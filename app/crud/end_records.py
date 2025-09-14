@@ -64,7 +64,6 @@ def update_end_trip_record(
     order_id: int,
     driver_id: str,
     end_km: int,
-    speedometer_img_url: str,
     contact_number: str,
     close_speedometer_image_url: str = None
 ) -> dict:
@@ -84,7 +83,6 @@ def update_end_trip_record(
     # Update trip record
     trip_record.end_km = end_km
     trip_record.contact_number = contact_number
-    trip_record.img_url = speedometer_img_url  # Update with end image
     trip_record.close_speedometer_image = close_speedometer_image_url  # Add close speedometer image
     
     # Calculate fare

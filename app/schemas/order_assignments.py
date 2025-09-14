@@ -107,7 +107,6 @@ class EndTripResponse(BaseModel):
     message: str
     end_record_id: int
     end_km: int
-    speedometer_img_url: str
     close_speedometer_img_url: Optional[str] = None
     total_km: int
     calculated_fare: int

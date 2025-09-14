@@ -386,34 +386,23 @@ async def end_trip(
     order_id: int,
     end_km: int = Form(...),
     contact_number: str = Form(...),
-    speedometer_img: UploadFile = File(...),
-    close_speedometer_img: UploadFile = File(None),
+    close_speedometer_img: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_driver=Depends(get_current_driver)
 ):
-    """End trip by uploading end KM, contact number, speedometer image, and close speedometer image"""
+    """End trip by uploading end KM, contact number, and close speedometer image"""
     try:
-        # Validate image files
-        if not speedometer_img.content_type or not speedometer_img.content_type.startswith('image/'):
+        # Validate close speedometer image file
+        if not close_speedometer_img.content_type or not close_speedometer_img.content_type.startswith('image/'):
             raise HTTPException(
                 status_code=400,
-                detail="Invalid file type. Please upload an image file."
+                detail="Invalid close speedometer file type. Please upload an image file."
             )
         
-        # Upload images to GCS
+        # Upload close speedometer image to GCS
         from app.utils.gcs import upload_image_to_gcs
         folder_path = f"trip_records/{order_id}/end"
-        speedometer_img_url = upload_image_to_gcs(speedometer_img, folder_path)
-        
-        # Handle close speedometer image if provided
-        close_speedometer_img_url = None
-        if close_speedometer_img and close_speedometer_img.filename:
-            if not close_speedometer_img.content_type or not close_speedometer_img.content_type.startswith('image/'):
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid close speedometer file type. Please upload an image file."
-                )
-            close_speedometer_img_url = upload_image_to_gcs(close_speedometer_img, folder_path)
+        close_speedometer_img_url = upload_image_to_gcs(close_speedometer_img, folder_path)
         
         # Update end trip record
         from app.crud.end_records import update_end_trip_record
@@ -422,7 +411,6 @@ async def end_trip(
             order_id=order_id,
             driver_id=str(current_driver.id),
             end_km=end_km,
-            speedometer_img_url=speedometer_img_url,
             contact_number=contact_number,
             close_speedometer_image_url=close_speedometer_img_url
         )
@@ -431,7 +419,6 @@ async def end_trip(
             "message": "Trip ended successfully",
             "end_record_id": result["trip_record"].id,
             "end_km": result["trip_record"].end_km,
-            "speedometer_img_url": speedometer_img_url,
             "close_speedometer_img_url": close_speedometer_img_url,
             "total_km": result["total_km"],
             "calculated_fare": result["calculated_fare"],
