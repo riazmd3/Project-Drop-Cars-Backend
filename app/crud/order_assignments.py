@@ -46,7 +46,8 @@ def get_order_assignment_by_id(db: Session, assignment_id: int) -> Optional[Orde
 def get_order_assignments_by_vehicle_owner_id(db: Session, vehicle_owner_id: str) -> List[OrderAssignment]:
     """Get all order assignments for a specific vehicle owner"""
     return db.query(OrderAssignment).filter(
-        OrderAssignment.vehicle_owner_id == vehicle_owner_id
+        OrderAssignment.vehicle_owner_id == vehicle_owner_id,
+        OrderAssignment.assignment_status.in_([AssignmentStatusEnum.ASSIGNED, AssignmentStatusEnum.PENDING])
     ).order_by(desc(OrderAssignment.created_at)).all()
 
 
@@ -262,6 +263,8 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
         # Note: Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT included
         # as they are not available for new assignments
     
+    return pending_orders
+
 def update_assignment_car_driver(
     db: Session, 
     assignment_id: int, 
