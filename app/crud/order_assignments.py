@@ -262,6 +262,8 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
         # Note: Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT included
         # as they are not available for new assignments
     
+    return pending_orders
+
 def update_assignment_car_driver(
     db: Session, 
     assignment_id: int, 
