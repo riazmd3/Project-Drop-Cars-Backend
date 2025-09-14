@@ -313,9 +313,9 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
 
 def check_vehicle_owner_balance(db: Session, vehicle_owner_id: str, required_amount: int) -> bool:
     """Check if vehicle owner has sufficient balance"""
-    from app.crud.wallet import get_wallet_balance
+    from app.crud.wallet import get_owner_balance
     try:
-        balance = get_wallet_balance(db, vehicle_owner_id)
+        balance = get_owner_balance(db, vehicle_owner_id)
         return balance >= required_amount
     except:
         return False
