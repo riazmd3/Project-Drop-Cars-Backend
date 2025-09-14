@@ -1,14 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.session import get_db
-from app.core.security import get_current_user, get_current_vehicleOwner_id
+from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver
 from app.schemas.order_assignments import (
     OrderAssignmentCreate,
     OrderAssignmentResponse,
     OrderAssignmentStatusUpdate,
-    OrderAssignmentWithOrderDetails
+    OrderAssignmentWithOrderDetails,
+    UpdateCarDriverRequest,
+    StartTripRequest,
+    StartTripResponse,
+    EndTripRequest,
+    EndTripResponse,
+    DriverOrderListResponse
 )
 from app.crud.order_assignments import (
     create_order_assignment,
@@ -18,7 +24,10 @@ from app.crud.order_assignments import (
     update_assignment_status,
     cancel_assignment,
     complete_assignment,
-    get_vendor_orders_with_assignments
+    get_vendor_orders_with_assignments,
+    update_assignment_car_driver,
+    get_driver_assigned_orders,
+    check_vehicle_owner_balance
 )
 from app.models.order_assignments import AssignmentStatusEnum
 
@@ -84,30 +93,31 @@ async def accept_order(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """Accept an order and create assignment"""
+    """Accept an order and create assignment with balance check"""
     try:
         # Get vehicle_owner_id from the authenticated user
         vehicle_owner_id = str(current_user.vehicle_owner_id)
 
-        # Determine required hold/debit amount (simple minimum hold = 1 rupee for demo)
-        hold_amount = 100  # 1 INR in paise; adjust business rule as needed
-
-        # Debit wallet atomically before assignment
-        from app.crud.wallet import debit_wallet
-        from app.models.wallet_ledger import WalletEntryTypeEnum
-        try:
-            _, _entry = debit_wallet(
-                db,
-                vehicle_owner_id=vehicle_owner_id,
-                amount=hold_amount,
-                reference_id=str(payload.order_id),
-                reference_type="ORDER_ACCEPT",
-                notes="Hold for order acceptance",
+        # Get order details to check estimated price
+        from app.models.orders import Order
+        order = db.query(Order).filter(Order.id == payload.order_id).first()
+        if not order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Order not found"
             )
-        except ValueError as ve:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Wallet: {str(ve)}")
+        
+        # Determine required hold amount (use estimated price or minimum)
+        hold_amount = order.estimated_price or 100  # Minimum 1 INR in paise
+        
+        # Check if vehicle owner has sufficient balance
+        if not check_vehicle_owner_balance(db, vehicle_owner_id, hold_amount):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Insufficient balance. Required: {hold_amount/100} INR"
+            )
 
-        # Create the order assignment
+        # Create the order assignment (without debiting yet)
         assignment = create_order_assignment(
             db=db,
             order_id=payload.order_id,
@@ -275,7 +285,163 @@ async def complete_assignment_endpoint(
             detail="Failed to complete assignment"
         )
     
-    return completed_assignment
+@router.patch("/{assignment_id}/assign-car-driver", response_model=OrderAssignmentResponse)
+async def assign_car_driver(
+    assignment_id: int,
+    payload: UpdateCarDriverRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    """Assign car and driver to an accepted order"""
+    # Get the assignment first to check authorization
+    assignment = get_order_assignment_by_id(db, assignment_id)
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assignment not found"
+        )
+    
+    # Check if the current user is the vehicle owner of this assignment
+    if str(assignment.vehicle_owner_id) != str(current_user.vehicle_owner_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this assignment"
+        )
+    
+    # Update the assignment with car and driver
+    updated_assignment = update_assignment_car_driver(
+        db, 
+        assignment_id, 
+        str(payload.driver_id), 
+        str(payload.car_id)
+    )
+    
+    if not updated_assignment:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to assign car and driver"
+        )
+    
+    return updated_assignment
+
+
+@router.get("/driver/assigned-orders", response_model=List[DriverOrderListResponse])
+async def get_driver_assigned_orders(
+    db: Session = Depends(get_db),
+    current_driver=Depends(get_current_driver)
+):
+    """Get all ASSIGNED orders for the authenticated driver"""
+    driver_id = str(current_driver.id)
+    assigned_orders = get_driver_assigned_orders(db, driver_id)
+    return assigned_orders
+
+
+@router.post("/driver/start-trip/{order_id}", response_model=StartTripResponse)
+async def start_trip(
+    order_id: int,
+    start_km: int = Form(...),
+    speedometer_img: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_driver=Depends(get_current_driver)
+):
+    """Start trip by uploading start KM and speedometer image"""
+    try:
+        # Validate image file
+        if not speedometer_img.content_type or not speedometer_img.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Please upload an image file."
+            )
+        
+        # Upload image to GCS
+        from app.utils.gcs import upload_image_to_gcs
+        folder_path = f"trip_records/{order_id}/start"
+        speedometer_img_url = upload_image_to_gcs(speedometer_img, folder_path)
+        
+        # Create start trip record
+        from app.crud.end_records import create_start_trip_record
+        trip_record = create_start_trip_record(
+            db=db,
+            order_id=order_id,
+            driver_id=str(current_driver.id),
+            start_km=start_km,
+            speedometer_img_url=speedometer_img_url
+        )
+        
+        return {
+            "message": "Trip started successfully",
+            "end_record_id": trip_record.id,
+            "start_km": trip_record.start_km,
+            "speedometer_img_url": speedometer_img_url
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start trip: {str(e)}")
+
+
+@router.post("/driver/end-trip/{order_id}", response_model=EndTripResponse)
+async def end_trip(
+    order_id: int,
+    end_km: int = Form(...),
+    contact_number: str = Form(...),
+    speedometer_img: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_driver=Depends(get_current_driver)
+):
+    """End trip by uploading end KM, contact number, and speedometer image"""
+    try:
+        # Validate image file
+        if not speedometer_img.content_type or not speedometer_img.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file type. Please upload an image file."
+            )
+        
+        # Upload image to GCS
+        from app.utils.gcs import upload_image_to_gcs
+        folder_path = f"trip_records/{order_id}/end"
+        speedometer_img_url = upload_image_to_gcs(speedometer_img, folder_path)
+        
+        # Update end trip record
+        from app.crud.end_records import update_end_trip_record
+        result = update_end_trip_record(
+            db=db,
+            order_id=order_id,
+            driver_id=str(current_driver.id),
+            end_km=end_km,
+            speedometer_img_url=speedometer_img_url,
+            contact_number=contact_number
+        )
+        
+        return {
+            "message": "Trip ended successfully",
+            "end_record_id": result["trip_record"].id,
+            "end_km": result["trip_record"].end_km,
+            "speedometer_img_url": speedometer_img_url,
+            "total_km": result["total_km"],
+            "calculated_fare": result["calculated_fare"],
+            "driver_amount": result["driver_amount"],
+            "vehicle_owner_amount": result["vehicle_owner_amount"]
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to end trip: {str(e)}")
+
+
+@router.get("/driver/trip-history", response_model=List[dict])
+async def get_driver_trip_history(
+    db: Session = Depends(get_db),
+    current_driver=Depends(get_current_driver)
+):
+    """Get driver's trip history"""
+    from app.crud.end_records import get_driver_trip_history
+    driver_id = str(current_driver.id)
+    trip_history = get_driver_trip_history(db, driver_id)
+    return trip_history
 
 
 

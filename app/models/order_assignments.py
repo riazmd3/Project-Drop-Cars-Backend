@@ -19,7 +19,7 @@ class OrderAssignment(Base):
     __tablename__ = "order_assignments"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    order_id = Column(Integer, ForeignKey("new_orders.order_id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     vehicle_owner_id = Column(UUID(as_uuid=True), ForeignKey("vehicle_owner.id"), nullable=False)
     driver_id = Column(UUID(as_uuid=True), ForeignKey("car_driver.id"), nullable=True)
     car_id = Column(UUID(as_uuid=True), ForeignKey("car_details.id"), nullable=True)

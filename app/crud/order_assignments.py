@@ -3,7 +3,7 @@ from sqlalchemy import desc
 from typing import Optional, List
 from datetime import datetime, timedelta
 from app.models.order_assignments import OrderAssignment, AssignmentStatusEnum
-from app.models.new_orders import NewOrder
+from app.models.orders import Order
 
 
 def create_order_assignment(
@@ -96,13 +96,13 @@ def get_vendor_orders_with_assignments(db: Session, vendor_id: str) -> List[dict
     """Get all orders for a vendor with their latest assignment details"""
     # Get all orders for the vendor
     print("vendor_id......", vendor_id)
-    orders = db.query(NewOrder).filter(NewOrder.vendor_id == vendor_id).all()
+    orders = db.query(Order).filter(Order.vendor_id == vendor_id).all()
     
     result = []
     for order in orders:
         # Get the latest assignment for this order
         latest_assignment = db.query(OrderAssignment).filter(
-            OrderAssignment.order_id == order.order_id
+            OrderAssignment.order_id == order.id
         ).order_by(desc(OrderAssignment.created_at)).first()
         
         if latest_assignment:
@@ -160,7 +160,7 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
     3. Orders with trip_status != "CANCELLED" (exclude cancelled orders)
     
     Business Logic:
-    - Compare new_orders table with order_assignments table
+    - Compare orders table with order_assignments table
     - For each order, get the latest assignment record (most recent created_at)
     - If no assignment exists, order is available
     - If latest assignment is CANCELLED, order is available for reassignment
@@ -169,21 +169,21 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
     from sqlalchemy import and_, or_, not_, desc
     
     # Get all orders excluding cancelled ones
-    all_orders = db.query(NewOrder).filter(NewOrder.trip_status != "CANCELLED").all()
+    all_orders = db.query(Order).filter(Order.trip_status != "CANCELLED").all()
     pending_orders = []
     
     for order in all_orders:
         # Get the latest assignment for this order (most recent created_at)
         # This ensures we compare with the most recent assignment status
         latest_assignment = db.query(OrderAssignment).filter(
-            OrderAssignment.order_id == order.order_id
+            OrderAssignment.order_id == order.id
         ).order_by(desc(OrderAssignment.created_at)).first()
         
         if not latest_assignment:
             # Rule 1: Order not in assignment table - should be available
             pending_orders.append({
                 "id": None,  # No assignment ID
-                "order_id": order.order_id,
+                "order_id": order.id,
                 "vehicle_owner_id": vehicle_owner_id,
                 "driver_id": None,
                 "car_id": None,
@@ -201,15 +201,15 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
                 "start_date_time": order.start_date_time or datetime.utcnow(),
                 "customer_name": order.customer_name or "Unknown",
                 "customer_number": order.customer_number or "Unknown",
-                "cost_per_km": order.cost_per_km or 0,
-                "extra_cost_per_km": order.extra_cost_per_km or 0,
-                "driver_allowance": order.driver_allowance or 0,
-                "extra_driver_allowance": order.extra_driver_allowance or 0,
-                "permit_charges": order.permit_charges or 0,
-                "extra_permit_charges": order.extra_permit_charges or 0,
-                "hill_charges": order.hill_charges or 0,
-                "toll_charges": order.toll_charges or 0,
-                "pickup_notes": order.pickup_notes,
+                "cost_per_km": 0,  # Orders table doesn't have these fields
+                "extra_cost_per_km": 0,
+                "driver_allowance": 0,
+                "extra_driver_allowance": 0,
+                "permit_charges": 0,
+                "extra_permit_charges": 0,
+                "hill_charges": 0,
+                "toll_charges": 0,
+                "pickup_notes": None,
                 "trip_status": order.trip_status or "Unknown",
                 "pick_near_city": order.pick_near_city or "Unknown",
                 "trip_distance": order.trip_distance or 0,
@@ -223,7 +223,7 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
             # Rule 2: Order is cancelled in assignment table - should be available
             pending_orders.append({
                 "id": latest_assignment.id,
-                "order_id": order.order_id,
+                "order_id": order.id,
                 "vehicle_owner_id": vehicle_owner_id,
                 "driver_id": latest_assignment.driver_id,
                 "car_id": latest_assignment.car_id,
@@ -241,15 +241,15 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
                 "start_date_time": order.start_date_time or datetime.utcnow(),
                 "customer_name": order.customer_name or "Unknown",
                 "customer_number": order.customer_number or "Unknown",
-                "cost_per_km": order.cost_per_km or 0,
-                "extra_cost_per_km": order.extra_cost_per_km or 0,
-                "driver_allowance": order.driver_allowance or 0,
-                "extra_driver_allowance": order.extra_driver_allowance or 0,
-                "permit_charges": order.permit_charges or 0,
-                "extra_permit_charges": order.extra_permit_charges or 0,
-                "hill_charges": order.hill_charges or 0,
-                "toll_charges": order.toll_charges or 0,
-                "pickup_notes": order.pickup_notes,
+                "cost_per_km": 0,  # Orders table doesn't have these fields
+                "extra_cost_per_km": 0,
+                "driver_allowance": 0,
+                "extra_driver_allowance": 0,
+                "permit_charges": 0,
+                "extra_permit_charges": 0,
+                "hill_charges": 0,
+                "toll_charges": 0,
+                "pickup_notes": None,
                 "trip_status": order.trip_status or "Unknown",
                 "pick_near_city": order.pick_near_city or "Unknown",
                 "trip_distance": order.trip_distance or 0,
@@ -262,4 +262,60 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
         # Note: Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT included
         # as they are not available for new assignments
     
-    return pending_orders
+def update_assignment_car_driver(
+    db: Session, 
+    assignment_id: int, 
+    driver_id: str, 
+    car_id: str
+) -> Optional[OrderAssignment]:
+    """Update assignment with driver and car"""
+    assignment = get_order_assignment_by_id(db, assignment_id)
+    if not assignment:
+        return None
+    
+    assignment.driver_id = driver_id
+    assignment.car_id = car_id
+    assignment.assignment_status = AssignmentStatusEnum.ASSIGNED
+    assignment.assigned_at = datetime.utcnow()
+    
+    db.commit()
+    db.refresh(assignment)
+    return assignment
+
+def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
+    """Get all ASSIGNED orders for a specific driver"""
+    assignments = db.query(OrderAssignment).filter(
+        OrderAssignment.driver_id == driver_id,
+        OrderAssignment.assignment_status == AssignmentStatusEnum.ASSIGNED
+    ).order_by(desc(OrderAssignment.assigned_at)).all()
+    
+    result = []
+    for assignment in assignments:
+        # Get order details
+        order = db.query(Order).filter(Order.id == assignment.order_id).first()
+        if order:
+            result.append({
+                "id": assignment.id,
+                "order_id": assignment.order_id,
+                "assignment_status": assignment.assignment_status,
+                "customer_name": order.customer_name,
+                "customer_number": order.customer_number,
+                "pickup_drop_location": order.pickup_drop_location,
+                "start_date_time": order.start_date_time,
+                "trip_type": order.trip_type.value if order.trip_type else "Unknown",
+                "car_type": order.car_type.value if order.car_type else "Unknown",
+                "estimated_price": order.estimated_price,
+                "assigned_at": assignment.assigned_at,
+                "created_at": assignment.created_at
+            })
+    
+    return result
+
+def check_vehicle_owner_balance(db: Session, vehicle_owner_id: str, required_amount: int) -> bool:
+    """Check if vehicle owner has sufficient balance"""
+    from app.crud.wallet import get_wallet_balance
+    try:
+        balance = get_wallet_balance(db, vehicle_owner_id)
+        return balance >= required_amount
+    except:
+        return False
