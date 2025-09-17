@@ -21,7 +21,7 @@ from app.crud.wallet import (
     check_rp_payment_already_processed,
 )
 from app.models.wallet_ledger import WalletLedger
-from app.models.razorpay_transactions import RazorpayTransaction
+from app.models.razorpay_transactions import RazorpayTransaction, RazorpayPaymentStatusEnum
 
 
 router = APIRouter()
