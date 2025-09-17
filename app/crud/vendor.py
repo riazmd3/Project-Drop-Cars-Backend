@@ -53,7 +53,6 @@ def create_vendor(db: Session, vendor_data: VendorSignupForm, aadhar_image: Uplo
         # Create vendor credentials
         hashed_password = get_password_hash(vendor_data.password)
         vendor_credentials = VendorCredentials(
-            organization_id=vendor_data.organization_id,
             primary_number=vendor_data.primary_number,
             hashed_password=hashed_password
         )
@@ -64,7 +63,6 @@ def create_vendor(db: Session, vendor_data: VendorSignupForm, aadhar_image: Uplo
         # Create vendor details
         vendor_details = VendorDetails(
             vendor_id=vendor_credentials.id,
-            organization_id=vendor_data.organization_id,
             full_name=vendor_data.full_name,
             primary_number=vendor_data.primary_number,
             secondary_number=vendor_data.secondary_number,

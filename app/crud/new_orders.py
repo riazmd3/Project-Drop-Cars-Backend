@@ -15,15 +15,18 @@ def _origin_and_destination_from_index_map(index_map: Dict[str, str]) -> (str, s
     return index_map[origin_key], index_map[destination_key]
 
 
-def calculate_oneway_fare(pickup_drop_location: Dict[str, str], cost_per_km: int, driver_allowance: int, extra_driver_allowance: int, permit_charges: int,extra_permit_charges: int, hill_charges: int, toll_charges: int) -> Dict[str, Any]:
+def calculate_oneway_fare(pickup_drop_location: Dict[str, str], cost_per_km: int, driver_allowance: int, extra_driver_allowance: int, permit_charges: int,extra_permit_charges: int, hill_charges: int, toll_charges: int, extra_cost_per_km:int) -> Dict[str, Any]:
     origin, destination = _origin_and_destination_from_index_map(pickup_drop_location)
     total_km,duration_text = get_distance_km_between_locations(origin, destination)
     base_km_amount = int(round(total_km * cost_per_km))
+    extra_base_km_amount = int(round(total_km * extra_cost_per_km))
+    
 
-    total_amount = base_km_amount \
+    total_amount = base_km_amount + extra_base_km_amount \
         + int(driver_allowance) \
         + int(extra_driver_allowance) \
         + int(permit_charges) \
+        + int(extra_permit_charges) \
         + int(hill_charges) \
         + int(toll_charges)
 
@@ -62,14 +65,16 @@ def _sum_multisegment_distance_and_duration(index_map: Dict[str, str]) -> (float
     return round(total_km_sum), duration_text
 
 
-def calculate_multisegment_fare(pickup_drop_location: Dict[str, str], cost_per_km: int, driver_allowance: int, extra_driver_allowance: int, permit_charges: int, extra_permit_charges: int, hill_charges: int, toll_charges: int) -> Dict[str, Any]:
+def calculate_multisegment_fare(pickup_drop_location: Dict[str, str], cost_per_km: int, driver_allowance: int, extra_driver_allowance: int, permit_charges: int, extra_permit_charges: int, hill_charges: int, toll_charges: int, extra_cost_per_km:int) -> Dict[str, Any]:
     total_km, duration_text = _sum_multisegment_distance_and_duration(pickup_drop_location)
     base_km_amount = int(round(total_km * cost_per_km))
+    extra_base_km_amount = int(round(total_km * extra_cost_per_km))
 
-    total_amount = base_km_amount \
+    total_amount = base_km_amount + extra_base_km_amount\
         + int(driver_allowance) \
         + int(extra_driver_allowance) \
         + int(permit_charges) \
+        + int(extra_permit_charges) \
         + int(hill_charges) \
         + int(toll_charges)
 
@@ -133,7 +138,7 @@ def create_oneway_order(
         platform_fees_percent = 10,
         trip_status="PENDING",
         estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges,
-        vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges,
+        vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges + toll_charges,
         pick_near_city=pick_near_city,
     )
 
