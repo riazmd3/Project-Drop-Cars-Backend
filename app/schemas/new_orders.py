@@ -69,7 +69,7 @@ class RentalOrderRequest(BaseModel):
 class RentalFareBreakdown(BaseModel):
     total_hours: float
     vendor_amount: int
-    vehicle_owner_amount: int
+    estimate_price: int
 
 
 class HourlyQuoteResponse(BaseModel):

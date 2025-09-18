@@ -14,12 +14,12 @@ def calculate_hourly_fare(
     extra_additional_cost_per_hour: int,
 ) -> Dict[str, Any]:
     total_hours = float(package_hours)
-    vendor_amount = int(cost_per_pack)
-    vehicle_owner_amount = int(cost_per_pack + extra_cost_per_pack)
+    estimate_price = int(cost_per_pack)
+    vendor_amount = int(cost_per_pack + extra_cost_per_pack)
     return {
         "total_hours": total_hours,
         "vendor_amount": vendor_amount,
-        "vehicle_owner_amount": vehicle_owner_amount,
+        "estimate_price": estimate_price,
     }
 
 

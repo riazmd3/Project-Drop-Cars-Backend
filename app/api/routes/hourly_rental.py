@@ -63,11 +63,15 @@ async def hourly_confirm(
             pickup_notes=payload.pickup_notes or "",
         )
 
-        create_master_from_hourly(db, order, pick_near_city=payload.pick_near_city)
+        master_order = create_master_from_hourly(db, order, pick_near_city=payload.pick_near_city, trip_time = payload.package_hours,estimated_price=payload.cost_per_pack,vendor_price=payload.extra_cost_per_pack)
 
-        return {"order_id": order.id,
-                "order_status": "PENDING",
-                "picup_near_city": payload.pick_near_city
+        return {"order_id": master_order.id,
+                "order_status": master_order.trip_status,
+                "picup_near_city": master_order.pick_near_city,
+                "vendor_price" : master_order.vendor_price,
+                "estimated_price" : master_order.estimated_price,
+                "trip_type" : master_order.trip_type,
+                "trip_time" : master_order.trip_time
                 }
     except HTTPException:
         raise

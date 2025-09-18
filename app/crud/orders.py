@@ -33,7 +33,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
     return master
 
 
-def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str) -> Order:
+def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str, trip_time : int, estimated_price: int, vendor_price:int) -> Order:
     master = Order(
         source=OrderSourceEnum.HOURLY_RENTAL,
         source_order_id=hourly.id,
@@ -46,6 +46,10 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         customer_number=hourly.customer_number,
         trip_status="PENDING",
         pick_near_city=pick_near_city,
+        trip_time = trip_time,
+        estimated_price = estimated_price,
+        vendor_price = vendor_price+estimated_price,
+        platform_fees_percent = 10
     )
     db.add(master)
     db.commit()
