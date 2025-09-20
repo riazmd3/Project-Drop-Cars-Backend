@@ -9,7 +9,6 @@ indian_phone_pattern = r'^[6-9]\d{9}$'
 
 # --- Base Schema ---
 class VendorBase(BaseModel):
-    organization_id: Optional[str] = None
     full_name: Annotated[str, Field(min_length=3, max_length=100)]
     primary_number: Annotated[str, Field(
         pattern=indian_phone_pattern,
@@ -28,7 +27,6 @@ class VendorBase(BaseModel):
 
 # --- Form Schema for validation without image ---
 class VendorSignupForm(BaseModel):
-    organization_id: Optional[str] = None
     full_name: Annotated[str, Field(
         min_length=3, 
         max_length=100,
@@ -87,7 +85,6 @@ class VendorSignupForm(BaseModel):
         address: str = Form(..., description="Address (min 10 characters)"),
         aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
         gpay_number: str = Form(..., description="GPay number"),
-        organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
         return cls(
             full_name=full_name,
@@ -97,7 +94,6 @@ class VendorSignupForm(BaseModel):
             address=address,
             aadhar_number=aadhar_number,
             gpay_number=gpay_number,
-            organization_id=organization_id,
         )
 
 # --- Signin Schema ---
@@ -115,7 +111,6 @@ class VendorSignin(BaseModel):
 # --- Output Schema ---
 class VendorOut(BaseModel):
     id: UUID
-    organization_id: Optional[str]
     full_name: str
     primary_number: str
     secondary_number: Optional[str]
@@ -133,7 +128,6 @@ class VendorOut(BaseModel):
         json_schema_extra = {
             "example": {
                 "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
-                "organization_id": "org_123",
                 "full_name": "John Doe",
                 "primary_number": "9876543210",
                 "secondary_number": "9876543211",
@@ -161,7 +155,6 @@ class TokenResponse(BaseModel):
                 "token_type": "bearer",
                 "vendor": {
                     "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
-                    "organization_id": "org_123",
                     "full_name": "John Doe",
                     "primary_number": "9876543210",
                     "secondary_number": "9876543211",

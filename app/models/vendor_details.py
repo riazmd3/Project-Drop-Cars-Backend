@@ -10,7 +10,7 @@ class VendorDetails(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     vendor_id = Column(UUID(as_uuid=True), ForeignKey("vendor.id"), nullable=False)
-    organization_id = Column(String)
+    # organization_id = Column(String)
     full_name = Column(String, nullable=False)
     primary_number = Column(String, unique=True, nullable=False)
     secondary_number = Column(String, unique=True, nullable=True)

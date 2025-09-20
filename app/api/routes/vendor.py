@@ -17,7 +17,6 @@ async def vendor_signup(
     address: str = Form(..., description="Address (min 10 characters)"),
     aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
     gpay_number: str = Form(..., description="GPay number"),
-    organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     aadhar_image: Optional[UploadFile] = File(None, description="Aadhar front image"),
     db: Session = Depends(get_db)
 ):
@@ -42,8 +41,7 @@ async def vendor_signup(
             password=password,
             address=address,
             aadhar_number=aadhar_number,
-            gpay_number=gpay_number,
-            organization_id=organization_id
+            gpay_number=gpay_number
         )
         
         # Validate image file if provided
@@ -70,7 +68,6 @@ async def vendor_signup(
         # Prepare response
         vendor_response = VendorOut(
             id=vendor_details.id,
-            organization_id=vendor_details.organization_id,
             full_name=vendor_details.full_name,
             primary_number=vendor_details.primary_number,
             secondary_number=vendor_details.secondary_number,
@@ -142,7 +139,6 @@ async def vendor_signin(
         # Prepare response
         vendor_response = VendorOut(
             id=vendor_details.id,
-            organization_id=vendor_details.organization_id,
             full_name=vendor_details.full_name,
             primary_number=vendor_details.primary_number,
             secondary_number=vendor_details.secondary_number,
