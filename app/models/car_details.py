@@ -15,6 +15,9 @@ class CarTypeEnum(enum.Enum):
     SEDAN = "SEDAN"
     SUV = "SUV"
     INNOVA = "INNOVA"
+    NEW_SEDAN = "NEW_SEDAN"
+    HATCHBACK = "HATCHBACK"
+    INNOVA_CRYSTA = "INNOVA_CRYSTA"
 
 class CarDetails(Base):
     __tablename__ = "car_details"

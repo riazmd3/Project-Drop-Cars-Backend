@@ -11,10 +11,42 @@ from app.schemas.new_orders import (
 from app.crud.hourly_rental import calculate_hourly_fare, create_hourly_order
 from app.crud.orders import create_master_from_hourly
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
+from pathlib import Path
+import json
+from fastapi.responses import JSONResponse
 
 
 router = APIRouter()
 
+JSON_FILE_PATH = Path("app/utils/rental_hour.json")
+data_cache = {}
+
+
+# Load JSON data once on startup
+def load_data_once():
+    global data_cache
+    data_cache = load_json_file()
+    print("Data loaded on startup")
+
+def load_json_file():
+    if JSON_FILE_PATH.exists():
+        with open(JSON_FILE_PATH, "r") as f:
+            return json.load(f)
+    return {}
+
+data_cache = load_json_file()
+
+# GET /data — Serve cached data
+@router.get("/rental_hrs_data")
+def get_data():
+    return JSONResponse(content=data_cache)
+
+# POST /refresh — Reload data from JSON file
+@router.post("/refresh-rental-hrs-data")
+def refresh_data():
+    global data_cache
+    data_cache = load_json_file()
+    return {"message": "Data refreshed", "data": data_cache}
 
 @router.post("/hourly/quote", response_model=HourlyQuoteResponse)
 async def hourly_quote(payload: RentalOrderRequest):
