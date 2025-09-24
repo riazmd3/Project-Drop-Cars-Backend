@@ -9,6 +9,9 @@ class CarTypeEnum(str, Enum):
     SEDAN = "SEDAN"
     SUV = "SUV"
     INNOVA = "INNOVA"
+    NEW_SEDAN = "NEW_SEDAN"
+    HATCHBACK = "HATCHBACK"
+    INNOVA_CRYSTA = "INNOVA_CRYSTA"
 
 class CarDetailsForm(BaseModel):
     vehicle_owner_id: Optional[UUID] = Field(None, description="Vehicle owner ID (auto-set from token)")

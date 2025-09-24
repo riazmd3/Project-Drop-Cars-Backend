@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.schemas.vendor import VendorSignupForm, VendorSignin, TokenResponse, VendorOut
-from app.crud.vendor import create_vendor, authenticate_vendor, get_vendor_with_details
+from app.crud.vendor import create_vendor, authenticate_vendor, get_vendor_with_details, get_vendor_details_by_vendor_id
 from app.core.security import create_access_token
 from app.database.session import get_db
 from typing import Optional
+from app.schemas.vendor import VendorDetailsResponse
+from app.core.security import get_current_vendor
 
 router = APIRouter()
 
@@ -165,3 +167,26 @@ async def vendor_signin(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}"
         )
+
+@router.get("/vendor-details/me", response_model=VendorDetailsResponse)
+def get_my_vendor_details(
+    db: Session = Depends(get_db),
+    vendor_id: str = Depends(get_current_vendor),
+):
+    # Unpack both credentials and details from the DB
+    vendor_credentials, vendor_details = get_vendor_with_details(db, str(vendor_id.id))
+
+    return VendorDetailsResponse(
+        id=str(vendor_details.id),
+        address=vendor_details.adress,  # mapping from 'adress' in DB
+        account_status=vendor_credentials.account_status.value,
+        full_name=vendor_details.full_name,
+        primary_number=vendor_details.primary_number,
+        secondary_number=vendor_details.secondary_number,
+        gpay_number=vendor_details.gpay_number,
+        wallet_balance=vendor_details.wallet_balance,
+        bank_balance=vendor_details.bank_balance,
+        aadhar_number=vendor_details.aadhar_number,
+        aadhar_front_img=vendor_details.aadhar_front_img,
+        created_at=vendor_details.created_at,
+    )

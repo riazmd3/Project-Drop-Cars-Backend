@@ -168,3 +168,19 @@ class TokenResponse(BaseModel):
                 }
             }
         }
+class VendorDetailsResponse(BaseModel):
+    id: UUID
+    full_name: str
+    primary_number: str
+    secondary_number: str
+    gpay_number: str
+    wallet_balance: float
+    bank_balance: float
+    aadhar_number: str
+    aadhar_front_img: Optional[str]
+    address: str
+    account_status: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
