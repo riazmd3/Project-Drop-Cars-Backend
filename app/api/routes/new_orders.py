@@ -19,6 +19,8 @@ from app.crud.new_orders import calculate_oneway_fare, calculate_multisegment_fa
 from app.crud.order_assignments import get_vendor_orders_with_assignments
 from app.schemas.order_assignments import OrderAssignmentWithOrderDetails
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
+from app.schemas.baseorder import BaseOrderSchema
+from app.crud.orders import get_vendor_orders
 
 
 router = APIRouter()
@@ -305,12 +307,12 @@ async def multicity_confirm(
 def get_pending_all_orders(db: Session = Depends(get_db)):
     return get_pending_all_city_orders(db)
 
-@router.get("/vendor", response_model=List[NewOrderResponse])
-def get_vendor_orders(
+@router.get("/vendor", response_model=List[BaseOrderSchema])
+def get_vendor_orderss(
     db: Session = Depends(get_db),
     current_vendor=Depends(get_current_vendor)
 ):
-    return get_orders_by_vendor_id(db, current_vendor.id)
+    return get_vendor_orders(db, current_vendor.id)
 
 
 @router.get("/vendor/with-assignments", response_model=List[OrderAssignmentWithOrderDetails])

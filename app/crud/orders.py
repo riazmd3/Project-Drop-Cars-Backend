@@ -6,6 +6,7 @@ from app.models.end_records import EndRecord
 from app.utils.gcs import upload_image_to_gcs
 from app.models.new_orders import NewOrder
 from app.models.hourly_rental import HourlyRental
+from sqlalchemy.sql import or_, and_
 
 
 def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
@@ -61,8 +62,94 @@ def get_all_orders(db: Session) -> List[Order]:
     return db.query(Order).order_by(Order.created_at.desc()).all()
 
 
-def get_vendor_orders(db: Session, vendor_id: str) -> List[Order]:
-    return db.query(Order).filter(Order.vendor_id == vendor_id).order_by(Order.created_at.desc()).all()
+# def get_vendor_orders(db: Session, vendor_id: str) -> List[Order]:
+#     print("Vendor ID in CRUD:", vendor_id)
+#     return db.query(Order).filter(Order.vendor_id == vendor_id).order_by(Order.created_at.desc()).all()
+
+
+def map_to_combined_schema(order, new_order=None, hourly_rental=None):
+    # BaseOrderSchema fields
+    base_data = {
+        "id": order.id,
+        "source": order.source.value,  # enum as string
+        "source_order_id": order.source_order_id,
+        "vendor_id": order.vendor_id,  # UUID, ensure correct type
+        "trip_type": order.trip_type.value,
+        "car_type": order.car_type.value,
+        "pickup_drop_location": order.pickup_drop_location,
+        "start_date_time": order.start_date_time,
+        "customer_name": order.customer_name,
+        "customer_number": order.customer_number,
+        "trip_status": order.trip_status,
+        "pick_near_city": order.pick_near_city,
+        "trip_distance": order.trip_distance,
+        "trip_time": order.trip_time,
+        "estimated_price": order.estimated_price,
+        "vendor_price": order.vendor_price,
+        "platform_fees_percent": order.platform_fees_percent,
+        "closed_vendor_price": order.closed_vendor_price,
+        "closed_driver_price": order.closed_driver_price,
+        "commision_amount": order.commision_amount,
+        "created_at": order.created_at,
+    }
+
+    # source_data based on source type
+    if order.source == OrderSourceEnum.NEW_ORDERS and new_order:
+        source_data = {
+            "order_id": new_order.order_id,
+            "cost_per_km": new_order.cost_per_km,
+            "extra_cost_per_km": new_order.extra_cost_per_km,
+            "driver_allowance": new_order.driver_allowance,
+            "extra_driver_allowance": new_order.extra_driver_allowance,
+            "permit_charges": new_order.permit_charges,
+            "extra_permit_charges": new_order.extra_permit_charges,
+            "hill_charges": new_order.hill_charges,
+            "toll_charges": new_order.toll_charges,
+            "pickup_notes": new_order.pickup_notes,
+        }
+    elif order.source == OrderSourceEnum.HOURLY_RENTAL and hourly_rental:
+        source_data = {
+            "id": hourly_rental.id,
+            "package_hours": hourly_rental.package_hours,
+            "cost_per_pack": hourly_rental.cost_per_pack,
+            "extra_cost_per_pack": hourly_rental.extra_cost_per_pack,
+            "additional_cost_per_hour": hourly_rental.additional_cost_per_hour,
+            "extra_additional_cost_per_hour": hourly_rental.extra_additional_cost_per_hour,
+            "pickup_notes": hourly_rental.pickup_notes,
+        }
+    else:
+        source_data = None
+
+    return {**base_data, "source_data": source_data}
+
+
+def get_vendor_orders(db: Session, vendor_id: str):
+    query = (
+        db.query(Order, NewOrder, HourlyRental)
+        .outerjoin(
+            NewOrder,
+            (Order.source == OrderSourceEnum.NEW_ORDERS) &
+            (Order.source_order_id == NewOrder.order_id)
+        )
+        .outerjoin(
+            HourlyRental,
+            (Order.source == OrderSourceEnum.HOURLY_RENTAL) &
+            (Order.source_order_id == HourlyRental.id)
+        )
+        .filter(Order.vendor_id == vendor_id)
+        .order_by(Order.created_at.desc())
+    )
+
+    results = query.all()
+
+    # map each row to CombinedOrderSchema dict
+    combined_orders = [
+        map_to_combined_schema(order, new_order, hourly_rental)
+        for order, new_order, hourly_rental in results
+    ]
+
+    return combined_orders
+
 
 
 def close_order(
