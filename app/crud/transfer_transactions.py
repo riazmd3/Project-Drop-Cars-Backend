@@ -73,6 +73,23 @@ def get_vendor_transfer_history(db: Session, vendor_id: str, skip: int = 0, limi
     
     return transactions, total_count
 
+def get_vendor_transfer_history_pending(db: Session, vendor_id: str):
+    """
+    Get transfer history for a specific vendor
+    """
+    transactions = db.query(TransferTransactions).filter(
+        TransferTransactions.vendor_id == vendor_id
+    ).filter(
+        TransferTransactions.status == TransferStatusEnum.PENDING
+    ).order_by(TransferTransactions.created_at.desc()).all()
+    
+    total_count = db.query(TransferTransactions).filter(
+        TransferTransactions.vendor_id == vendor_id
+    ).filter(TransferTransactions.status == TransferStatusEnum.PENDING
+    ).count()
+    
+    return transactions, total_count
+
 def get_all_pending_transfers(db: Session, skip: int = 0, limit: int = 100):
     """
     Get all pending transfer requests for admin review
