@@ -150,6 +150,33 @@ def get_vendor_orders(db: Session, vendor_id: str):
 
     return combined_orders
 
+def get_vendor_pending_orders(db: Session, vendor_id: str):
+    query = (
+        db.query(Order, NewOrder, HourlyRental)
+        .outerjoin(
+            NewOrder,
+            (Order.source == OrderSourceEnum.NEW_ORDERS) &
+            (Order.source_order_id == NewOrder.order_id)
+        )
+        .outerjoin(
+            HourlyRental,
+            (Order.source == OrderSourceEnum.HOURLY_RENTAL) &
+            (Order.source_order_id == HourlyRental.id)
+        )
+        .filter(Order.vendor_id == vendor_id)
+        .filter(Order.trip_status == 'PENDING')
+        .order_by(Order.created_at.desc())
+    )
+
+    results = query.all()
+
+    # map each row to CombinedOrderSchema dict
+    combined_orders = [
+        map_to_combined_schema(order, new_order, hourly_rental)
+        for order, new_order, hourly_rental in results
+    ]
+
+    return combined_orders
 
 
 def close_order(

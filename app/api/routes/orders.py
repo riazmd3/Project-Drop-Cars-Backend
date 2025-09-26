@@ -5,7 +5,7 @@ from typing import List
 from app.database.session import get_db
 from app.core.security import get_current_vendor, get_current_driver
 from app.schemas.new_orders import UnifiedOrder, CloseOrderResponse
-from app.crud.orders import get_all_orders, get_vendor_orders, close_order
+from app.crud.orders import get_all_orders, get_vendor_orders, close_order, get_vendor_pending_orders
 
 
 router = APIRouter()
@@ -22,6 +22,13 @@ def list_vendor_orders(
     current_vendor=Depends(get_current_vendor),
 ):
     return get_vendor_orders(db, current_vendor.id)
+
+@router.get("/pending/vendor", response_model=List[UnifiedOrder])
+def list_vendor_orders(
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor),
+):
+    return get_vendor_pending_orders(db, current_vendor.id)
 
 
 @router.post("/{order_id}/close", response_model=CloseOrderResponse)
