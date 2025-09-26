@@ -23,6 +23,7 @@ def list_vendor_orders(
     db: Session = Depends(get_db),
     current_vendor=Depends(get_current_vendor),
 ):
+    # print(current_vendor.id)
     return get_vendor_orders(db, current_vendor.id)
 
 @router.get("/pending/vendor", response_model=List[UnifiedOrder])
