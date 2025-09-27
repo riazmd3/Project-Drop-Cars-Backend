@@ -303,7 +303,7 @@ def get_vehicle_owner_orders_by_assignment_status(
     assignment_status: str
 ) -> List[VehicleOwnerOrderDetailResponse]:
     """Get orders for vehicle owner filtered by assignment status"""
-    from sqlalchemy import and_
+    from sqlalchemy import and_, or_
     
     # Query to join orders with order_assignments and filter by vehicle_owner_id and assignment_status
     query = db.query(Order, OrderAssignment).join(
@@ -311,7 +311,10 @@ def get_vehicle_owner_orders_by_assignment_status(
     ).filter(
         and_(
             OrderAssignment.vehicle_owner_id == vehicle_owner_id,
-            OrderAssignment.assignment_status == assignment_status
+            or_(
+                OrderAssignment.assignment_status == assignment_status,
+                OrderAssignment.assignment_status == "ASSIGNED"
+            )
         )
     ).order_by(Order.created_at.desc())
     
@@ -408,7 +411,8 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
     ).filter(
         and_(
             OrderAssignment.vehicle_owner_id == vehicle_owner_id,
-            OrderAssignment.assignment_status != "PENDING"
+            OrderAssignment.assignment_status != "PENDING",
+            OrderAssignment.assignment_status != "ASSIGNED"
         )
     ).order_by(Order.created_at.desc())
     
