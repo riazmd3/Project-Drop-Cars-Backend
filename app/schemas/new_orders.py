@@ -104,6 +104,7 @@ class UnifiedOrder(BaseModel):
     vendor_price: Optional[int] = None
     platform_fees_percent: Optional[int] = None
     created_at: datetime
+    # cost_per_km : Optional[int] = None
 
     class Config:
         from_attributes = True

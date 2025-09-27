@@ -91,6 +91,7 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         "closed_driver_price": order.closed_driver_price,
         "commision_amount": order.commision_amount,
         "created_at": order.created_at,
+        "cost_per_km" : new_order.cost_per_km if new_order else None,
     }
 
     # source_data based on source type
@@ -106,6 +107,8 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
             "hill_charges": new_order.hill_charges,
             "toll_charges": new_order.toll_charges,
             "pickup_notes": new_order.pickup_notes,
+            # "cost_per_km" : order.cost_per_km if hasattr(order, 'cost_per_km') else None,
+            
         }
     elif order.source == OrderSourceEnum.HOURLY_RENTAL and hourly_rental:
         source_data = {
@@ -139,6 +142,7 @@ def get_vendor_orders(db: Session, vendor_id: str):
         .filter(Order.vendor_id == vendor_id)
         .order_by(Order.created_at.desc())
     )
+    # print("Constructed Query:")
 
     results = query.all()
 
