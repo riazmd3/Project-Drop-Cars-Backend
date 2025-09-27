@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.session import get_db
-from app.core.security import get_current_vendor, get_current_driver, get_current_admin
+from app.core.security import get_current_vendor, get_current_driver, get_current_admin, get_current_vehicleOwner_id
 from app.schemas.new_orders import UnifiedOrder, CloseOrderResponse
-from app.schemas.order_details import AdminOrderDetailResponse, VendorOrderDetailResponse
+from app.schemas.order_details import AdminOrderDetailResponse, VendorOrderDetailResponse, VehicleOwnerOrderDetailResponse
 from app.crud.orders import get_all_orders, get_vendor_orders, close_order, get_vendor_pending_orders
-from app.crud.order_details import get_admin_order_details, get_vendor_order_details
+from app.crud.order_details import get_admin_order_details, get_vendor_order_details, get_vehicle_owner_pending_orders, get_vehicle_owner_non_pending_orders
 
 
 router = APIRouter()
@@ -112,5 +112,60 @@ async def close_order_endpoint(
         return CloseOrderResponse(order_id=order.id, end_record_id=end_record.id, img_url=img_url)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/vehicle-owner/pending", response_model=List[VehicleOwnerOrderDetailResponse])
+async def get_vehicle_owner_pending_orders_endpoint(
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    """
+    Get all pending orders for the authenticated vehicle owner.
+    
+    This endpoint returns orders where the assignment_status is 'PENDING' for the vehicle owner.
+    The vehicle owner ID is extracted from the JWT token.
+    
+    Returns:
+    - List of orders with assignment_status = 'PENDING'
+    - Order details including customer info, trip details, vendor info
+    - Assignment information specific to this vehicle owner
+    - Driver and car information if assigned
+    """
+    try:
+        orders = get_vehicle_owner_pending_orders(db, vehicle_owner_id)
+        return orders
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving pending orders: {str(e)}"
+        )
+
+
+@router.get("/vehicle-owner/non-pending", response_model=List[VehicleOwnerOrderDetailResponse])
+async def get_vehicle_owner_non_pending_orders_endpoint(
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    """
+    Get all non-pending orders for the authenticated vehicle owner.
+    
+    This endpoint returns orders where the assignment_status is NOT 'PENDING' for the vehicle owner.
+    This includes orders with status: ASSIGNED, CANCELLED, COMPLETED, DRIVING.
+    The vehicle owner ID is extracted from the JWT token.
+    
+    Returns:
+    - List of orders with assignment_status != 'PENDING'
+    - Order details including customer info, trip details, vendor info
+    - Assignment information specific to this vehicle owner
+    - Driver and car information if assigned
+    """
+    try:
+        orders = get_vehicle_owner_non_pending_orders(db, vehicle_owner_id)
+        return orders
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving non-pending orders: {str(e)}"
+        )
 
 

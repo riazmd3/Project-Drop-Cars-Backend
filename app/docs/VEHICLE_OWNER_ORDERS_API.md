@@ -1,296 +1,313 @@
 # Vehicle Owner Orders API Documentation
 
-## Overview
-This document describes the APIs for vehicle owners to manage order assignments, view pending orders, and get available resources (drivers and cars).
+This document describes the API endpoints for vehicle owners to retrieve order details based on assignment status.
 
-## Base URLs
-- Pending Orders: `/api/orders/vehicle_owner/pending`
-- Order Assignments: `/api/assignments/`
-- Available Resources: `/api/assignments/available-drivers` and `/api/assignments/available-cars`
+## Overview
+
+Vehicle owners can access two main endpoints to view their assigned orders:
+1. **Pending Orders**: Orders with assignment_status = 'PENDING'
+2. **Non-Pending Orders**: Orders with assignment_status != 'PENDING' (ASSIGNED, CANCELLED, COMPLETED, DRIVING)
+
+Both endpoints require JWT authentication and automatically filter orders based on the vehicle owner's ID extracted from the token.
 
 ## Authentication
-All endpoints require Bearer token authentication with vehicle owner credentials. The vehicle_owner_id is automatically extracted from the JWT token.
 
----
+All endpoints require Bearer token authentication. The vehicle owner ID is automatically extracted from the JWT token.
 
-## 1. Get Pending Orders
-
-### Endpoint
+**Headers:**
 ```
-GET /api/orders/vehicle_owner/pending
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
 ```
 
-### Description
-Retrieves pending orders for the authenticated vehicle owner based on business rules:
-1. Orders that are not in the assignment table (never assigned)
-2. Orders that have been cancelled in the assignment table (available for reassignment)
-3. Orders with trip_status != "CANCELLED" (exclude cancelled orders)
+## API Endpoints
 
-### Authentication
-- Requires Bearer token
-- vehicle_owner_id is automatically extracted from the JWT token
+### 1. Get Pending Orders
 
-### Response
+**Endpoint:** `GET /orders/vehicle-owner/pending`
+
+**Description:** Retrieves all orders assigned to the authenticated vehicle owner where the assignment status is 'PENDING'.
+
+**Authentication:** Required (Vehicle Owner JWT Token)
+
+**Response Model:** `List[VehicleOwnerOrderDetailResponse]`
+
+**Example Request:**
+```bash
+curl -X GET "http://localhost:8000/orders/vehicle-owner/pending" \
+  -H "Authorization: Bearer <vehicle_owner_jwt_token>" \
+  -H "Content-Type: application/json"
+```
+
+**Example Response:**
 ```json
 [
   {
-    "id": null, // null for unassigned orders, assignment_id for cancelled orders
-    "order_id": 123,
-    "vehicle_owner_id": "550e8400-e29b-41d4-a716-446655440000",
-    "driver_id": null,
-    "car_id": null,
+    "id": 123,
+    "source": "NEW_ORDERS",
+    "source_order_id": 456,
+    "vendor_id": "550e8400-e29b-41d4-a716-446655440000",
+    "trip_type": "ONE_WAY",
+    "car_type": "SEDAN",
+    "pickup_drop_location": {
+      "pickup": {
+        "address": "Airport Terminal 1",
+        "coordinates": {"lat": 12.9716, "lng": 77.5946}
+      },
+      "drop": {
+        "address": "City Center Mall",
+        "coordinates": {"lat": 12.9716, "lng": 77.5946}
+      }
+    },
+    "start_date_time": "2024-01-15T10:30:00Z",
+    "customer_name": "John Doe",
+    "customer_number": "+919876543210",
+    "trip_status": "CONFIRMED",
+    "pick_near_city": "Bangalore",
+    "trip_distance": 25,
+    "trip_time": "45 minutes",
+    "estimated_price": 500,
+    "vendor_price": 400,
+    "platform_fees_percent": 20,
+    "closed_vendor_price": null,
+    "closed_driver_price": null,
+    "commision_amount": null,
+    "created_at": "2024-01-15T09:00:00Z",
+    "assignment_id": 789,
     "assignment_status": "PENDING",
     "assigned_at": null,
     "expires_at": null,
     "cancelled_at": null,
     "completed_at": null,
-    "created_at": "2024-01-15T10:30:00Z",
+    "assignment_created_at": "2024-01-15T09:15:00Z",
+    "vendor_name": "ABC Travels",
+    "vendor_phone": "+919876543211",
+    "assigned_driver_name": null,
+    "assigned_driver_phone": null,
+    "assigned_car_name": null,
+    "assigned_car_number": null
+  }
+]
+```
+
+### 2. Get Non-Pending Orders
+
+**Endpoint:** `GET /orders/vehicle-owner/non-pending`
+
+**Description:** Retrieves all orders assigned to the authenticated vehicle owner where the assignment status is NOT 'PENDING'. This includes orders with status: ASSIGNED, CANCELLED, COMPLETED, DRIVING.
+
+**Authentication:** Required (Vehicle Owner JWT Token)
+
+**Response Model:** `List[VehicleOwnerOrderDetailResponse]`
+
+**Example Request:**
+```bash
+curl -X GET "http://localhost:8000/orders/vehicle-owner/non-pending" \
+  -H "Authorization: Bearer <vehicle_owner_jwt_token>" \
+  -H "Content-Type: application/json"
+```
+
+**Example Response:**
+```json
+[
+  {
+    "id": 124,
+    "source": "HOURLY_RENTAL",
+    "source_order_id": 457,
     "vendor_id": "550e8400-e29b-41d4-a716-446655440001",
-    "trip_type": "Oneway",
-    "car_type": "Sedan",
+    "trip_type": "ROUND_TRIP",
+    "car_type": "SUV",
     "pickup_drop_location": {
-      "pickup": "Location A",
-      "drop": "Location B"
+      "pickup": {
+        "address": "Hotel Grand Plaza",
+        "coordinates": {"lat": 12.9716, "lng": 77.5946}
+      },
+      "drop": {
+        "address": "Hotel Grand Plaza",
+        "coordinates": {"lat": 12.9716, "lng": 77.5946}
+      }
     },
-    "start_date_time": "2024-01-16T09:00:00Z",
-    "customer_name": "John Doe",
-    "customer_number": "+1234567890",
-    "cost_per_km": 15,
-    "extra_cost_per_km": 20,
-    "driver_allowance": 500,
-    "extra_driver_allowance": 750,
-    "permit_charges": 100,
-    "extra_permit_charges": 150,
-    "hill_charges": 200,
-    "toll_charges": 300,
-    "pickup_notes": "Near main gate",
-    "trip_status": "pending",
-    "pick_near_city": "Mumbai",
-    "trip_distance": 120,
-    "trip_time": "3 hours",
-    "platform_fees_percent": 10,
-    "estimated_price": 2000,
-    "vendor_price": 1800,
-    "order_created_at": "2024-01-15T10:30:00Z"
+    "start_date_time": "2024-01-14T14:00:00Z",
+    "customer_name": "Jane Smith",
+    "customer_number": "+919876543212",
+    "trip_status": "IN_PROGRESS",
+    "pick_near_city": "Bangalore",
+    "trip_distance": 60,
+    "trip_time": "2 hours",
+    "estimated_price": 1200,
+    "vendor_price": 1000,
+    "platform_fees_percent": 20,
+    "closed_vendor_price": null,
+    "closed_driver_price": null,
+    "commision_amount": null,
+    "created_at": "2024-01-14T13:00:00Z",
+    "assignment_id": 790,
+    "assignment_status": "ASSIGNED",
+    "assigned_at": "2024-01-14T13:30:00Z",
+    "expires_at": "2024-01-14T15:30:00Z",
+    "cancelled_at": null,
+    "completed_at": null,
+    "assignment_created_at": "2024-01-14T13:15:00Z",
+    "vendor_name": "XYZ Tours",
+    "vendor_phone": "+919876543213",
+    "assigned_driver_name": "Raj Kumar",
+    "assigned_driver_phone": "+919876543214",
+    "assigned_car_name": "Toyota Innova",
+    "assigned_car_number": "KA01AB1234"
   }
 ]
 ```
 
-### Error Responses
-- `401 Unauthorized`: Invalid or missing authentication token
+## Response Schema
 
----
+### VehicleOwnerOrderDetailResponse
 
-## 2. Accept Order (Updated with Duplicate Prevention)
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | Order ID |
+| `source` | string | Source of the order (NEW_ORDERS, HOURLY_RENTAL) |
+| `source_order_id` | integer | Original order ID from source system |
+| `vendor_id` | UUID | Vendor ID who created the order |
+| `trip_type` | string | Type of trip (ONE_WAY, ROUND_TRIP, MULTI_CITY) |
+| `car_type` | string | Required car type (SEDAN, SUV, HATCHBACK, etc.) |
+| `pickup_drop_location` | object | Pickup and drop location details with coordinates |
+| `start_date_time` | datetime | Scheduled start time of the trip |
+| `customer_name` | string | Customer's name |
+| `customer_number` | string | Customer's contact number |
+| `trip_status` | string | Current status of the trip |
+| `pick_near_city` | string | City where pickup is located |
+| `trip_distance` | integer | Estimated distance in kilometers |
+| `trip_time` | string | Estimated trip duration |
+| `estimated_price` | integer | Estimated price for the trip |
+| `vendor_price` | integer | Price offered by vendor |
+| `platform_fees_percent` | integer | Platform commission percentage |
+| `closed_vendor_price` | integer | Final vendor price (set when trip is completed) |
+| `closed_driver_price` | integer | Final driver price (set when trip is completed) |
+| `commision_amount` | integer | Commission amount (set when trip is completed) |
+| `created_at` | datetime | Order creation timestamp |
+| `assignment_id` | integer | Assignment ID for this vehicle owner |
+| `assignment_status` | string | Assignment status (PENDING, ASSIGNED, CANCELLED, COMPLETED, DRIVING) |
+| `assigned_at` | datetime | When the assignment was confirmed |
+| `expires_at` | datetime | When the assignment expires |
+| `cancelled_at` | datetime | When the assignment was cancelled |
+| `completed_at` | datetime | When the assignment was completed |
+| `assignment_created_at` | datetime | Assignment creation timestamp |
+| `vendor_name` | string | Vendor's business name |
+| `vendor_phone` | string | Vendor's primary contact number |
+| `assigned_driver_name` | string | Name of assigned driver (if any) |
+| `assigned_driver_phone` | string | Phone number of assigned driver (if any) |
+| `assigned_car_name` | string | Name/model of assigned car (if any) |
+| `assigned_car_number` | string | Registration number of assigned car (if any) |
 
-### Endpoint
-```
-POST /api/assignments/acceptorder
-```
+## Assignment Status Values
 
-### Description
-Accepts an order and creates an assignment. Updated with duplicate prevention logic to prevent creating multiple active assignments for the same order.
+| Status | Description |
+|--------|-------------|
+| `PENDING` | Order assigned to vehicle owner but not yet confirmed |
+| `ASSIGNED` | Order confirmed and driver/car assigned |
+| `CANCELLED` | Assignment was cancelled |
+| `COMPLETED` | Trip has been completed |
+| `DRIVING` | Trip is currently in progress |
 
-### Request Body
+## Error Responses
+
+### 401 Unauthorized
 ```json
 {
-  "order_id": 123
+  "detail": "Could not validate credentials"
 }
 ```
 
-### Business Rules
-- Cannot create a new assignment if the order already has an active assignment (status != CANCELLED)
-- Can create a new assignment if:
-  - Order has never been assigned
-  - Order's previous assignment was cancelled
-
-### Response
+### 500 Internal Server Error
 ```json
 {
-  "id": 456,
-  "order_id": 123,
-  "vehicle_owner_id": "550e8400-e29b-41d4-a716-446655440000",
-  "driver_id": null,
-  "car_id": null,
-  "assignment_status": "PENDING",
-  "assigned_at": null,
-  "expires_at": "2024-01-15T11:30:00Z",
-  "cancelled_at": null,
-  "completed_at": null,
-  "created_at": "2024-01-15T10:30:00Z"
+  "detail": "Error retrieving pending orders: <error_message>"
 }
 ```
-
-### Error Responses
-- `400 Bad Request`: Order already has an active assignment
-- `401 Unauthorized`: Invalid authentication
-
----
-
-## 3. Get Available Drivers
-
-### Endpoint
-```
-GET /api/assignments/available-drivers
-```
-
-### Description
-Retrieves all drivers with "ONLINE" status for the authenticated vehicle owner.
-
-### Authentication
-- Requires Bearer token
-- vehicle_owner_id is automatically extracted from the JWT token
-
-### Response
-```json
-[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440002",
-    "vehicle_owner_id": "550e8400-e29b-41d4-a716-446655440000",
-    "organization_id": "org_123",
-    "full_name": "Driver Name",
-    "primary_number": "+1234567890",
-    "secondary_number": "+1234567891",
-    "licence_number": "DL123456789",
-    "licence_front_img": "https://storage.googleapis.com/bucket/license_front.jpg",
-    "address": "Driver Address",
-    "driver_status": "ONLINE",
-    "created_at": "2024-01-15T10:30:00Z"
-  }
-]
-```
-
-### Error Responses
-- `401 Unauthorized`: Invalid authentication
-
----
-
-## 4. Get Available Cars
-
-### Endpoint
-```
-GET /api/assignments/available-cars
-```
-
-### Description
-Retrieves all cars with "ONLINE" status for the authenticated vehicle owner.
-
-### Authentication
-- Requires Bearer token
-- vehicle_owner_id is automatically extracted from the JWT token
-
-### Response
-```json
-[
-  {
-    "id": "550e8400-e29b-41d4-a716-446655440003",
-    "vehicle_owner_id": "550e8400-e29b-41d4-a716-446655440000",
-    "organization_id": "org_123",
-    "car_name": "Toyota Camry",
-    "car_type": "SEDAN",
-    "car_number": "MH01AB1234",
-    "rc_front_img_url": "https://storage.googleapis.com/bucket/rc_front.jpg",
-    "rc_back_img_url": "https://storage.googleapis.com/bucket/rc_back.jpg",
-    "insurance_img_url": "https://storage.googleapis.com/bucket/insurance.jpg",
-    "fc_img_url": "https://storage.googleapis.com/bucket/fc.jpg",
-    "car_img_url": "https://storage.googleapis.com/bucket/car.jpg",
-    "car_status": "ONLINE",
-    "created_at": "2024-01-15T10:30:00Z"
-  }
-]
-```
-
-### Error Responses
-- `401 Unauthorized`: Invalid authentication
-
----
-
-## Status Enums
-
-### Assignment Status
-- `PENDING`: Assignment created but not yet confirmed
-- `ASSIGNED`: Assignment confirmed with driver/car
-- `CANCELLED`: Assignment cancelled
-- `COMPLETED`: Assignment completed
-- `DRIVING`: Currently in progress
-
-### Driver Status
-- `ONLINE`: Available for assignments
-- `DRIVING`: Currently busy with an assignment
-- `BLOCKED`: Not available for assignments
-
-### Car Status
-- `ONLINE`: Available for assignments
-- `DRIVING`: Currently busy with an assignment
-- `BLOCKED`: Not available for assignments
-
----
-
-## Business Logic Summary
-
-### Pending Orders Logic
-1. **Rule 1**: Orders not in assignment table are shown as pending
-2. **Rule 2**: Orders with cancelled assignments are shown as pending (available for reassignment)
-3. **Rule 3**: Orders with trip_status "CANCELLED" are excluded from pending orders
-4. Orders with active assignments (PENDING, ASSIGNED, COMPLETED, DRIVING) are NOT shown as pending
-
-### Duplicate Prevention Logic
-1. Before creating a new assignment, check if order already has an active assignment
-2. Active assignments are those with status != CANCELLED
-3. If active assignment exists, throw error
-4. If no active assignment or only cancelled assignments exist, allow new assignment creation
-
-### Resource Availability
-1. **Available Drivers**: Only drivers with status = "ONLINE"
-2. **Available Cars**: Only cars with status = "ONLINE"
-3. Resources with "DRIVING" or "BLOCKED" status are not returned
-
-### Authentication & Authorization
-1. All endpoints use Bearer token authentication
-2. vehicle_owner_id is automatically extracted from the JWT token
-3. No need to pass vehicle_owner_id in the request path
-4. Users can only access their own data
-
----
 
 ## Usage Examples
 
-### Get Pending Orders
-```bash
-curl -X GET \
-  "https://api.example.com/api/orders/vehicle_owner/pending" \
-  -H "Authorization: Bearer YOUR_TOKEN"
+### JavaScript/Fetch API
+```javascript
+// Get pending orders
+const getPendingOrders = async (token) => {
+  const response = await fetch('/orders/vehicle-owner/pending', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (response.ok) {
+    const orders = await response.json();
+    console.log('Pending orders:', orders);
+    return orders;
+  } else {
+    throw new Error('Failed to fetch pending orders');
+  }
+};
+
+// Get non-pending orders
+const getNonPendingOrders = async (token) => {
+  const response = await fetch('/orders/vehicle-owner/non-pending', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (response.ok) {
+    const orders = await response.json();
+    console.log('Non-pending orders:', orders);
+    return orders;
+  } else {
+    throw new Error('Failed to fetch non-pending orders');
+  }
+};
 ```
 
-### Accept Order
-```bash
-curl -X POST \
-  "https://api.example.com/api/assignments/acceptorder" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"order_id": 123}'
+### Python Requests
+```python
+import requests
+
+def get_vehicle_owner_orders(token, endpoint):
+    url = f"http://localhost:8000/orders/vehicle-owner/{endpoint}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        response.raise_for_status()
+
+# Usage
+pending_orders = get_vehicle_owner_orders(token, "pending")
+non_pending_orders = get_vehicle_owner_orders(token, "non-pending")
 ```
 
-### Get Available Drivers
-```bash
-curl -X GET \
-  "https://api.example.com/api/assignments/available-drivers" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+## Notes
 
-### Get Available Cars
-```bash
-curl -X GET \
-  "https://api.example.com/api/assignments/available-cars" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
+1. **Authentication**: Both endpoints require a valid JWT token for vehicle owners. The vehicle owner ID is automatically extracted from the token.
 
----
+2. **Filtering**: Orders are automatically filtered based on the authenticated vehicle owner's ID and the specified assignment status.
 
-## Security Notes
+3. **Ordering**: Results are ordered by order creation time (newest first).
 
-- All endpoints require valid JWT Bearer token
-- vehicle_owner_id is automatically extracted from the token's subject claim
-- No manual vehicle_owner_id parameter required
-- Users can only access their own data
-- Token expiration and validation are handled automatically
+4. **Data Privacy**: Sensitive information like addresses, IDs, and personal details are not included in the response for security reasons.
+
+5. **Real-time Updates**: These endpoints provide current data. For real-time updates, consider implementing WebSocket connections or polling mechanisms.
+
+6. **Pagination**: Currently, all results are returned in a single response. For large datasets, consider implementing pagination.
+
+## Related Endpoints
+
+- `GET /orders/admin/{order_id}` - Get detailed order information for admins
+- `GET /orders/vendor/{order_id}` - Get limited order information for vendors
+- `GET /orders/vendor` - Get all orders for authenticated vendor
+- `GET /orders/pending/vendor` - Get pending orders for authenticated vendor

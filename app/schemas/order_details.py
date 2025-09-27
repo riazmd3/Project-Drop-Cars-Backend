@@ -181,3 +181,51 @@ class VendorOrderDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class VehicleOwnerOrderDetailResponse(BaseModel):
+    """Order details response for vehicle owner - includes order and assignment information"""
+    # Order basic information
+    id: int
+    source: str
+    source_order_id: int
+    vendor_id: UUID
+    trip_type: str
+    car_type: str
+    pickup_drop_location: Dict[str, Any]
+    start_date_time: datetime
+    customer_name: str
+    customer_number: str
+    trip_status: Optional[str] = None
+    pick_near_city: Optional[str] = None
+    trip_distance: Optional[int] = None
+    trip_time: Optional[str] = None
+    estimated_price: Optional[int] = None
+    vendor_price: Optional[int] = None
+    platform_fees_percent: Optional[int] = None
+    closed_vendor_price: Optional[int] = None
+    closed_driver_price: Optional[int] = None
+    commision_amount: Optional[int] = None
+    created_at: datetime
+
+    # Assignment information for this vehicle owner
+    assignment_id: int
+    assignment_status: AssignmentStatusEnum
+    assigned_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    assignment_created_at: datetime
+
+    # Basic vendor info (no sensitive data)
+    vendor_name: Optional[str] = None
+    vendor_phone: Optional[str] = None
+
+    # Driver and car info if assigned
+    assigned_driver_name: Optional[str] = None
+    assigned_driver_phone: Optional[str] = None
+    assigned_car_name: Optional[str] = None
+    assigned_car_number: Optional[str] = None
+
+    class Config:
+        from_attributes = True

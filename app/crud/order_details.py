@@ -12,6 +12,7 @@ from app.models.vehicle_owner_details import VehicleOwnerDetails
 from app.schemas.order_details import (
     AdminOrderDetailResponse, 
     VendorOrderDetailResponse,
+    VehicleOwnerOrderDetailResponse,
     VendorBasicInfo,
     DriverBasicInfo,
     CarBasicInfo,
@@ -294,3 +295,196 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         assigned_car_number=assigned_car_number,
         vehicle_owner_name=vehicle_owner_name
     )
+
+
+def get_vehicle_owner_orders_by_assignment_status(
+    db: Session, 
+    vehicle_owner_id: str, 
+    assignment_status: str
+) -> List[VehicleOwnerOrderDetailResponse]:
+    """Get orders for vehicle owner filtered by assignment status"""
+    from sqlalchemy import and_
+    
+    # Query to join orders with order_assignments and filter by vehicle_owner_id and assignment_status
+    query = db.query(Order, OrderAssignment).join(
+        OrderAssignment, Order.id == OrderAssignment.order_id
+    ).filter(
+        and_(
+            OrderAssignment.vehicle_owner_id == vehicle_owner_id,
+            OrderAssignment.assignment_status == assignment_status
+        )
+    ).order_by(Order.created_at.desc())
+    
+    results = []
+    
+    for order, assignment in query.all():
+        # Get basic vendor info
+        vendor_name = None
+        vendor_phone = None
+        vendor_details = db.query(VendorDetails).filter(VendorDetails.vendor_id == str(order.vendor_id)).first()
+        if vendor_details:
+            vendor_name = vendor_details.full_name
+            vendor_phone = vendor_details.primary_number
+        
+        # Get driver and car info if assigned
+        assigned_driver_name = None
+        assigned_driver_phone = None
+        assigned_car_name = None
+        assigned_car_number = None
+        
+        if assignment.driver_id:
+            driver = db.query(CarDriver).filter(CarDriver.id == assignment.driver_id).first()
+            if driver:
+                assigned_driver_name = driver.full_name
+                assigned_driver_phone = driver.primary_number
+        
+        if assignment.car_id:
+            car = db.query(CarDetails).filter(CarDetails.id == assignment.car_id).first()
+            if car:
+                assigned_car_name = car.car_name
+                assigned_car_number = car.car_number
+        
+        result = VehicleOwnerOrderDetailResponse(
+            # Order information
+            id=order.id,
+            source=order.source.value,
+            source_order_id=order.source_order_id,
+            vendor_id=order.vendor_id,
+            trip_type=order.trip_type.value,
+            car_type=order.car_type.value,
+            pickup_drop_location=order.pickup_drop_location,
+            start_date_time=order.start_date_time,
+            customer_name=order.customer_name,
+            customer_number=order.customer_number,
+            trip_status=order.trip_status,
+            pick_near_city=order.pick_near_city,
+            trip_distance=order.trip_distance,
+            trip_time=order.trip_time,
+            estimated_price=order.estimated_price,
+            vendor_price=order.vendor_price,
+            platform_fees_percent=order.platform_fees_percent,
+            closed_vendor_price=order.closed_vendor_price,
+            closed_driver_price=order.closed_driver_price,
+            commision_amount=order.commision_amount,
+            created_at=order.created_at,
+            
+            # Assignment information
+            assignment_id=assignment.id,
+            assignment_status=assignment.assignment_status,
+            assigned_at=assignment.assigned_at,
+            expires_at=assignment.expires_at,
+            cancelled_at=assignment.cancelled_at,
+            completed_at=assignment.completed_at,
+            assignment_created_at=assignment.created_at,
+            
+            # Vendor info
+            vendor_name=vendor_name,
+            vendor_phone=vendor_phone,
+            
+            # Driver and car info
+            assigned_driver_name=assigned_driver_name,
+            assigned_driver_phone=assigned_driver_phone,
+            assigned_car_name=assigned_car_name,
+            assigned_car_number=assigned_car_number
+        )
+        
+        results.append(result)
+    
+    return results
+
+
+def get_vehicle_owner_pending_orders(db: Session, vehicle_owner_id: str) -> List[VehicleOwnerOrderDetailResponse]:
+    """Get pending orders for vehicle owner"""
+    return get_vehicle_owner_orders_by_assignment_status(db, vehicle_owner_id, "PENDING")
+
+
+def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> List[VehicleOwnerOrderDetailResponse]:
+    """Get non-pending orders for vehicle owner (ASSIGNED, CANCELLED, COMPLETED, DRIVING)"""
+    from sqlalchemy import and_, not_
+    
+    # Query to join orders with order_assignments and filter by vehicle_owner_id and non-pending status
+    query = db.query(Order, OrderAssignment).join(
+        OrderAssignment, Order.id == OrderAssignment.order_id
+    ).filter(
+        and_(
+            OrderAssignment.vehicle_owner_id == vehicle_owner_id,
+            OrderAssignment.assignment_status != "PENDING"
+        )
+    ).order_by(Order.created_at.desc())
+    
+    results = []
+    
+    for order, assignment in query.all():
+        # Get basic vendor info
+        vendor_name = None
+        vendor_phone = None
+        vendor_details = db.query(VendorDetails).filter(VendorDetails.vendor_id == str(order.vendor_id)).first()
+        if vendor_details:
+            vendor_name = vendor_details.full_name
+            vendor_phone = vendor_details.primary_number
+        
+        # Get driver and car info if assigned
+        assigned_driver_name = None
+        assigned_driver_phone = None
+        assigned_car_name = None
+        assigned_car_number = None
+        
+        if assignment.driver_id:
+            driver = db.query(CarDriver).filter(CarDriver.id == assignment.driver_id).first()
+            if driver:
+                assigned_driver_name = driver.full_name
+                assigned_driver_phone = driver.primary_number
+        
+        if assignment.car_id:
+            car = db.query(CarDetails).filter(CarDetails.id == assignment.car_id).first()
+            if car:
+                assigned_car_name = car.car_name
+                assigned_car_number = car.car_number
+        
+        result = VehicleOwnerOrderDetailResponse(
+            # Order information
+            id=order.id,
+            source=order.source.value,
+            source_order_id=order.source_order_id,
+            vendor_id=order.vendor_id,
+            trip_type=order.trip_type.value,
+            car_type=order.car_type.value,
+            pickup_drop_location=order.pickup_drop_location,
+            start_date_time=order.start_date_time,
+            customer_name=order.customer_name,
+            customer_number=order.customer_number,
+            trip_status=order.trip_status,
+            pick_near_city=order.pick_near_city,
+            trip_distance=order.trip_distance,
+            trip_time=order.trip_time,
+            estimated_price=order.estimated_price,
+            vendor_price=order.vendor_price,
+            platform_fees_percent=order.platform_fees_percent,
+            closed_vendor_price=order.closed_vendor_price,
+            closed_driver_price=order.closed_driver_price,
+            commision_amount=order.commision_amount,
+            created_at=order.created_at,
+            
+            # Assignment information
+            assignment_id=assignment.id,
+            assignment_status=assignment.assignment_status,
+            assigned_at=assignment.assigned_at,
+            expires_at=assignment.expires_at,
+            cancelled_at=assignment.cancelled_at,
+            completed_at=assignment.completed_at,
+            assignment_created_at=assignment.created_at,
+            
+            # Vendor info
+            vendor_name=vendor_name,
+            vendor_phone=vendor_phone,
+            
+            # Driver and car info
+            assigned_driver_name=assigned_driver_name,
+            assigned_driver_phone=assigned_driver_phone,
+            assigned_car_name=assigned_car_name,
+            assigned_car_number=assigned_car_number
+        )
+        
+        results.append(result)
+    
+    return results
