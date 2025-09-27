@@ -19,7 +19,7 @@ class VendorCredentials(Base):
     hashed_password = Column(String, nullable=False)
     account_status = Column(
         SqlEnum(AccountStatusEnum, name="account_status_enum"),
-        default=AccountStatusEnum.INACTIVE,
+        default=AccountStatusEnum.PENDING,
         nullable=False
     )
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
