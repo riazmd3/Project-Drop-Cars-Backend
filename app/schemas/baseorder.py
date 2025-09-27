@@ -83,6 +83,7 @@ class BaseOrderSchema(BaseModel):
     closed_driver_price: Optional[int]
     commision_amount: Optional[int]
     created_at: datetime
+    cost_per_km: Optional[int]
 
     class Config:
         orm_mode = True

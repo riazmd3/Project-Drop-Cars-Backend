@@ -15,7 +15,8 @@ from app.crud.transfer_transactions import (
     get_all_pending_transfers,
     process_transfer_request,
     get_vendor_balance,
-    get_transfer_statistics
+    get_transfer_statistics,
+    get_vendor_transfer_history_pending
 )
 from app.crud.vendor import get_vendor_by_id
 from app.database.session import get_db
@@ -44,10 +45,17 @@ async def request_transfer(
         vendor_id = str(current_vendor.id)
         
         # Create transfer request
-        transfer_transaction = create_transfer_request(db, vendor_id, transfer_data)
-        
-        return transfer_transaction
-        
+        # transactions, total_count = get_vendor_transfer_history(db, vendor_id, skip, limit)
+        transactions, total_count = get_vendor_transfer_history_pending(db, vendor_id)
+        print("Pending Transactions Count:", total_count)
+        if total_count == 0:
+            transfer_transaction = create_transfer_request(db, vendor_id, transfer_data)
+            return transfer_transaction
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You have a pending transfer request. Please wait for it to be processed before making a new request."
+            )
     except HTTPException:
         raise
     except Exception as e:
@@ -106,7 +114,6 @@ async def get_transfer_history(
     """
     try:
         vendor_id = str(current_vendor.id)
-        
         # Get transfer history
         transactions, total_count = get_vendor_transfer_history(db, vendor_id, skip, limit)
         
