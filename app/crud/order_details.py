@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from app.models.orders import Order
 from app.models.order_assignments import OrderAssignment
 from app.models.end_records import EndRecord
@@ -401,7 +401,7 @@ def get_vehicle_owner_pending_orders(db: Session, vehicle_owner_id: str) -> List
 def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> List[VehicleOwnerOrderDetailResponse]:
     """Get non-pending orders for vehicle owner (ASSIGNED, CANCELLED, COMPLETED, DRIVING)"""
     from sqlalchemy import and_, not_
-    
+    print("vehicle_owner_id", vehicle_owner_id)
     # Query to join orders with order_assignments and filter by vehicle_owner_id and non-pending status
     query = db.query(Order, OrderAssignment).join(
         OrderAssignment, Order.id == OrderAssignment.order_id
