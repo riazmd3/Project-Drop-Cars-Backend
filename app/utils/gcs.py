@@ -4,7 +4,7 @@ import os
 from fastapi import UploadFile
 
 GCS_CREDENTIALS = "app/core/drop-cars-468718-d08441443ada.json"
-GCS_BUCKET_NAME = "drop-cars-files"
+GCS_BUCKET_NAME = "drop-cars-test-bucket"
 
 client = storage.Client.from_service_account_json(GCS_CREDENTIALS)
 bucket = client.bucket(GCS_BUCKET_NAME)
