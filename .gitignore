@@ -7,7 +7,7 @@ __pycache__/
 # Optional: ignore virtual environment
 venv/
 .env/
-
+.env
 # Optional: macOS system files
 .DS_Store
 

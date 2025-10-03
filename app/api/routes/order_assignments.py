@@ -385,12 +385,13 @@ async def start_trip(
 async def end_trip(
     order_id: int,
     end_km: int = Form(...),
-    contact_number: str = Form(...),
+    toll_charge_update: bool = Form(False),
+    updated_toll_charges: int | None = Form(None),
     close_speedometer_img: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_driver=Depends(get_current_driver)
 ):
-    """End trip by uploading end KM, contact number, and close speedometer image"""
+    """End trip by uploading end KM, optional toll updates, and close speedometer image"""
     try:
         # Validate close speedometer image file
         if not close_speedometer_img.content_type or not close_speedometer_img.content_type.startswith('image/'):
@@ -411,7 +412,8 @@ async def end_trip(
             order_id=order_id,
             driver_id=str(current_driver.id),
             end_km=end_km,
-            contact_number=contact_number,
+            toll_charge_update=toll_charge_update,
+            updated_toll_charges=updated_toll_charges,
             close_speedometer_image_url=close_speedometer_img_url
         )
         

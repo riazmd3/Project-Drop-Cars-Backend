@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey
+from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 import enum
 from app.database.session import Base
@@ -33,6 +33,10 @@ class Order(Base):
     estimated_price = Column(Integer, nullable=True)
     vendor_price = Column(Integer, nullable=True)
     platform_fees_percent = Column(Integer, nullable=True)
+
+    # Toll updates
+    toll_charge_update = Column(Boolean, nullable=False, server_default='false')
+    updated_toll_charges = Column(Integer, nullable=True)
 
     # Closing amounts (set when order is completed)
     closed_vendor_price = Column(Integer, nullable=True)

@@ -64,7 +64,9 @@ def update_end_trip_record(
     order_id: int,
     driver_id: str,
     end_km: int,
-    contact_number: str,
+    *,
+    toll_charge_update: bool = False,
+    updated_toll_charges: int | None = None,
     close_speedometer_image_url: str = None
 ) -> dict:
     """Update end trip record and calculate fare"""
@@ -82,7 +84,6 @@ def update_end_trip_record(
     
     # Update trip record
     trip_record.end_km = end_km
-    trip_record.contact_number = contact_number
     trip_record.close_speedometer_image = close_speedometer_image_url  # Add close speedometer image
     
     # Calculate fare
@@ -99,6 +100,18 @@ def update_end_trip_record(
     # Note: Orders table doesn't have detailed pricing, using estimated_price
     base_fare = order.estimated_price or 0
     calculated_fare = base_fare
+
+    # Apply toll updates if provided
+    if toll_charge_update:
+        order.toll_charge_update = True
+        if updated_toll_charges is not None:
+            order.updated_toll_charges = updated_toll_charges
+            calculated_fare = base_fare + updated_toll_charges
+        else:
+            order.updated_toll_charges = None
+    else:
+        order.toll_charge_update = False
+        order.updated_toll_charges = None
     
     # Update order with final amounts and status
     order.closed_vendor_price = calculated_fare
