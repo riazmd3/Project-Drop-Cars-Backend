@@ -137,11 +137,11 @@ def create_oneway_order(
         trip_time = trip_time,
         platform_fees_percent = 10,
         trip_status="PENDING",
-        estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges,
+        estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges + toll_charges,
         vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges + toll_charges,
         pick_near_city=pick_near_city,
     )
-
+    print(cost_per_km,trip_distance,driver_allowance,hill_charges,permit_charges,toll_charges)
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
