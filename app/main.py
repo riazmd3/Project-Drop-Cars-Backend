@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi_utils.tasks import repeat_every
+from app.database.session import SessionLocal
 from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin, hourly_rental, orders, wallet
 import app.models.admin
 import app.models.car_driver
@@ -34,4 +36,18 @@ app.include_router(order_assignments.router, prefix="/api/orders", tags=["OrderA
 app.include_router(transfer_transactions.router, prefix="/api", tags=["TransferTransactions"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
 app.include_router(wallet.router, prefix="/api", tags=["Wallet"]) 
+
+
+@app.on_event("startup")
+@repeat_every(seconds=180, wait_first=True)  # every 3 minutes
+def cancel_expired_assignments_task() -> None:
+    """Background job: cancel pending assignments that exceeded their max assignment time."""
+    db = SessionLocal()
+    try:
+        from app.crud.order_assignments import cancel_timed_out_pending_assignments
+        cancelled = cancel_timed_out_pending_assignments(db)
+        if cancelled:
+            print(f"Auto-cancelled {cancelled} timed-out assignment(s)")
+    finally:
+        db.close()
 

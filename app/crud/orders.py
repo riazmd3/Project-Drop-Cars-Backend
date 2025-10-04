@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import datetime, timedelta
 
 from app.models.orders import Order, OrderSourceEnum
 from app.models.end_records import EndRecord
@@ -27,6 +28,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
         estimated_price=new_order.estimated_price,
         vendor_price=new_order.vendor_price,
         platform_fees_percent=new_order.platform_fees_percent,
+        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=15))
     )
     db.add(master)
     db.commit()
@@ -50,7 +52,8 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         trip_time = trip_time,
         estimated_price = estimated_price,
         vendor_price = vendor_price+estimated_price,
-        platform_fees_percent = 10
+        platform_fees_percent = 10,
+        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=15))
     )
     db.add(master)
     db.commit()
@@ -60,6 +63,19 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
 
 def get_all_orders(db: Session) -> List[Order]:
     return db.query(Order).order_by(Order.created_at.desc()).all()
+
+
+def set_vehicle_owner_visibility(db: Session, order_id: int, vendor_id: str, visible: bool) -> Order:
+    """Toggle vehicle owner visibility for customer data, ensuring vendor ownership."""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise ValueError("Order not found")
+    if str(order.vendor_id) != str(vendor_id):
+        raise ValueError("Not authorized to modify this order")
+    order.data_visibility_vehicle_owner = bool(visible)
+    db.commit()
+    db.refresh(order)
+    return order
 
 
 # def get_vendor_orders(db: Session, vendor_id: str) -> List[Order]:

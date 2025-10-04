@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey, Boolean
+from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey, Boolean, Interval
 from sqlalchemy.dialects.postgresql import UUID
 import enum
 from app.database.session import Base
@@ -37,6 +37,13 @@ class Order(Base):
     # Toll updates
     toll_charge_update = Column(Boolean, nullable=False, server_default='false')
     updated_toll_charges = Column(Integer, nullable=True)
+
+    # Maximum time allowed to assign order to a driver/car
+    # Default: 15 minutes from creation
+    max_time_to_assign_order = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+
+    # Visibility approval by vendor: whether vehicle owners can see customer info
+    data_visibility_vehicle_owner = Column(Boolean, nullable=False, server_default='false')
 
     # Closing amounts (set when order is completed)
     closed_vendor_price = Column(Integer, nullable=True)

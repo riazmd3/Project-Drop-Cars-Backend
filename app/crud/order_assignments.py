@@ -21,8 +21,11 @@ def create_order_assignment(
     if existing_assignment:
         raise ValueError(f"Order {order_id} already has an active assignment with status {existing_assignment.assignment_status}")
     
-    # Calculate expiry time (1 hour from now)
-    expires_at = datetime.utcnow() + timedelta(hours=1)
+    # Calculate expiry time based on order's max_time_to_assign_order
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise ValueError("Order not found")
+    expires_at = order.max_time_to_assign_order or (datetime.utcnow() + timedelta(minutes=15))
     
     db_assignment = OrderAssignment(
         order_id=order_id,
@@ -36,6 +39,37 @@ def create_order_assignment(
     db.commit()
     db.refresh(db_assignment)
     return db_assignment
+
+
+def cancel_timed_out_pending_assignments(db: Session) -> int:
+    """Cancel PENDING assignments that exceeded order's max_time_to_assign_order and have no driver/car assigned.
+
+    Returns number of assignments cancelled in this run.
+    """
+    now = datetime.utcnow()
+    # Find pending assignments whose order's max_time_to_assign_order has passed
+    pending_assignments = (
+        db.query(OrderAssignment)
+        .join(Order, Order.id == OrderAssignment.order_id)
+        .filter(
+            OrderAssignment.assignment_status == AssignmentStatusEnum.PENDING,
+            OrderAssignment.driver_id.is_(None),
+            OrderAssignment.car_id.is_(None),
+            Order.max_time_to_assign_order <= now
+        )
+        .all()
+    )
+
+    cancelled_count = 0
+    for assignment in pending_assignments:
+        assignment.assignment_status = AssignmentStatusEnum.CANCELLED
+        assignment.cancelled_at = now
+        cancelled_count += 1
+
+    if cancelled_count:
+        db.commit()
+
+    return cancelled_count
 
 
 def get_order_assignment_by_id(db: Session, assignment_id: int) -> Optional[OrderAssignment]:

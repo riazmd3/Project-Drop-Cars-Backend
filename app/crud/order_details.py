@@ -347,6 +347,8 @@ def get_vehicle_owner_orders_by_assignment_status(
                 assigned_car_name = car.car_name
                 assigned_car_number = car.car_number
         
+        # Apply vendor-controlled visibility for customer data
+        show_customer = bool(order.data_visibility_vehicle_owner)
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -357,8 +359,8 @@ def get_vehicle_owner_orders_by_assignment_status(
             car_type=order.car_type.value,
             pickup_drop_location=order.pickup_drop_location,
             start_date_time=order.start_date_time,
-            customer_name=order.customer_name,
-            customer_number=order.customer_number,
+            customer_name=order.customer_name if show_customer else "Hidden",
+            customer_number=order.customer_number if show_customer else "Hidden",
             trip_status=order.trip_status,
             pick_near_city=order.pick_near_city,
             trip_distance=order.trip_distance,
@@ -445,6 +447,8 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
                 assigned_car_name = car.car_name
                 assigned_car_number = car.car_number
         
+        # Apply vendor-controlled visibility for customer data
+        show_customer = bool(order.data_visibility_vehicle_owner)
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -455,8 +459,8 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
             car_type=order.car_type.value,
             pickup_drop_location=order.pickup_drop_location,
             start_date_time=order.start_date_time,
-            customer_name=order.customer_name,
-            customer_number=order.customer_number,
+            customer_name=order.customer_name if show_customer else "Hidden",
+            customer_number=order.customer_number if show_customer else "Hidden",
             trip_status=order.trip_status,
             pick_near_city=order.pick_near_city,
             trip_distance=order.trip_distance,
