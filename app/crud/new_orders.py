@@ -115,6 +115,7 @@ def create_oneway_order(
     trip_time = str,
     platform_fees_percent = int,
     pick_near_city: str,
+    max_time_to_assign_order: int = 15,
 ) -> Tuple[NewOrder, int]:
     new_order = NewOrder(
         vendor_id=vendor_id,
@@ -141,12 +142,12 @@ def create_oneway_order(
         vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges + toll_charges,
         pick_near_city=pick_near_city,
     )
-    print(cost_per_km,trip_distance,driver_allowance,hill_charges,permit_charges,toll_charges)
+    # print(cost_per_km,trip_distance,driver_allowance,hill_charges,permit_charges,toll_charges)
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
     # Also create/refresh master order row
-    master_order = create_master_from_new_order(db, new_order)
+    master_order = create_master_from_new_order(db, new_order, max_time_to_assign_order)
     return new_order, master_order.id
 
 

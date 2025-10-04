@@ -47,6 +47,10 @@ class RentalOrderRequest(BaseModel):
     extra_additional_cost_per_hour: int
 
     pickup_notes: Optional[str] = None
+    max_time_to_assign_order: Optional[int] = Field(
+        default=15, 
+        description="Maximum time in minutes to assign the order (default: 15 minutes)"
+    )
 
     @field_validator("pickup_drop_location")
     def validate_locations(cls, v: Dict[str, str]):
@@ -156,6 +160,10 @@ class OnewayQuoteRequest(BaseModel):
     hill_charges: int
     toll_charges: int
     pickup_notes: Optional[str] = None
+    max_time_to_assign_order: Optional[int] = Field(
+        default=15, 
+        description="Maximum time in minutes to assign the order (default: 15 minutes)"
+    )
 
     @field_validator("pickup_drop_location")
     def validate_locations(cls, v: Dict[str, str]):

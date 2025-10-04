@@ -95,7 +95,7 @@ async def hourly_confirm(
             pickup_notes=payload.pickup_notes or "",
         )
 
-        master_order = create_master_from_hourly(db, order, pick_near_city=payload.pick_near_city, trip_time = payload.package_hours,estimated_price=payload.cost_per_pack,vendor_price=payload.extra_cost_per_pack)
+        master_order = create_master_from_hourly(db, order, pick_near_city=payload.pick_near_city, trip_time = payload.package_hours,estimated_price=payload.cost_per_pack,vendor_price=payload.extra_cost_per_pack, max_time_to_assign_order=payload.max_time_to_assign_order)
 
         return {"order_id": master_order.id,
                 "order_status": master_order.trip_status,

@@ -1,16 +1,17 @@
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict
 from datetime import datetime, timedelta
+from sqlalchemy import func, extract
 
 from app.models.orders import Order, OrderSourceEnum
 from app.models.end_records import EndRecord
 from app.utils.gcs import upload_image_to_gcs
-from app.models.new_orders import NewOrder
+from app.models.new_orders import NewOrder, OrderTypeEnum
 from app.models.hourly_rental import HourlyRental
 from sqlalchemy.sql import or_, and_
 
 
-def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
+def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15) -> Order:
     master = Order(
         source=OrderSourceEnum.NEW_ORDERS,
         source_order_id=new_order.order_id,
@@ -28,7 +29,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
         estimated_price=new_order.estimated_price,
         vendor_price=new_order.vendor_price,
         platform_fees_percent=new_order.platform_fees_percent,
-        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=15))
+        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order))
     )
     db.add(master)
     db.commit()
@@ -36,7 +37,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder) -> Order:
     return master
 
 
-def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str, trip_time : int, estimated_price: int, vendor_price:int) -> Order:
+def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str, trip_time : int, estimated_price: int, vendor_price:int, max_time_to_assign_order: int = 15) -> Order:
     master = Order(
         source=OrderSourceEnum.HOURLY_RENTAL,
         source_order_id=hourly.id,
@@ -53,7 +54,7 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         estimated_price = estimated_price,
         vendor_price = vendor_price+estimated_price,
         platform_fees_percent = 10,
-        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=15))
+        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order))
     )
     db.add(master)
     db.commit()
@@ -197,6 +198,65 @@ def get_vendor_pending_orders(db: Session, vendor_id: str):
     ]
 
     return combined_orders
+
+
+def get_max_time_to_assign_by_trip_type(db: Session) -> Dict[str, int]:
+    """
+    Get the maximum time to assign orders from existing orders for each trip type.
+    Returns the maximum time in minutes for oneway, roundtrip, multicity, and hourly rental.
+    """
+    trip_types = [OrderTypeEnum.ONEWAY, OrderTypeEnum.ROUND_TRIP, OrderTypeEnum.MULTY_CITY, OrderTypeEnum.HOURLY_RENTAL]
+    max_times = {}
+    
+    for trip_type in trip_types:
+        # Get orders for this trip type
+        orders = db.query(Order).filter(Order.trip_type == trip_type).all()
+        
+        if not orders:
+            # If no orders exist for this trip type, use default 15 minutes
+            max_times[trip_type.value] = 15
+            continue
+            
+        # Calculate the time difference between created_at and max_time_to_assign_order
+        max_time_minutes = 0
+        for order in orders:
+            if order.max_time_to_assign_order and order.created_at:
+                time_diff = (order.max_time_to_assign_order - order.created_at).total_seconds() / 60
+                max_time_minutes = max(max_time_minutes, int(time_diff))
+        
+        # If no valid time differences found, use default 15 minutes
+        if max_time_minutes == 0:
+            max_time_minutes = 15
+            
+        max_times[trip_type.value] = max_time_minutes
+    
+    return max_times
+
+
+def get_max_time_for_trip_type(db: Session, trip_type: OrderTypeEnum) -> int:
+    """
+    Get the maximum time to assign orders for a specific trip type.
+    Returns the maximum time in minutes.
+    """
+    # Get orders for this trip type
+    orders = db.query(Order).filter(Order.trip_type == trip_type).all()
+    
+    if not orders:
+        # If no orders exist for this trip type, use default 15 minutes
+        return 15
+        
+    # Calculate the time difference between created_at and max_time_to_assign_order
+    max_time_minutes = 0
+    for order in orders:
+        if order.max_time_to_assign_order and order.created_at:
+            time_diff = (order.max_time_to_assign_order - order.created_at).total_seconds() / 60
+            max_time_minutes = max(max_time_minutes, int(time_diff))
+    
+    # If no valid time differences found, use default 15 minutes
+    if max_time_minutes == 0:
+        max_time_minutes = 15
+        
+    return max_time_minutes
 
 
 def close_order(

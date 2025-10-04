@@ -6,7 +6,7 @@ from app.database.session import get_db
 from app.core.security import get_current_vendor, get_current_driver, get_current_admin, get_current_vehicleOwner_id
 from app.schemas.new_orders import UnifiedOrder, CloseOrderResponse
 from app.schemas.order_details import AdminOrderDetailResponse, VendorOrderDetailResponse, VehicleOwnerOrderDetailResponse
-from app.crud.orders import get_all_orders, get_vendor_orders, close_order, get_vendor_pending_orders, set_vehicle_owner_visibility
+from app.crud.orders import get_all_orders, get_vendor_orders, close_order, get_vendor_pending_orders, set_vehicle_owner_visibility, get_max_time_to_assign_by_trip_type
 from app.crud.order_details import get_admin_order_details, get_vendor_order_details, get_vehicle_owner_pending_orders, get_vehicle_owner_non_pending_orders
 
 
@@ -195,4 +195,25 @@ async def hide_customer_from_vehicle_owner(
         return {"order_id": order.id, "data_visibility_vehicle_owner": False}
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/max-assignment-times")
+async def get_max_assignment_times(
+    db: Session = Depends(get_db),
+):
+    """
+    Get the maximum time to assign orders for each trip type based on historical data.
+    Returns the maximum time in minutes for oneway, roundtrip, multicity, and hourly rental.
+    """
+    try:
+        max_times = get_max_time_to_assign_by_trip_type(db)
+        return {
+            "max_assignment_times": max_times,
+            "description": "Maximum time in minutes to assign orders for each trip type based on historical data"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving max assignment times: {str(e)}"
+        )
 
