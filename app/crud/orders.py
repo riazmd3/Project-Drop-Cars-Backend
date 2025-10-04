@@ -11,7 +11,7 @@ from app.models.hourly_rental import HourlyRental
 from sqlalchemy.sql import or_, and_
 
 
-def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15) -> Order:
+def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
     master = Order(
         source=OrderSourceEnum.NEW_ORDERS,
         source_order_id=new_order.order_id,
@@ -29,7 +29,8 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
         estimated_price=new_order.estimated_price,
         vendor_price=new_order.vendor_price,
         platform_fees_percent=new_order.platform_fees_percent,
-        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order))
+        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order)),
+        toll_charge_update=toll_charge_update
     )
     db.add(master)
     db.commit()
@@ -37,7 +38,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
     return master
 
 
-def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str, trip_time : int, estimated_price: int, vendor_price:int, max_time_to_assign_order: int = 15) -> Order:
+def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str, trip_time : int, estimated_price: int, vendor_price:int, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
     master = Order(
         source=OrderSourceEnum.HOURLY_RENTAL,
         source_order_id=hourly.id,
@@ -54,7 +55,8 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         estimated_price = estimated_price,
         vendor_price = vendor_price+estimated_price,
         platform_fees_percent = 10,
-        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order))
+        max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order)),
+        toll_charge_update=toll_charge_update
     )
     db.add(master)
     db.commit()

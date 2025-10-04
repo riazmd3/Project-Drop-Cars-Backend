@@ -105,6 +105,7 @@ async def oneway_confirm(
             platform_fees_percent = 10,
             pick_near_city=pick_near_city,
             max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
         )
         print(fare)
 
@@ -198,6 +199,7 @@ async def roundtrip_confirm(
             platform_fees_percent = 10,
             pick_near_city=pick_near_city,
             max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
         )
 
         return OnewayConfirmResponse(
@@ -290,6 +292,7 @@ async def multicity_confirm(
             platform_fees_percent = 10,
             pick_near_city=pick_near_city,
             max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
         )
 
         return OnewayConfirmResponse(

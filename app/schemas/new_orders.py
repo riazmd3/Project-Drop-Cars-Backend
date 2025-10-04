@@ -51,6 +51,10 @@ class RentalOrderRequest(BaseModel):
         default=15, 
         description="Maximum time in minutes to assign the order (default: 15 minutes)"
     )
+    toll_charge_update: Optional[bool] = Field(
+        default=False,
+        description="Whether toll charges can be updated during the trip (default: false)"
+    )
 
     @field_validator("pickup_drop_location")
     def validate_locations(cls, v: Dict[str, str]):
@@ -163,6 +167,10 @@ class OnewayQuoteRequest(BaseModel):
     max_time_to_assign_order: Optional[int] = Field(
         default=15, 
         description="Maximum time in minutes to assign the order (default: 15 minutes)"
+    )
+    toll_charge_update: Optional[bool] = Field(
+        default=False,
+        description="Whether toll charges can be updated during the trip (default: false)"
     )
 
     @field_validator("pickup_drop_location")

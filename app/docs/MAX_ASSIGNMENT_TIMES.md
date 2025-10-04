@@ -45,7 +45,8 @@ POST /api/orders/oneway/confirm
   "toll_charges": 50,
   "pickup_notes": "Call before arrival",
   "send_to": "ALL",
-  "max_time_to_assign_order": 30
+  "max_time_to_assign_order": 30,
+  "toll_charge_update": true
 }
 ```
 
@@ -66,7 +67,8 @@ POST /api/orders/hourly/confirm
   "additional_cost_per_hour": 100,
   "extra_additional_cost_per_hour": 50,
   "pickup_notes": "Airport pickup",
-  "max_time_to_assign_order": 45
+  "max_time_to_assign_order": 45,
+  "toll_charge_update": false
 }
 ```
 
@@ -75,57 +77,72 @@ POST /api/orders/hourly/confirm
 ### Schema Updates
 
 #### `OnewayQuoteRequest` and `OnewayConfirmRequest`
-Added `max_time_to_assign_order: Optional[int] = Field(default=15)`
+Added:
+- `max_time_to_assign_order: Optional[int] = Field(default=15)`
+- `toll_charge_update: Optional[bool] = Field(default=False)`
 
 #### `RentalOrderRequest`
-Added `max_time_to_assign_order: Optional[int] = Field(default=15)`
+Added:
+- `max_time_to_assign_order: Optional[int] = Field(default=15)`
+- `toll_charge_update: Optional[bool] = Field(default=False)`
 
 ### Modified Functions
 
 #### `create_master_from_new_order()`
-Now accepts `max_time_to_assign_order` parameter from payload instead of calculating from database.
+Now accepts:
+- `max_time_to_assign_order` parameter from payload instead of calculating from database
+- `toll_charge_update` parameter from payload
 
 #### `create_master_from_hourly()`
-Now accepts `max_time_to_assign_order` parameter from payload instead of calculating from database.
+Now accepts:
+- `max_time_to_assign_order` parameter from payload instead of calculating from database
+- `toll_charge_update` parameter from payload
 
 #### `create_oneway_order()`
-Now accepts and passes through `max_time_to_assign_order` parameter.
+Now accepts and passes through:
+- `max_time_to_assign_order` parameter
+- `toll_charge_update` parameter
 
 ## Benefits
 
 1. **Flexible Configuration**: Set different timeout values for different orders based on your business needs
-2. **Payload-Based Control**: Specify timeout values directly in the request payload
-3. **Default Safety**: Always falls back to 15 minutes if not specified
-4. **Per-Order Customization**: Each order can have its own timeout value
+2. **Payload-Based Control**: Specify timeout values and toll charge update settings directly in the request payload
+3. **Default Safety**: Always falls back to 15 minutes if not specified, and False for toll charge updates
+4. **Per-Order Customization**: Each order can have its own timeout value and toll charge update setting
+5. **Toll Charge Management**: Control whether toll charges can be updated during the trip
 
 ## Usage
 
 ### For Oneway, Round Trip, and Multicity Orders
-Add the `max_time_to_assign_order` field to your request payload:
+Add the `max_time_to_assign_order` and `toll_charge_update` fields to your request payload:
 ```json
 {
   // ... other fields ...
-  "max_time_to_assign_order": 30  // 30 minutes timeout
+  "max_time_to_assign_order": 30,  // 30 minutes timeout
+  "toll_charge_update": true       // Allow toll charge updates during trip
 }
 ```
 
 ### For Hourly Rental Orders
-Add the `max_time_to_assign_order` field to your request payload:
+Add the `max_time_to_assign_order` and `toll_charge_update` fields to your request payload:
 ```json
 {
   // ... other fields ...
-  "max_time_to_assign_order": 45  // 45 minutes timeout
+  "max_time_to_assign_order": 45,  // 45 minutes timeout
+  "toll_charge_update": false      // Disable toll charge updates during trip
 }
 ```
 
 ### Default Behavior
-If `max_time_to_assign_order` is not provided, the system defaults to 15 minutes.
+- If `max_time_to_assign_order` is not provided, the system defaults to 15 minutes
+- If `toll_charge_update` is not provided, the system defaults to False
 
 ## Testing
 
 Run the test files to verify the functionality:
 ```bash
 python app/tests/test_payload_max_time.py
+python app/tests/test_toll_charge_update.py
 ```
 
 ## Database Impact
