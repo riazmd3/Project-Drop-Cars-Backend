@@ -220,6 +220,8 @@ class FareBreakdown(BaseModel):
     hill_charges: int
     toll_charges: int
     total_amount: int
+    # commission_amount: int
+    Commission_percent: int
 
 
 class OnewayQuoteResponse(BaseModel):

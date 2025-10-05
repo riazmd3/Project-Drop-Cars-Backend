@@ -41,6 +41,7 @@ def calculate_oneway_fare(pickup_drop_location: Dict[str, str], cost_per_km: int
         "hill_charges": int(hill_charges),
         "toll_charges": int(toll_charges),
         "total_amount": int(total_amount),
+        "Commission_percent": 10,
     }
 
 
@@ -89,6 +90,7 @@ def calculate_multisegment_fare(pickup_drop_location: Dict[str, str], cost_per_k
         "hill_charges": int(hill_charges),
         "toll_charges": int(toll_charges),
         "total_amount": int(total_amount),
+        "Commission_percent": 10,
     }
 
 
