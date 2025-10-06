@@ -154,9 +154,12 @@ def update_end_trip_record(
     order.closed_vendor_price = int(calculated_fare)
     if order.source and order.source.name == "HOURLY_RENTAL":
         order.commision_amount = int(admin_commission)
-        order.closed_driver_price = int(calculated_fare) - int(admin_commission)
+        # order.closed_driver_price = int(calculated_fare) - int(admin_commission)
+        order.closed_driver_price = vendor_total - estimated_total
+
     else:
-        order.closed_driver_price = int(calculated_fare * 0.7)
+        # order.closed_driver_price = int(calculated_fare * 0.7)
+        order.closed_driver_price = 0
         order.commision_amount = int(calculated_fare * 0.3)
     order.trip_status = "COMPLETED"  # Update order status to completed
     
