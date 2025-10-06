@@ -4,6 +4,7 @@ from datetime import datetime
 from app.models.end_records import EndRecord
 from app.models.order_assignments import OrderAssignment, AssignmentStatusEnum
 from app.models.orders import Order
+from app.models.hourly_rental import HourlyRental
 from app.models.car_driver import CarDriver, AccountStatusEnum
 
 def create_start_trip_record(
@@ -97,16 +98,52 @@ def update_end_trip_record(
         raise ValueError("Order not found")
     
     # Calculate fare based on order pricing
-    # Note: Orders table doesn't have detailed pricing, using estimated_price
-    base_fare = order.estimated_price or 0
-    calculated_fare = base_fare
+    calculated_fare = order.estimated_price or 0
+    admin_commission = 0
+    if order.source and order.source.name == "HOURLY_RENTAL":
+        # Fetch hourly rental pricing data
+        hourly = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+        if not hourly:
+            raise ValueError("Hourly rental source order not found")
+
+        hours_selected = int(hourly.package_hours.get("hours", 0))
+        included_km_range = int(hourly.package_hours.get("km_range", 0))
+        balance_km = max(0, int(total_km) - included_km_range)
+
+        vendor_total = (
+            (int(hourly.cost_per_hour) + int(hourly.extra_cost_per_hour)) * hours_selected
+        ) + (
+            balance_km * (int(hourly.cost_for_addon_km) + int(hourly.extra_cost_for_addon_km))
+        )
+
+        estimated_total = (
+            int(hourly.cost_per_hour) * hours_selected
+        ) + (
+            balance_km * int(hourly.cost_for_addon_km)
+        )
+
+        # Apply toll charge updates equally if provided
+        if toll_charge_update and updated_toll_charges is not None:
+            estimated_total += int(updated_toll_charges)
+            vendor_total += int(updated_toll_charges)
+
+        # Admin profit: 10% of (vendor - estimate)
+        diff = max(0, int(vendor_total) - int(estimated_total))
+        admin_commission = int(round(diff * 0.10))
+
+        calculated_fare = int(vendor_total)
+    else:
+        # Note: Orders table doesn't have detailed pricing, using estimated_price for non-hourly
+        base_fare = order.estimated_price or 0
+        calculated_fare = base_fare
 
     # Apply toll updates if provided
     if toll_charge_update:
         order.toll_charge_update = True
         if updated_toll_charges is not None:
             order.updated_toll_charges = updated_toll_charges
-            calculated_fare = base_fare + updated_toll_charges
+            if not (order.source and order.source.name == "HOURLY_RENTAL"):
+                calculated_fare = (order.estimated_price or 0) + updated_toll_charges
         else:
             order.updated_toll_charges = None
     else:
@@ -114,9 +151,13 @@ def update_end_trip_record(
         order.updated_toll_charges = None
     
     # Update order with final amounts and status
-    order.closed_vendor_price = calculated_fare
-    order.closed_driver_price = int(calculated_fare * 0.7)  # 70% to driver
-    order.commision_amount = int(calculated_fare * 0.3)  # 30% commission
+    order.closed_vendor_price = int(calculated_fare)
+    if order.source and order.source.name == "HOURLY_RENTAL":
+        order.commision_amount = int(admin_commission)
+        order.closed_driver_price = int(calculated_fare) - int(admin_commission)
+    else:
+        order.closed_driver_price = int(calculated_fare * 0.7)
+        order.commision_amount = int(calculated_fare * 0.3)
     order.trip_status = "COMPLETED"  # Update order status to completed
     
     # Get assignment to find vehicle owner

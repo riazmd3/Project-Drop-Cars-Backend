@@ -77,6 +77,14 @@ async def hourly_confirm(
 ):
     try:
         vendor_id = current_vendor.id
+        # Precompute fare for master order fields
+        fare = calculate_hourly_fare(
+            payload.package_hours,
+            payload.cost_per_hour,
+            payload.extra_cost_per_hour,
+            payload.cost_for_addon_km,
+            payload.extra_cost_for_addon_km,
+        )
 
         order = create_hourly_order(
             db,
@@ -95,14 +103,14 @@ async def hourly_confirm(
             pickup_notes=payload.pickup_notes or "",
         )
 
-        # estimate/vendor are derived in calculate_hourly_fare; for the master order, we can echo the inputs
+        # estimate/vendor are derived from fare
         master_order = create_master_from_hourly(
             db,
             order,
             pick_near_city=payload.pick_near_city,
             trip_time=str(payload.package_hours.get("hours", 0)),
-            estimated_price=fare["fare"].estimate_price if isinstance(fare, dict) else fare.fare.estimate_price,
-            vendor_price=fare["fare"].vendor_amount if isinstance(fare, dict) else fare.fare.vendor_amount,
+            estimated_price=int(fare["estimate_price"]),
+            vendor_price=int(fare["vendor_amount"]),
             max_time_to_assign_order=payload.max_time_to_assign_order,
             toll_charge_update=payload.toll_charge_update,
         )

@@ -52,8 +52,8 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         trip_status="PENDING",
         pick_near_city=pick_near_city,
         trip_time = trip_time,
-        estimated_price = estimated_price,
-        vendor_price = vendor_price+estimated_price,
+        estimated_price = int(estimated_price),
+        vendor_price = int(vendor_price),
         platform_fees_percent = 10,
         max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order)),
         toll_charge_update=toll_charge_update
@@ -133,10 +133,10 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         source_data = {
             "id": hourly_rental.id,
             "package_hours": hourly_rental.package_hours,
-            "cost_per_pack": hourly_rental.cost_per_pack,
-            "extra_cost_per_pack": hourly_rental.extra_cost_per_pack,
-            "additional_cost_per_hour": hourly_rental.additional_cost_per_hour,
-            "extra_additional_cost_per_hour": hourly_rental.extra_additional_cost_per_hour,
+            "cost_per_hour": hourly_rental.cost_per_hour,
+            "extra_cost_per_hour": hourly_rental.extra_cost_per_hour,
+            "cost_for_addon_km": hourly_rental.cost_for_addon_km,
+            "extra_cost_for_addon_km": hourly_rental.extra_cost_for_addon_km,
             "pickup_notes": hourly_rental.pickup_notes,
         }
     else:
