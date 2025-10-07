@@ -166,6 +166,7 @@ async def get_assignments_by_vehicle_owner(
     current_user=Depends(get_current_user)
 ):
     """Get all assignments for a specific vehicle owner"""
+    print(f"Vehicle owner ID: {vehicle_owner_id}")
     # Verify the authenticated user is requesting their own assignments
     if str(vehicle_owner_id) != str(current_user.vehicle_owner_id):
         raise HTTPException(

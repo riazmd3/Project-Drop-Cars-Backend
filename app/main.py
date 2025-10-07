@@ -16,6 +16,7 @@ import app.models.order_assignments
 import app.models.transfer_transactions
 import app.models.wallet_ledger
 import app.models.razorpay_transactions
+import app.models.vendor_wallet_ledger
 from app.database.session import Base, engine
 import app.models.end_records
 
