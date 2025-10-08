@@ -1,3 +1,16 @@
+### POST /order-assignments/driver/end-trip/{order_id}
+
+Form fields:
+- `end_km` (int, required)
+- `toll_charge_update` (bool, optional)
+- `updated_toll_charges` (int, required if `toll_charge_update` is true)
+- `close_speedometer_img` (file, required)
+
+Behavior:
+- Validates `updated_toll_charges` presence when `toll_charge_update` is true.
+- Validates `end_km - start_km` > `trip_distance` when `trip_distance` exists.
+- Recalculates fare and computes/stores `vendor_profit`, `admin_profit`, `driver_profit` on `orders`.
+- Credits vendor wallet with vendor profit and records an entry in `vendor_wallet_ledger` with `order_id` mapping.
 # Order Assignments and Trip Management APIs
 
 ## Overview

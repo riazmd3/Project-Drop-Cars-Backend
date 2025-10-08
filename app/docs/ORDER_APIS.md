@@ -1,3 +1,19 @@
+## End Trip Updates
+
+- Validation rules:
+  - If `toll_charge_update` is true, `updated_toll_charges` is required; request fails otherwise.
+  - `end_km - start_km` must be greater than the original `trip_distance` for the order when available.
+
+- Profit allocation on completion (Hourly Rental):
+  - Recalculate with updated km and tolls.
+  - Vendor profit = (vendor_total - estimated_total) + 10% of (cost_per_km * updated_km).
+  - Admin profit = 10% of vendor profit.
+  - Driver profit = estimated_total - admin profit.
+  - Values are stored in `orders.vendor_profit`, `orders.admin_profit`, `orders.driver_profit`.
+
+- Vendor Ledger:
+  - On successful end-trip, a credit entry is added in `vendor_wallet_ledger` mapped by `order_id`.
+  - Ledger records `amount`, `balance_before`, `balance_after`, and `notes`.
 ## Hourly Rental API
 
 POST `/api/orders/hourly/quote`

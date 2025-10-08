@@ -7,19 +7,29 @@ from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 
 
 def calculate_hourly_fare(
-    package_hours: int,
-    cost_per_pack: int,
-    extra_cost_per_pack: int,
-    additional_cost_per_hour: int,
-    extra_additional_cost_per_hour: int,
+    package_hours: Dict[str, int],
+    cost_per_hour: int,
+    extra_cost_per_hour: int,
+    cost_for_addon_km: int,
+    extra_cost_for_addon_km: int,
 ) -> Dict[str, Any]:
-    total_hours = float(package_hours)
-    estimate_price = int(cost_per_pack)
-    vendor_amount = int(cost_per_pack + extra_cost_per_pack)
+    hours = int(package_hours.get("hours", 0))
+    km_range = int(package_hours.get("km_range", 0))
+
+    base_hours_amount = hours * int(cost_per_hour)
+    vendor_hours_amount = hours * int(cost_per_hour + extra_cost_per_hour)
+
+    # Base includes included km_range; addon_km priced separately if any. Quote phase assumes 0 addon_km.
+    base_km_amount = 0
+    vendor_km_amount = 0
+
+    estimate_price = base_hours_amount + base_km_amount
+    vendor_amount = vendor_hours_amount + vendor_km_amount
+
     return {
-        "total_hours": total_hours,
-        "vendor_amount": vendor_amount,
-        "estimate_price": estimate_price,
+        "total_hours": float(hours),
+        "vendor_amount": int(vendor_amount),
+        "estimate_price": int(estimate_price),
     }
 
 
@@ -33,11 +43,11 @@ def create_hourly_order(
     start_date_time,
     customer_name: str,
     customer_number: str,
-    package_hours: int,
-    cost_per_pack: int,
-    extra_cost_per_pack: int,
-    additional_cost_per_hour: int,
-    extra_additional_cost_per_hour: int,
+    package_hours: Dict[str, int],
+    cost_per_hour: int,
+    extra_cost_per_hour: int,
+    cost_for_addon_km: int,
+    extra_cost_for_addon_km: int,
     pickup_notes: str,
 ) -> HourlyRental:
     order = HourlyRental(
@@ -49,10 +59,10 @@ def create_hourly_order(
         customer_name=customer_name,
         customer_number=customer_number,
         package_hours=package_hours,
-        cost_per_pack=cost_per_pack,
-        extra_cost_per_pack=extra_cost_per_pack,
-        additional_cost_per_hour=additional_cost_per_hour,
-        extra_additional_cost_per_hour=extra_additional_cost_per_hour,
+        cost_per_hour=cost_per_hour,
+        extra_cost_per_hour=extra_cost_per_hour,
+        cost_for_addon_km=cost_for_addon_km,
+        extra_cost_for_addon_km=extra_cost_for_addon_km,
         pickup_notes=pickup_notes,
     )
 

@@ -39,12 +39,14 @@ class RentalOrderRequest(BaseModel):
         description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
     
-    package_hours: int
+    package_hours: Dict[str, int] = Field(
+        description='{"hours": <int>, "km_range": <int>}'
+    )
     
-    cost_per_pack: int
-    extra_cost_per_pack: int
-    additional_cost_per_hour: int
-    extra_additional_cost_per_hour: int
+    cost_per_hour: int
+    extra_cost_per_hour: int
+    cost_for_addon_km: int
+    extra_cost_for_addon_km: int
 
     pickup_notes: Optional[str] = None
     max_time_to_assign_order: Optional[int] = Field(

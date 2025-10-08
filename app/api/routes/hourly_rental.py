@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-JSON_FILE_PATH = Path("app/utils/rental_hour.json")
+JSON_FILE_PATH = Path("load_data\hourly_plans.json")
 data_cache = {}
 
 
@@ -53,10 +53,10 @@ async def hourly_quote(payload: RentalOrderRequest):
     try:
         fare = calculate_hourly_fare(
             payload.package_hours,
-            payload.cost_per_pack,
-            payload.extra_cost_per_pack,
-            payload.additional_cost_per_hour,
-            payload.extra_additional_cost_per_hour,
+            payload.cost_per_hour,
+            payload.extra_cost_per_hour,
+            payload.cost_for_addon_km,
+            payload.extra_cost_for_addon_km,
         )
         return HourlyQuoteResponse(
             fare=RentalFareBreakdown(**fare),
@@ -77,6 +77,14 @@ async def hourly_confirm(
 ):
     try:
         vendor_id = current_vendor.id
+        # Precompute fare for master order fields
+        fare = calculate_hourly_fare(
+            payload.package_hours,
+            payload.cost_per_hour,
+            payload.extra_cost_per_hour,
+            payload.cost_for_addon_km,
+            payload.extra_cost_for_addon_km,
+        )
 
         order = create_hourly_order(
             db,
@@ -88,14 +96,24 @@ async def hourly_confirm(
             customer_name=payload.customer_name,
             customer_number=payload.customer_number,
             package_hours=payload.package_hours,
-            cost_per_pack=payload.cost_per_pack,
-            extra_cost_per_pack=payload.extra_cost_per_pack,
-            additional_cost_per_hour=payload.additional_cost_per_hour,
-            extra_additional_cost_per_hour=payload.extra_additional_cost_per_hour,
+            cost_per_hour=payload.cost_per_hour,
+            extra_cost_per_hour=payload.extra_cost_per_hour,
+            cost_for_addon_km=payload.cost_for_addon_km,
+            extra_cost_for_addon_km=payload.extra_cost_for_addon_km,
             pickup_notes=payload.pickup_notes or "",
         )
 
-        master_order = create_master_from_hourly(db, order, pick_near_city=payload.pick_near_city, trip_time = payload.package_hours,estimated_price=payload.cost_per_pack,vendor_price=payload.extra_cost_per_pack, max_time_to_assign_order=payload.max_time_to_assign_order, toll_charge_update=payload.toll_charge_update)
+        # estimate/vendor are derived from fare
+        master_order = create_master_from_hourly(
+            db,
+            order,
+            pick_near_city=payload.pick_near_city,
+            trip_time=str(payload.package_hours.get("hours", 0)),
+            estimated_price=int(fare["estimate_price"]),
+            vendor_price=int(fare["vendor_amount"]),
+            max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
+        )
 
         return {"order_id": master_order.id,
                 "order_status": master_order.trip_status,

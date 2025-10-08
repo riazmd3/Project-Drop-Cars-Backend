@@ -4,6 +4,8 @@ from datetime import datetime
 from app.models.end_records import EndRecord
 from app.models.order_assignments import OrderAssignment, AssignmentStatusEnum
 from app.models.orders import Order
+from app.models.new_orders import NewOrder
+from app.models.hourly_rental import HourlyRental
 from app.models.car_driver import CarDriver, AccountStatusEnum
 
 def create_start_trip_record(
@@ -90,6 +92,11 @@ def update_end_trip_record(
     total_km = end_km - trip_record.start_km
     if total_km < 0:
         raise ValueError("End KM cannot be less than start KM")
+    # Ensure difference km is greater than original planned km (when available)
+    if order := db.query(Order).filter(Order.id == order_id).first():
+        # For all trip types, enforce updated km > old km when order.trip_distance exists
+        if order.trip_distance is not None and total_km <= int(order.trip_distance):
+            raise ValueError("Updated total KM must be greater than the original trip distance")
     
     # Get order details for fare calculation
     order = db.query(Order).filter(Order.id == order_id).first()
@@ -97,26 +104,133 @@ def update_end_trip_record(
         raise ValueError("Order not found")
     
     # Calculate fare based on order pricing
-    # Note: Orders table doesn't have detailed pricing, using estimated_price
-    base_fare = order.estimated_price or 0
-    calculated_fare = base_fare
+    calculated_fare = order.estimated_price or 0
+    admin_commission = 0
+    if order.source and order.source.name == "HOURLY_RENTAL":
+        # Fetch hourly rental pricing data
+        hourly = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+        if not hourly:
+            raise ValueError("Hourly rental source order not found")
+
+        hours_selected = int(hourly.package_hours.get("hours", 0))
+        included_km_range = int(hourly.package_hours.get("km_range", 0))
+        balance_km = max(0, int(total_km) - included_km_range)
+
+        vendor_total = (
+            (int(hourly.cost_per_hour) + int(hourly.extra_cost_per_hour)) * hours_selected
+        ) + (
+            balance_km * (int(hourly.cost_for_addon_km) + int(hourly.extra_cost_for_addon_km))
+        )
+
+        estimated_total = (
+            int(hourly.cost_per_hour) * hours_selected
+        ) + (
+            balance_km * int(hourly.cost_for_addon_km)
+        )
+
+        # Apply toll charge updates equally if provided
+        if toll_charge_update and updated_toll_charges is not None:
+            estimated_total += int(updated_toll_charges)
+            vendor_total += int(updated_toll_charges)
+        elif toll_charge_update and updated_toll_charges is None:
+            # If update flag is true but value missing, block
+            raise ValueError("Updated toll charges must be provided when toll_charge_update is true")
+
+        # Admin profit: 10% of (vendor - estimate)
+        diff = max(0, int(vendor_total) - int(estimated_total))
+        admin_commission = int(round(diff * 0.10))
+
+        calculated_fare = int(vendor_total)
+    else:
+        # Note: Orders table doesn't have detailed pricing, using estimated_price for non-hourly
+        base_fare = order.estimated_price or 0
+        calculated_fare = base_fare
 
     # Apply toll updates if provided
     if toll_charge_update:
         order.toll_charge_update = True
         if updated_toll_charges is not None:
             order.updated_toll_charges = updated_toll_charges
-            calculated_fare = base_fare + updated_toll_charges
+            if not (order.source and order.source.name == "HOURLY_RENTAL"):
+                calculated_fare = (order.estimated_price or 0) + updated_toll_charges
         else:
-            order.updated_toll_charges = None
+            # Missing toll charges when flag is true
+            raise ValueError("Updated toll charges must be provided when toll_charge_update is true")
     else:
         order.toll_charge_update = False
         order.updated_toll_charges = None
     
-    # Update order with final amounts and status
-    order.closed_vendor_price = calculated_fare
-    order.closed_driver_price = int(calculated_fare * 0.7)  # 70% to driver
-    order.commision_amount = int(calculated_fare * 0.3)  # 30% commission
+    # Update order with final amounts, profits, and status
+
+    # order.closed_vendor_price = int(calculated_fare)
+    if order.source and order.source.name == "HOURLY_RENTAL":
+        # Reuse estimated_total/vendor_total from hourly branch
+        # Vendor profit per spec: (vendor_total - estimated_total) + 10% of (cost_per_km * updated_km)
+        hours_selected = int(hourly.package_hours.get("hours", 0))
+        included_km_range = int(hourly.package_hours.get("km_range", 0))
+
+
+        balance_km = max(0, int(total_km) - included_km_range)
+        # extra_vendor_component = int(round((int(hourly.cost_for_addon_km) * int(total_km)) * 0.10))
+        # vendor_profit = max(0, int(vendor_total) - int(estimated_total)) + extra_vendor_component
+
+        # admin_profit = int(round(vendor_profit * 0.10))
+        # # Driver profit is the remainder from estimated side as per spec
+        # driver_profit = max(0, int(estimated_total) - admin_profit)
+
+        commision_amount = 10
+        cal_driver_price = (hourly.cost_per_hour * hours_selected) + (balance_km * hourly.cost_for_addon_km)
+        cal_vendor_price = ((hourly.cost_per_hour + hourly.extra_cost_per_hour) * hours_selected) + (balance_km * (hourly.cost_for_addon_km + hourly.extra_cost_for_addon_km))
+
+        cal_vendor_profit = (cal_vendor_price - cal_driver_price)
+        cal_admin_profit = cal_vendor_profit * (commision_amount/100)
+
+
+        order.closed_vendor_price = cal_vendor_price
+        order.closed_driver_price = cal_driver_price
+
+        order.vendor_profit = cal_vendor_profit - cal_admin_profit
+        order.admin_profit = cal_admin_profit
+        order.driver_profit = cal_vendor_price - cal_vendor_profit
+        order.commision_amount = commision_amount
+    else:
+
+        #New Custom Verification
+        new_order = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
+        if not new_order:
+            raise ValueError("New order not found")
+        cost_per_km = new_order.cost_per_km
+        extra_cost_per_km = new_order.extra_cost_per_km
+        driver_allowance = new_order.driver_allowance
+        extra_driver_allowance = new_order.extra_driver_allowance
+        permit_charges = new_order.permit_charges
+        extra_permit_charges = new_order.extra_permit_charges
+        hill_charges = new_order.hill_charges
+        toll_charges = order.updated_toll_charges if order.updated_toll_charges else new_order.toll_charges
+        updated_km = total_km
+
+        closed_vendor_price = ((cost_per_km+extra_cost_per_km)*updated_km) + (driver_allowance+extra_driver_allowance) + (permit_charges+extra_permit_charges) + (hill_charges) + (toll_charges)
+        closed_driver_price = ((cost_per_km)*updated_km) + (driver_allowance) + (permit_charges) + (hill_charges) + (toll_charges)
+        commision_amount = 10
+        vendor_amount_to_receive_from_driver = closed_vendor_price - closed_driver_price + ((cost_per_km*updated_km)*(commision_amount/100))
+        vendor_profit = vendor_amount_to_receive_from_driver - (vendor_amount_to_receive_from_driver*(commision_amount/100))
+        admin_profit = vendor_amount_to_receive_from_driver*(commision_amount/100)
+        driver_profit = closed_vendor_price - vendor_amount_to_receive_from_driver
+
+        #New Custom Verification
+        # For non-hourly, keep existing behavior but set profits coherently
+        print("Calculated fare", calculated_fare)
+        print("Estimated price", order.estimated_price)
+        # print()
+        order.closed_vendor_price = closed_vendor_price
+        order.vendor_profit = vendor_profit
+        order.admin_profit = admin_profit
+        order.driver_profit = driver_profit
+        order.closed_driver_price = closed_driver_price
+        order.commision_amount = commision_amount
+        print("Admin profit", admin_profit)
+        print("Driver profit", driver_profit)
+        print("Vendor profit", vendor_profit)
     order.trip_status = "COMPLETED"  # Update order status to completed
     
     # Get assignment to find vehicle owner
@@ -128,6 +242,7 @@ def update_end_trip_record(
     if assignment:
         # Debit amount from vehicle owner
         from app.crud.wallet import debit_wallet
+        from app.crud.vendor_wallet import credit_vendor_wallet
         from app.models.wallet_ledger import WalletEntryTypeEnum
         
         try:
@@ -141,6 +256,17 @@ def update_end_trip_record(
             )
         except ValueError as e:
             raise ValueError(f"Wallet debit failed: {str(e)}")
+        # Credit vendor wallet with vendor_profit via vendor ledger
+        try:
+            credit_vendor_wallet(
+                db,
+                vendor_id=str(order.vendor_id),
+                amount=int(order.vendor_profit or 0),
+                order_id=order_id,
+                notes=f"Trip {order_id} vendor profit"
+            )
+        except ValueError as e:
+            raise ValueError(f"Vendor wallet credit failed: {str(e)}")
         
         # Update assignment status to COMPLETED
         assignment.assignment_status = AssignmentStatusEnum.COMPLETED

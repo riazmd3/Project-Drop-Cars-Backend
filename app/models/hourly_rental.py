@@ -24,11 +24,13 @@ class HourlyRental(Base):
     customer_name = Column(String, nullable=False)
     customer_number = Column(String, nullable=False)
 
-    package_hours = Column(Integer, nullable=False)
-    cost_per_pack = Column(Integer, nullable=False)
-    extra_cost_per_pack = Column(Integer, nullable=False)
-    additional_cost_per_hour = Column(Integer, nullable=False)
-    extra_additional_cost_per_hour = Column(Integer, nullable=False)
+    # package_hours now stores structured data like {"hours": 5, "km_range": 50}
+    package_hours = Column(JSON, nullable=False)
+    # pricing fields updated to hour-based and addon-km-based pricing
+    cost_per_hour = Column(Integer, nullable=False)
+    extra_cost_per_hour = Column(Integer, nullable=False)
+    cost_for_addon_km = Column(Integer, nullable=False)
+    extra_cost_for_addon_km = Column(Integer, nullable=False)
 
     pickup_notes = Column(String, nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)

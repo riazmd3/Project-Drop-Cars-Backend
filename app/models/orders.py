@@ -50,6 +50,11 @@ class Order(Base):
     closed_driver_price = Column(Integer, nullable=True)
     commision_amount = Column(Integer, nullable=True)
 
+    # Profit allocations (set when order is completed)
+    vendor_profit = Column(Integer, nullable=True)
+    driver_profit = Column(Integer, nullable=True)
+    admin_profit = Column(Integer, nullable=True)
+
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
 
