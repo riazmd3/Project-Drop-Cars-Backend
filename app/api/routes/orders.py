@@ -24,6 +24,7 @@ def list_vendor_orders(
     current_vendor=Depends(get_current_vendor),
 ):
     # print(current_vendor.id)
+    print("Function executing")
     return get_vendor_orders(db, current_vendor.id)
 
 @router.get("/pending/vendor", response_model=List[UnifiedOrder])
@@ -73,6 +74,7 @@ async def get_vendor_order_details_endpoint(
     - Basic driver and car info (names and phone numbers only)
     - No personal details like addresses, IDs, etc.
     """
+    print("checksss 3")
     order_details = get_vendor_order_details(db, order_id, str(current_vendor.id))
     if not order_details:
         raise HTTPException(

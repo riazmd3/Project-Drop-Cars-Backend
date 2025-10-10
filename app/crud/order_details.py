@@ -293,7 +293,10 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         assigned_driver_phone=assigned_driver_phone,
         assigned_car_name=assigned_car_name,
         assigned_car_number=assigned_car_number,
-        vehicle_owner_name=vehicle_owner_name
+        vehicle_owner_name=vehicle_owner_name,
+        # cost_per_km = new_order.cost_per_km if new_order else None,
+        vendor_profit = order.vendor_profit if order else None,
+        admin_profit = order.admin_profit if order else None
     )
 
 

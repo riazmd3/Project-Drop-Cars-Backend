@@ -113,6 +113,7 @@ async def oneway_confirm(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
+            trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
     except HTTPException:
@@ -206,6 +207,7 @@ async def roundtrip_confirm(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
+            trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
     except HTTPException:
@@ -299,6 +301,7 @@ async def multicity_confirm(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
+            trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
     except HTTPException:
@@ -318,6 +321,7 @@ def get_vendor_orderss(
     db: Session = Depends(get_db),
     current_vendor=Depends(get_current_vendor)
 ):
+    print("checks 2")
     return get_vendor_orders(db, current_vendor.id)
 
 
