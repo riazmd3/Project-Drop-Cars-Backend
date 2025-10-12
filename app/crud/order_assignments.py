@@ -21,8 +21,11 @@ def create_order_assignment(
     if existing_assignment:
         raise ValueError(f"Order {order_id} already has an active assignment with status {existing_assignment.assignment_status}")
     
-    # Calculate expiry time (1 hour from now)
-    expires_at = datetime.utcnow() + timedelta(hours=1)
+    # Calculate expiry time based on order's max_time_to_assign_order
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise ValueError("Order not found")
+    expires_at = order.max_time_to_assign_order or (datetime.utcnow() + timedelta(minutes=15))
     
     db_assignment = OrderAssignment(
         order_id=order_id,
@@ -38,6 +41,37 @@ def create_order_assignment(
     return db_assignment
 
 
+def cancel_timed_out_pending_assignments(db: Session) -> int:
+    """Cancel PENDING assignments that exceeded order's max_time_to_assign_order and have no driver/car assigned.
+
+    Returns number of assignments cancelled in this run.
+    """
+    now = datetime.utcnow()
+    # Find pending assignments whose order's max_time_to_assign_order has passed
+    pending_assignments = (
+        db.query(OrderAssignment)
+        .join(Order, Order.id == OrderAssignment.order_id)
+        .filter(
+            OrderAssignment.assignment_status == AssignmentStatusEnum.PENDING,
+            OrderAssignment.driver_id.is_(None),
+            OrderAssignment.car_id.is_(None),
+            Order.max_time_to_assign_order <= now
+        )
+        .all()
+    )
+
+    cancelled_count = 0
+    for assignment in pending_assignments:
+        assignment.assignment_status = AssignmentStatusEnum.CANCELLED
+        assignment.cancelled_at = now
+        cancelled_count += 1
+
+    if cancelled_count:
+        db.commit()
+
+    return cancelled_count
+
+
 def get_order_assignment_by_id(db: Session, assignment_id: int) -> Optional[OrderAssignment]:
     """Get order assignment by ID"""
     return db.query(OrderAssignment).filter(OrderAssignment.id == assignment_id).first()
@@ -45,6 +79,7 @@ def get_order_assignment_by_id(db: Session, assignment_id: int) -> Optional[Orde
 
 def get_order_assignments_by_vehicle_owner_id(db: Session, vehicle_owner_id: str) -> List[OrderAssignment]:
     """Get all order assignments for a specific vehicle owner"""
+    # print(f"Vehicle owner ID: {vehicle_owner_id}")
     return db.query(OrderAssignment).filter(
         OrderAssignment.vehicle_owner_id == vehicle_owner_id,
         OrderAssignment.assignment_status.in_([AssignmentStatusEnum.ASSIGNED, AssignmentStatusEnum.PENDING])
@@ -309,7 +344,12 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
                 "start_date_time": order.start_date_time,
                 "trip_type": order.trip_type.value if order.trip_type else "Unknown",
                 "car_type": order.car_type.value if order.car_type else "Unknown",
+                "trip_time": order.trip_time,
+                "trip_distance": order.trip_distance,
                 "estimated_price": order.estimated_price,
+                "toll_charge_update": order.toll_charge_update,
+                "data_visibility_vehicle_owner": order.data_visibility_vehicle_owner,
+                "closed_vendor_price": order.vendor_price,
                 "assigned_at": assignment.assigned_at,
                 "created_at": assignment.created_at
             })

@@ -104,6 +104,8 @@ async def oneway_confirm(
             trip_time = fare["trip_time"],
             platform_fees_percent = 10,
             pick_near_city=pick_near_city,
+            max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
         )
         print(fare)
 
@@ -111,6 +113,7 @@ async def oneway_confirm(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
+            trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
     except HTTPException:
@@ -196,12 +199,15 @@ async def roundtrip_confirm(
             trip_time = fare["trip_time"],
             platform_fees_percent = 10,
             pick_near_city=pick_near_city,
+            max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
         )
 
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
+            trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
     except HTTPException:
@@ -287,12 +293,15 @@ async def multicity_confirm(
             trip_time = fare["trip_time"],
             platform_fees_percent = 10,
             pick_near_city=pick_near_city,
+            max_time_to_assign_order=payload.max_time_to_assign_order,
+            toll_charge_update=payload.toll_charge_update,
         )
 
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
             pick_near_city=new_order.pick_near_city,
+            trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
     except HTTPException:
@@ -312,6 +321,7 @@ def get_vendor_orderss(
     db: Session = Depends(get_db),
     current_vendor=Depends(get_current_vendor)
 ):
+    print("checks 2")
     return get_vendor_orders(db, current_vendor.id)
 
 

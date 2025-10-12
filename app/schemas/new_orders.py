@@ -39,14 +39,24 @@ class RentalOrderRequest(BaseModel):
         description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
     
-    package_hours: int
+    package_hours: Dict[str, int] = Field(
+        description='{"hours": <int>, "km_range": <int>}'
+    )
     
-    cost_per_pack: int
-    extra_cost_per_pack: int
-    additional_cost_per_hour: int
-    extra_additional_cost_per_hour: int
+    cost_per_hour: int
+    extra_cost_per_hour: int
+    cost_for_addon_km: int
+    extra_cost_for_addon_km: int
 
     pickup_notes: Optional[str] = None
+    max_time_to_assign_order: Optional[int] = Field(
+        default=15, 
+        description="Maximum time in minutes to assign the order (default: 15 minutes)"
+    )
+    toll_charge_update: Optional[bool] = Field(
+        default=False,
+        description="Whether toll charges can be updated during the trip (default: false)"
+    )
 
     @field_validator("pickup_drop_location")
     def validate_locations(cls, v: Dict[str, str]):
@@ -105,6 +115,7 @@ class UnifiedOrder(BaseModel):
     platform_fees_percent: Optional[int] = None
     created_at: datetime
     # cost_per_km : Optional[int] = None
+    vendor_profit : Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -156,6 +167,14 @@ class OnewayQuoteRequest(BaseModel):
     hill_charges: int
     toll_charges: int
     pickup_notes: Optional[str] = None
+    max_time_to_assign_order: Optional[int] = Field(
+        default=15, 
+        description="Maximum time in minutes to assign the order (default: 15 minutes)"
+    )
+    toll_charge_update: Optional[bool] = Field(
+        default=False,
+        description="Whether toll charges can be updated during the trip (default: false)"
+    )
 
     @field_validator("pickup_drop_location")
     def validate_locations(cls, v: Dict[str, str]):
@@ -204,6 +223,8 @@ class FareBreakdown(BaseModel):
     hill_charges: int
     toll_charges: int
     total_amount: int
+    # commission_amount: int
+    Commission_percent: int
 
 
 class OnewayQuoteResponse(BaseModel):
@@ -215,6 +236,7 @@ class OnewayConfirmResponse(BaseModel):
     order_id: int
     trip_status: str
     pick_near_city: str
+    trip_type : OrderType
     fare: FareBreakdown
 
 class NewOrderResponse(BaseModel):

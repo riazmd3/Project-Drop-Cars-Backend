@@ -293,7 +293,10 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         assigned_driver_phone=assigned_driver_phone,
         assigned_car_name=assigned_car_name,
         assigned_car_number=assigned_car_number,
-        vehicle_owner_name=vehicle_owner_name
+        vehicle_owner_name=vehicle_owner_name,
+        # cost_per_km = new_order.cost_per_km if new_order else None,
+        vendor_profit = order.vendor_profit if order else None,
+        admin_profit = order.admin_profit if order else None
     )
 
 
@@ -303,7 +306,7 @@ def get_vehicle_owner_orders_by_assignment_status(
     assignment_status: str
 ) -> List[VehicleOwnerOrderDetailResponse]:
     """Get orders for vehicle owner filtered by assignment status"""
-    from sqlalchemy import and_
+    from sqlalchemy import and_, or_
     
     # Query to join orders with order_assignments and filter by vehicle_owner_id and assignment_status
     query = db.query(Order, OrderAssignment).join(
@@ -311,7 +314,10 @@ def get_vehicle_owner_orders_by_assignment_status(
     ).filter(
         and_(
             OrderAssignment.vehicle_owner_id == vehicle_owner_id,
-            OrderAssignment.assignment_status == assignment_status
+            or_(
+                OrderAssignment.assignment_status == assignment_status,
+                OrderAssignment.assignment_status == "ASSIGNED"
+            )
         )
     ).order_by(Order.created_at.desc())
     
@@ -344,6 +350,8 @@ def get_vehicle_owner_orders_by_assignment_status(
                 assigned_car_name = car.car_name
                 assigned_car_number = car.car_number
         
+        # Apply vendor-controlled visibility for customer data
+        show_customer = bool(order.data_visibility_vehicle_owner)
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -354,8 +362,8 @@ def get_vehicle_owner_orders_by_assignment_status(
             car_type=order.car_type.value,
             pickup_drop_location=order.pickup_drop_location,
             start_date_time=order.start_date_time,
-            customer_name=order.customer_name,
-            customer_number=order.customer_number,
+            customer_name=order.customer_name if show_customer else "Hidden",
+            customer_number=order.customer_number if show_customer else "Hidden",
             trip_status=order.trip_status,
             pick_near_city=order.pick_near_city,
             trip_distance=order.trip_distance,
@@ -408,7 +416,8 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
     ).filter(
         and_(
             OrderAssignment.vehicle_owner_id == vehicle_owner_id,
-            OrderAssignment.assignment_status != "PENDING"
+            OrderAssignment.assignment_status != "PENDING",
+            OrderAssignment.assignment_status != "ASSIGNED"
         )
     ).order_by(Order.created_at.desc())
     
@@ -441,6 +450,8 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
                 assigned_car_name = car.car_name
                 assigned_car_number = car.car_number
         
+        # Apply vendor-controlled visibility for customer data
+        show_customer = bool(order.data_visibility_vehicle_owner)
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -451,8 +462,8 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
             car_type=order.car_type.value,
             pickup_drop_location=order.pickup_drop_location,
             start_date_time=order.start_date_time,
-            customer_name=order.customer_name,
-            customer_number=order.customer_number,
+            customer_name=order.customer_name if show_customer else "Hidden",
+            customer_number=order.customer_number if show_customer else "Hidden",
             trip_status=order.trip_status,
             pick_near_city=order.pick_near_city,
             trip_distance=order.trip_distance,

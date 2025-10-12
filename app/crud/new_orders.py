@@ -41,6 +41,7 @@ def calculate_oneway_fare(pickup_drop_location: Dict[str, str], cost_per_km: int
         "hill_charges": int(hill_charges),
         "toll_charges": int(toll_charges),
         "total_amount": int(total_amount),
+        "Commission_percent": 10,
     }
 
 
@@ -89,6 +90,7 @@ def calculate_multisegment_fare(pickup_drop_location: Dict[str, str], cost_per_k
         "hill_charges": int(hill_charges),
         "toll_charges": int(toll_charges),
         "total_amount": int(total_amount),
+        "Commission_percent": 10,
     }
 
 
@@ -115,6 +117,8 @@ def create_oneway_order(
     trip_time = str,
     platform_fees_percent = int,
     pick_near_city: str,
+    max_time_to_assign_order: int = 15,
+    toll_charge_update: bool = False,
 ) -> Tuple[NewOrder, int]:
     new_order = NewOrder(
         vendor_id=vendor_id,
@@ -137,16 +141,16 @@ def create_oneway_order(
         trip_time = trip_time,
         platform_fees_percent = 10,
         trip_status="PENDING",
-        estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges,
+        estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges + toll_charges,
         vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges + toll_charges,
         pick_near_city=pick_near_city,
     )
-
+    # print(cost_per_km,trip_distance,driver_allowance,hill_charges,permit_charges,toll_charges)
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
     # Also create/refresh master order row
-    master_order = create_master_from_new_order(db, new_order)
+    master_order = create_master_from_new_order(db, new_order, max_time_to_assign_order, toll_charge_update)
     return new_order, master_order.id
 
 

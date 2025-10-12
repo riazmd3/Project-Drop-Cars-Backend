@@ -178,6 +178,11 @@ class VendorOrderDetailResponse(BaseModel):
     assigned_car_name: Optional[str] = None
     assigned_car_number: Optional[str] = None
     vehicle_owner_name: Optional[str] = None
+    # cost_per_km : Optional[int] = None
+    vendor_profit : Optional[int] = None
+    admin_profit : Optional[int] = None
+    
+    
 
     class Config:
         from_attributes = True

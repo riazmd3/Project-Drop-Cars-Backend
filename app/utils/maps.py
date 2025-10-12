@@ -1,14 +1,16 @@
 import os
 from typing import Tuple
 import requests
+from  dotenv import load_dotenv
 
-
+load_dotenv()
 class MapsApiError(Exception):
     pass
 
 
 def get_google_maps_api_key() -> str:
-    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    # api_key = os.getenv("GOOGLE_MAPS_API_KEYS")
+    api_key = "AIzaSyD93lzYOce05GUsCzx-Sw64vbVtD11sJvU" 
     print(api_key)
     if not api_key:
         raise MapsApiError("GOOGLE_MAPS_API_KEY environment variable is not set")

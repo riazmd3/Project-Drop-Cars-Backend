@@ -166,6 +166,7 @@ async def get_assignments_by_vehicle_owner(
     current_user=Depends(get_current_user)
 ):
     """Get all assignments for a specific vehicle owner"""
+    print(f"Vehicle owner ID: {vehicle_owner_id}")
     # Verify the authenticated user is requesting their own assignments
     if str(vehicle_owner_id) != str(current_user.vehicle_owner_id):
         raise HTTPException(
@@ -333,6 +334,7 @@ async def get_driver_assigned_orders_endpoint(
     """Get all ASSIGNED orders for the authenticated driver"""
     driver_id = str(current_driver.id)
     assigned_orders = get_driver_assigned_orders(db, driver_id)
+    print("Testing Car")
     return assigned_orders
 
 
@@ -385,12 +387,13 @@ async def start_trip(
 async def end_trip(
     order_id: int,
     end_km: int = Form(...),
-    contact_number: str = Form(...),
+    toll_charge_update: bool = Form(False),
+    updated_toll_charges: int | None = Form(None),
     close_speedometer_img: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_driver=Depends(get_current_driver)
 ):
-    """End trip by uploading end KM, contact number, and close speedometer image"""
+    """End trip by uploading end KM, optional toll updates, and close speedometer image"""
     try:
         # Validate close speedometer image file
         if not close_speedometer_img.content_type or not close_speedometer_img.content_type.startswith('image/'):
@@ -411,7 +414,8 @@ async def end_trip(
             order_id=order_id,
             driver_id=str(current_driver.id),
             end_km=end_km,
-            contact_number=contact_number,
+            # toll_charge_update=toll_charge_update,
+            updated_toll_charges=updated_toll_charges,
             close_speedometer_image_url=close_speedometer_img_url
         )
         
@@ -421,9 +425,9 @@ async def end_trip(
             "end_km": result["trip_record"].end_km,
             "close_speedometer_img_url": close_speedometer_img_url,
             "total_km": result["total_km"],
-            "calculated_fare": result["calculated_fare"],
-            "driver_amount": result["driver_amount"],
-            "vehicle_owner_amount": result["vehicle_owner_amount"]
+            # "calculated_fare": result["calculated_fare"],
+            # "driver_amount": result["driver_amount"],
+            # "vehicle_owner_amount": result["vehicle_owner_amount"]
         }
         
     except ValueError as e:
