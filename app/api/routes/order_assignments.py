@@ -334,6 +334,7 @@ async def get_driver_assigned_orders_endpoint(
     """Get all ASSIGNED orders for the authenticated driver"""
     driver_id = str(current_driver.id)
     assigned_orders = get_driver_assigned_orders(db, driver_id)
+    print("Testing Car")
     return assigned_orders
 
 
