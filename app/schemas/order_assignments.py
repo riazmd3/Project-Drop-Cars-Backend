@@ -109,9 +109,9 @@ class EndTripResponse(BaseModel):
     end_km: int
     close_speedometer_img_url: Optional[str] = None
     total_km: int
-    calculated_fare: int
-    driver_amount: int
-    vehicle_owner_amount: int
+    # calculated_fare: int
+    # driver_amount: int
+    # vehicle_owner_amount: int
 
 class DriverOrderListResponse(BaseModel):
     id: int
