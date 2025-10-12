@@ -67,7 +67,7 @@ def update_end_trip_record(
     driver_id: str,
     end_km: int,
     *,
-    toll_charge_update: bool = False,
+    # toll_charge_update: bool = False,
     updated_toll_charges: int | None = None,
     close_speedometer_image_url: str = None
 ) -> dict:
@@ -83,7 +83,7 @@ def update_end_trip_record(
     
     if trip_record.end_km > 0:
         raise ValueError("Trip already ended")
-    
+    # print("Hello")
     # Update trip record
     trip_record.end_km = end_km
     trip_record.close_speedometer_image = close_speedometer_image_url  # Add close speedometer image
@@ -103,9 +103,14 @@ def update_end_trip_record(
     if not order:
         raise ValueError("Order not found")
     
+    if order.toll_charge_update == True:
+        # print("Toll charge update already applied, cannot update again",order.toll_charge_update)
+        if updated_toll_charges is  None or not(updated_toll_charges > 10):
+            raise ValueError("You Must Enter the Toll charges for this order")
+    
     # Calculate fare based on order pricing
     calculated_fare = order.estimated_price or 0
-    admin_commission = 0
+    # admin_commission = 0
     if order.source and order.source.name == "HOURLY_RENTAL":
         # Fetch hourly rental pricing data
         hourly = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
@@ -129,10 +134,10 @@ def update_end_trip_record(
         )
 
         # Apply toll charge updates equally if provided
-        if toll_charge_update and updated_toll_charges is not None:
+        if order.toll_charge_update and updated_toll_charges is not None:
             estimated_total += int(updated_toll_charges)
             vendor_total += int(updated_toll_charges)
-        elif toll_charge_update and updated_toll_charges is None:
+        elif order.toll_charge_update and updated_toll_charges is None:
             # If update flag is true but value missing, block
             raise ValueError("Updated toll charges must be provided when toll_charge_update is true")
 
@@ -147,8 +152,8 @@ def update_end_trip_record(
         calculated_fare = base_fare
 
     # Apply toll updates if provided
-    if toll_charge_update:
-        order.toll_charge_update = True
+    if order.toll_charge_update == True:
+        # order.toll_charge_update = True
         if updated_toll_charges is not None:
             order.updated_toll_charges = updated_toll_charges
             if not (order.source and order.source.name == "HOURLY_RENTAL"):
@@ -157,7 +162,7 @@ def update_end_trip_record(
             # Missing toll charges when flag is true
             raise ValueError("Updated toll charges must be provided when toll_charge_update is true")
     else:
-        order.toll_charge_update = False
+        # order.toll_charge_update = False
         order.updated_toll_charges = None
     
     # Update order with final amounts, profits, and status
@@ -284,9 +289,9 @@ def update_end_trip_record(
     return {
         "trip_record": trip_record,
         "total_km": total_km,
-        "calculated_fare": calculated_fare,
-        "driver_amount": int(calculated_fare * 0.7),
-        "vehicle_owner_amount": int(calculated_fare * 0.3)
+        # "calculated_fare": calculated_fare,
+        # "driver_amount": int(calculated_fare * 0.7),
+        # "vehicle_owner_amount": int(calculated_fare * 0.3)
     }
 
 def get_driver_trip_history(db: Session, driver_id: str) -> List[dict]:

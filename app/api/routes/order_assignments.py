@@ -414,7 +414,7 @@ async def end_trip(
             order_id=order_id,
             driver_id=str(current_driver.id),
             end_km=end_km,
-            toll_charge_update=toll_charge_update,
+            # toll_charge_update=toll_charge_update,
             updated_toll_charges=updated_toll_charges,
             close_speedometer_image_url=close_speedometer_img_url
         )
@@ -425,9 +425,9 @@ async def end_trip(
             "end_km": result["trip_record"].end_km,
             "close_speedometer_img_url": close_speedometer_img_url,
             "total_km": result["total_km"],
-            "calculated_fare": result["calculated_fare"],
-            "driver_amount": result["driver_amount"],
-            "vehicle_owner_amount": result["vehicle_owner_amount"]
+            # "calculated_fare": result["calculated_fare"],
+            # "driver_amount": result["driver_amount"],
+            # "vehicle_owner_amount": result["vehicle_owner_amount"]
         }
         
     except ValueError as e:
