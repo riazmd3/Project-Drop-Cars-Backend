@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-JSON_FILE_PATH = Path("load_data\hourly_plans.json")
+JSON_FILE_PATH = Path("load_data/hourly_plans.json")
 data_cache = {}
 
 
@@ -39,6 +39,7 @@ data_cache = load_json_file()
 # GET /data — Serve cached data
 @router.get("/rental_hrs_data")
 def get_data():
+    print(data_cache)
     return JSONResponse(content=data_cache)
 
 # POST /refresh — Reload data from JSON file

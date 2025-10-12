@@ -123,6 +123,11 @@ class DriverOrderListResponse(BaseModel):
     start_date_time: datetime
     trip_type: str
     car_type: str
+    trip_distance: int
+    trip_time: str
+    toll_charge_update: Optional[bool] = None
+    data_visibility_vehicle_owner: Optional[bool] = None
+    closed_vendor_price: Optional[int] = None
     estimated_price: Optional[int] = None
     assigned_at: Optional[datetime] = None
     created_at: datetime

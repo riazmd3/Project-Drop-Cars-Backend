@@ -115,6 +115,7 @@ class UnifiedOrder(BaseModel):
     platform_fees_percent: Optional[int] = None
     created_at: datetime
     # cost_per_km : Optional[int] = None
+    vendor_profit : Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -235,6 +236,7 @@ class OnewayConfirmResponse(BaseModel):
     order_id: int
     trip_status: str
     pick_near_city: str
+    trip_type : OrderType
     fare: FareBreakdown
 
 class NewOrderResponse(BaseModel):

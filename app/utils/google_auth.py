@@ -2,8 +2,10 @@ import os
 from google.cloud import storage
 
 def download_credentials_from_gcs():
-    bucket_name = os.environ.get("CREDENTIALS_BUCKET")
-    blob_name = os.environ.get("CREDENTIALS_FILE")
+    # bucket_name = os.environ.get("CREDENTIALS_BUCKET")
+    # blob_name = os.environ.get("CREDENTIALS_FILE")
+    bucket_name = os.getenv("CREDENTIALS_BUCKET")
+    blob_name = os.getenv("CREDENTIALS_FILE")
     if not bucket_name or not blob_name:
         raise RuntimeError("Missing CREDENTIALS_BUCKET or CREDENTIALS_FILE env vars")
 

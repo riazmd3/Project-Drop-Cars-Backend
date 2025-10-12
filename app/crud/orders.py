@@ -111,7 +111,10 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         "commision_amount": order.commision_amount,
         "created_at": order.created_at,
         "cost_per_km" : new_order.cost_per_km if new_order else None,
+        "venodr_profit" : order.vendor_profit if order else None,
+        "admin_profit" : order.admin_profit if order else None,
     }
+    print("Base Data:", base_data)
 
     # source_data based on source type
     if order.source == OrderSourceEnum.NEW_ORDERS and new_order:
@@ -127,6 +130,7 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
             "toll_charges": new_order.toll_charges,
             "pickup_notes": new_order.pickup_notes,
             # "cost_per_km" : order.cost_per_km if hasattr(order, 'cost_per_km') else None,
+            # "venodr_profit" : order.vendor_profit if order else None,
             
         }
     elif order.source == OrderSourceEnum.HOURLY_RENTAL and hourly_rental:

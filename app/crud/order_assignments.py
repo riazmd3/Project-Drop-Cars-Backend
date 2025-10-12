@@ -344,7 +344,12 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
                 "start_date_time": order.start_date_time,
                 "trip_type": order.trip_type.value if order.trip_type else "Unknown",
                 "car_type": order.car_type.value if order.car_type else "Unknown",
+                "trip_time": order.trip_time,
+                "trip_distance": order.trip_distance,
                 "estimated_price": order.estimated_price,
+                "toll_charge_update": order.toll_charge_update,
+                "data_visibility_vehicle_owner": order.data_visibility_vehicle_owner,
+                "closed_vendor_price": order.vendor_price,
                 "assigned_at": assignment.assigned_at,
                 "created_at": assignment.created_at
             })

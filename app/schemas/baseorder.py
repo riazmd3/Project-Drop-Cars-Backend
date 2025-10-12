@@ -84,6 +84,8 @@ class BaseOrderSchema(BaseModel):
     commision_amount: Optional[int]
     created_at: datetime
     cost_per_km: Optional[int]
+    venodr_profit: Optional[int]
+    admin_profit: Optional[int]
 
     class Config:
         orm_mode = True
