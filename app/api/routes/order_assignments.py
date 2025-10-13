@@ -14,7 +14,8 @@ from app.schemas.order_assignments import (
     StartTripResponse,
     EndTripRequest,
     EndTripResponse,
-    DriverOrderListResponse
+    DriverOrderListResponse,
+    DriverOrderReport
 )
 from app.crud.order_assignments import (
     create_order_assignment,
@@ -27,7 +28,8 @@ from app.crud.order_assignments import (
     get_vendor_orders_with_assignments,
     update_assignment_car_driver,
     get_driver_assigned_orders,
-    check_vehicle_owner_balance
+    check_vehicle_owner_balance,
+    get_driver_assigned_orders_report
 )
 from app.models.order_assignments import AssignmentStatusEnum
 
@@ -325,6 +327,18 @@ async def assign_car_driver(
     
     return updated_assignment
 
+
+@router.get("/driver/assigned-orders/{order_id}", response_model=List[DriverOrderReport])
+async def get_driver_assigned_orders_report_endpoint(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_driver=Depends(get_current_driver)
+):
+    """Get all ASSIGNED orders for the authenticated driver"""
+    driver_id = str(current_driver.id)
+    assigned_orders = get_driver_assigned_orders_report(db, driver_id, order_id)
+    # print("Testing Car")
+    return assigned_orders
 
 @router.get("/driver/assigned-orders", response_model=List[DriverOrderListResponse])
 async def get_driver_assigned_orders_endpoint(

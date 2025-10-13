@@ -4,6 +4,11 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 from app.models.order_assignments import OrderAssignment, AssignmentStatusEnum
 from app.models.orders import Order
+from app.models.new_orders import NewOrder
+from app.models.end_records import EndRecord
+from app.models.hourly_rental import HourlyRental
+from app.models.orders import OrderSourceEnum
+from fastapi import HTTPException
 
 
 def create_order_assignment(
@@ -355,6 +360,96 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
             })
     
     return result
+
+def get_driver_assigned_orders_report(db: Session, driver_id: str, order_id : int) -> List[dict]:
+    """Get all ASSIGNED orders for a specific driver"""
+    assignment = db.query(OrderAssignment).filter(
+        OrderAssignment.driver_id == driver_id,
+        # OrderAssignment.assignment_status == AssignmentStatusEnum.ASSIGNED
+        OrderAssignment.order_id == order_id,
+        OrderAssignment.assignment_status.in_([AssignmentStatusEnum.COMPLETED])
+    ).order_by(desc(OrderAssignment.assigned_at)).first()
+    
+    result = []
+    order = db.query(Order).filter(Order.id == order_id,).first()
+    if order and assignment:
+        if order and order.source == OrderSourceEnum.HOURLY_RENTAL:
+            print(order.source)
+            hourly_rental = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+            end_records = db.query(EndRecord).filter(EndRecord.order_id == order.id).first()
+            total_km = end_records.end_km - end_records.start_km if end_records else 0
+            if hourly_rental:
+                print("working hourly")
+                result.append({
+                    # "id": assignment.id,
+                    #Assignment details
+                    "order_id": assignment.order_id,
+                    "trip_status": assignment.assignment_status,
+                    
+                    #Order details
+                    "customer_name": order.customer_name,
+                    "customer_number": order.customer_number,
+                    "pickup_drop_location": order.pickup_drop_location,
+                    "start_date_time": order.start_date_time,
+                    "trip_type": order.trip_type if order.trip_type else "Unknown",
+                    "car_type": order.car_type if order.car_type else "Unknown",
+                    "trip_time": order.trip_time,
+                    "total_km": total_km if total_km > 0 else 0,
+                    "toll_charges": order.updated_toll_charges if order.updated_toll_charges else new_order.toll_charges,
+
+                    "updated_toll_charge": order.updated_toll_charges,
+                    "customer_price": order.closed_vendor_price,
+                    
+                    
+                    #Hourly Rental details
+                    "package_hours": hourly_rental.package_hours,
+                    "cost_per_hour": hourly_rental.cost_per_hour + hourly_rental.extra_cost_per_hour,
+                    "cost_per_km": hourly_rental.cost_for_addon_km + hourly_rental.extra_cost_for_addon_km,
+        
+
+                    "assigned_at": assignment.assigned_at,
+                    "created_at": assignment.created_at,
+                    "completed_at": assignment.completed_at
+                })
+        else:
+            new_order = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
+            end_records = db.query(EndRecord).filter(EndRecord.order_id == order.id).first()
+            total_km = end_records.end_km - end_records.start_km if end_records else 0
+            result.append({
+                # "id": assignment.id,
+                #Assignment details
+                "order_id": assignment.order_id,
+                "trip_status": assignment.assignment_status,
+                
+                #Order details
+                "customer_name": order.customer_name,
+                "customer_number": order.customer_number,
+                "pickup_drop_location": order.pickup_drop_location,
+                "start_date_time": order.start_date_time,
+                "trip_type": order.trip_type if order.trip_type else "Unknown",
+                "car_type": order.car_type if order.car_type else "Unknown",
+                "trip_time": order.trip_time,
+                "trip_distance": order.trip_distance if order.trip_distance else 0,
+                "toll_charges": order.updated_toll_charges if order.updated_toll_charges else new_order.toll_charges,
+                "customer_price": order.closed_vendor_price,
+                
+                #New Order details
+                "cost_per_km": new_order.cost_per_km + new_order.extra_cost_per_km,
+                "driver_allowance": new_order.driver_allowance + new_order.extra_driver_allowance,
+                "permit_charges": new_order.permit_charges + new_order.extra_permit_charges,
+                "hill_charges": new_order.hill_charges,
+                "pickup_notes": new_order.pickup_notes,
+                "updated_toll_charge": order.updated_toll_charges,
+                "total_km": total_km if total_km > 0 else 0,
+                "assigned_at": assignment.assigned_at,
+                "created_at": order.created_at,
+                "completed_at": assignment.completed_at
+            })
+                
+
+        return result
+    else:
+        raise HTTPException(status_code=404, detail="Order not Found")
 
 def check_vehicle_owner_balance(db: Session, vehicle_owner_id: str, required_amount: int) -> bool:
     """Check if vehicle owner has sufficient balance"""
