@@ -177,7 +177,7 @@ class DriverOrderReport(BaseModel):
     customer_price: Optional[float]
 
     # Hourly Rental details (optional - only if hourly_rental is present)
-    package_hours: dict
+    package_hours: Optional[dict] = None
     cost_per_hour: Optional[float] = None
     cost_per_km: Optional[float] = None
 
