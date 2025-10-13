@@ -3,11 +3,11 @@ import uuid
 import os
 from fastapi import UploadFile
 
-# GCS_CREDENTIALS = "app/core/drop-cars-468718-d08441443ada.json"
+GCS_CREDENTIALS = "app/core/drop-cars-468718-d08441443ada.json"
 GCS_BUCKET_NAME = "drop-cars-test-bucket"
 
-# client = storage.Client.from_service_account_json(GCS_CREDENTIALS)
-client = storage.Client()
+client = storage.Client.from_service_account_json(GCS_CREDENTIALS)
+# client = storage.Client()
 bucket = client.bucket(GCS_BUCKET_NAME)
 
 def upload_image_to_gcs(file: UploadFile, folder: str = "vehicle_owner_details/aadhar") -> str:

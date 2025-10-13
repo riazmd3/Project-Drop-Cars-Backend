@@ -134,3 +134,64 @@ class DriverOrderListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class DriverOrderReport(BaseModel):
+    # # id: int
+    # #Assignment details
+    # order_id: int
+    # trip_status: AssignmentStatusEnum
+    
+    # #Order details
+    # customer_name: str
+    # customer_number: str
+    # pickup_drop_location: dict
+    # start_date_time: datetime
+    # trip_type: str
+    # car_type: str
+    # trip_distance: int
+    # trip_time: str
+    # # toll_charge_updated_toll_chargeupdate: Optional[bool] = None
+    # # data_visibility_vehicle_owner: Optional[bool] = None
+    # # closed_vendor_price: Optional[int] = None
+    # customer_price: Optional[int] = None
+    # assigned_at: Optional[datetime] = None
+    # created_at: datetime
+    # completed_at: datetime
+    # class Config:
+    #     from_attributes = True
+        # Assignment details
+        
+    order_id: int  # depending on your DB, adjust as needed
+    trip_status: str
+
+    # Order details
+    customer_name: str
+    customer_number: str
+    pickup_drop_location: dict
+    start_date_time: datetime
+    trip_type: str = "Unknown"
+    car_type: str = "Unknown"
+    trip_time: Optional[str]  # Could be timedelta or string depending on your model
+    trip_distance: Optional[float] = None
+    toll_charges: Optional[float]
+    customer_price: Optional[float]
+
+    # Hourly Rental details (optional - only if hourly_rental is present)
+    package_hours: dict
+    cost_per_hour: Optional[float] = None
+    cost_per_km: Optional[float] = None
+
+    # New Order details (optional - only if hourly_rental is not present)
+    driver_allowance: Optional[float] = None
+    permit_charges: Optional[float] = None
+    hill_charges: Optional[float] = None
+    pickup_notes: Optional[str] = None
+
+    # Timestamps
+    assigned_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    total_km : int
+
+    # Additional toll field for clarity/debugging if needed
+    updated_toll_charge: Optional[float] = None
