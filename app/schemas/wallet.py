@@ -59,4 +59,13 @@ class WalletBalanceOut(BaseModel):
     vehicle_owner_id: UUID
     current_balance: int
 
-
+class WalletHistory(BaseModel):
+    id: UUID
+    vendor_id: UUID
+    order_id: Optional[int]
+    entry_type: str
+    amount: int
+    balance_before: int
+    balance_after: int
+    notes: Optional[str]
+    created_at: datetime

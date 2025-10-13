@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database.session import get_db
-from app.core.security import get_current_vehicleOwner_id
+from app.core.security import get_current_vehicleOwner_id, get_current_vendor
 from app.schemas.wallet import (
     CreateRazorpayOrderRequest,
     CreateRazorpayOrderResponse,
@@ -11,6 +11,7 @@ from app.schemas.wallet import (
     RazorpayTransactionOut,
     WalletLedgerOut,
     WalletBalanceOut,
+    WalletHistory,
 )
 from app.utils.razorpay_client import RazorpayClient
 from app.crud.wallet import (
@@ -21,6 +22,8 @@ from app.crud.wallet import (
     check_rp_payment_already_processed,
 )
 from app.models.wallet_ledger import WalletLedger
+from app.models.transfer_transactions import TransferTransactions, TransferStatusEnum
+from app.models.vendor_wallet_ledger import VendorWalletLedger
 from app.models.razorpay_transactions import RazorpayTransaction, RazorpayPaymentStatusEnum
 
 
@@ -108,3 +111,38 @@ def get_balance_endpoint(
     return {"vehicle_owner_id": vehicle_owner_id, "current_balance": balance}
 
 
+@router.get("/vendor/wallet/history", response_model=List[WalletHistory])
+def get_ledger(
+    db: Session = Depends(get_db),
+    vendor_id: str = Depends(get_current_vendor),
+):
+    # print(vendor_id.id)
+    credit = db.query(VendorWalletLedger).filter(VendorWalletLedger.vendor_id == vendor_id.id).order_by(VendorWalletLedger.created_at.desc()).all()
+    debit = db.query(TransferTransactions).filter(TransferTransactions.vendor_id == vendor_id.id,
+                                                  TransferTransactions.status == TransferStatusEnum.APPROVED).order_by(TransferTransactions.updated_at.desc()).all()
+    result = []
+    
+    for entry in debit:
+        result.append(WalletHistory(id=entry.id,
+                                    vendor_id=entry.vendor_id,
+                                    order_id=None,
+                                    # entry_type="DEBIT" if entry.status == "Approved" else "None",
+                                    entry_type="DEBIT",
+                                    amount=entry.requested_amount,
+                                    balance_before=entry.wallet_balance_before,
+                                    balance_after=entry.wallet_balance_after,
+                                    notes=entry.admin_notes,
+                                    created_at=entry.updated_at))
+    
+    for entry in credit:
+        result.append(WalletHistory(id=entry.id,
+                                    vendor_id=entry.vendor_id,
+                                    order_id=entry.order_id,
+                                    entry_type=entry.entry_type,
+                                    amount=entry.amount,
+                                    balance_before=entry.balance_before,
+                                    balance_after=entry.balance_after,
+                                    notes=entry.notes,
+                                    created_at=entry.created_at))
+    result.sort(key=lambda x: x.created_at, reverse=True)
+    return result
