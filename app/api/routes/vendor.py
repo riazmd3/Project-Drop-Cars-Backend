@@ -136,7 +136,7 @@ async def vendor_signin(
             )
         
         # Create access token
-        access_token = create_access_token({"sub": str(vendor_credentials.id)})
+        access_token = create_access_token({"sub": str(vendor_credentials.id),"token_version" : vendor_credentials.token_version})
         
         # Prepare response
         vendor_response = VendorOut(
