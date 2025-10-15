@@ -4,6 +4,10 @@ import enum
 from app.database.session import Base
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 
+class Trip_status(str,enum.Enum): 
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
 class OrderSourceEnum(str, enum.Enum):
     NEW_ORDERS = "NEW_ORDERS"
@@ -26,7 +30,7 @@ class Order(Base):
     customer_number = Column(String, nullable=False)
 
     # Optional shared financials/summaries
-    trip_status = Column(String, nullable=True)
+    trip_status = Column(SqlEnum(Trip_status,name="Trip_status"),nullable=False)
     pick_near_city = Column(String, nullable=True)
     trip_distance = Column(Integer, nullable=True)
     trip_time = Column(String, nullable=True)
