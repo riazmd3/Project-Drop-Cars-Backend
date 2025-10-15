@@ -69,6 +69,8 @@ def cancel_timed_out_pending_assignments(db: Session) -> int:
     for assignment in pending_assignments:
         assignment.assignment_status = AssignmentStatusEnum.CANCELLED
         assignment.cancelled_at = now
+        for column in assignment.__tablename__.columns:
+            print(column.name)
         cancelled_count += 1
 
     if cancelled_count:
@@ -233,7 +235,7 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
                 # "expires_at": None,
                 # "cancelled_at": None,
                 # "completed_at": None,
-                "created_at": order.created_at or datetime.utcnow(),  # Fallback to current time if None
+                "created_at": order.created_at,  # Fallback to current time if None
                 # Order details
                 "vendor_id": order.vendor_id,
                 "trip_type": order.trip_type.value if order.trip_type else "Unknown",
@@ -256,6 +258,7 @@ def get_pending_orders_for_vehicle_owner(db: Session, vehicle_owner_id: str) -> 
                 "pick_near_city": order.pick_near_city or "Unknown",
                 "trip_distance": order.trip_distance or 0,
                 "trip_time": order.trip_time or "Unknown",
+                "max_time_to_assign_order": order.max_time_to_assign_order,
                 "platform_fees_percent": order.platform_fees_percent or 0,
                 "estimated_price": order.estimated_price,
                 "vendor_price": order.vendor_price,
