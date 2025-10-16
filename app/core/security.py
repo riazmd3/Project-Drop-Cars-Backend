@@ -9,7 +9,7 @@ from app.database.session import get_db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "ewebu34bi34b9934bbds044h034b"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 security = HTTPBearer()
 
@@ -43,6 +43,17 @@ def verify_token(token: str):
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+def get_current_user_sub(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = verify_token(token)
+        sub: str = payload.get("sub")
+        if sub is None:
+            raise HTTPException(status_code=401, detail="Invalid JWT payload")
+        return sub
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     """Get current authenticated vehicle owner from token"""
