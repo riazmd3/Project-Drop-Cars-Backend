@@ -49,9 +49,11 @@ def get_current_user_sub(credentials: HTTPAuthorizationCredentials = Depends(sec
         token = credentials.credentials
         payload = verify_token(token)
         sub: str = payload.get("sub")
+        user: str = payload.get("user")
+        
         if sub is None:
             raise HTTPException(status_code=401, detail="Invalid JWT payload")
-        return sub
+        return sub,user
     except JWTError:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 

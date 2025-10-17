@@ -6,11 +6,13 @@ import httpx
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
 def get_notification(db: Session, sub: str):
-    return db.query(Notification).filter(Notification.sub == sub).first()
+    print("The Sube us ",sub[0])
+    return db.query(Notification).filter(Notification.sub == sub[0]).first()
 
 def create_notification(db: Session, sub: str, data: NotificationCreate):
     db_notification = Notification(
-        sub=sub,
+        user = sub[1],
+        sub=sub[0],
         permission1=data.permission1,
         permission2=data.permission2,
         token=data.token
@@ -45,11 +47,12 @@ def update_permissions_only(db: Session, sub: str, data: NotificationPermissionU
     return notification
 
 def get_users_with_permission1(db: Session):
-    return db.query(Notification).filter(Notification.permission1 == True).all()
+    return db.query(Notification).filter(Notification.permission1 == True,Notification.user == "vendor").all()
 
-async def send_push_notifications(db: Session, title: str, message: str):
+async def send_push_notifications_driver(db: Session, title: str, message: str):
     users = get_users_with_permission1(db)
     tokens = [user.token for user in users if user.token]
+    print(tokens)
 
     if not tokens:
         return {"status": "No tokens found for users with permission1 = True"}
