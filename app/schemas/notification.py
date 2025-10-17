@@ -21,4 +21,8 @@ class NotificationResponse(NotificationBase):
 class NotificationPermissionUpdate(BaseModel):
     permission1: Optional[bool] = None
     permission2: Optional[bool] = None
+    
+class BulkNotificationRequest(BaseModel):
+    title: str
+    message: str
 

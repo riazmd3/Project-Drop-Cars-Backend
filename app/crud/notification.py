@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate,NotificationUpdate, NotificationPermissionUpdate
+import httpx
+
+EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
 def get_notification(db: Session, sub: str):
     return db.query(Notification).filter(Notification.sub == sub).first()
@@ -40,3 +43,32 @@ def update_permissions_only(db: Session, sub: str, data: NotificationPermissionU
     db.commit()
     db.refresh(notification)
     return notification
+
+def get_users_with_permission1(db: Session):
+    return db.query(Notification).filter(Notification.permission1 == True).all()
+
+async def send_push_notifications(db: Session, title: str, message: str):
+    users = get_users_with_permission1(db)
+    tokens = [user.token for user in users if user.token]
+
+    if not tokens:
+        return {"status": "No tokens found for users with permission1 = True"}
+
+    payloads = [
+        {
+            "to": token,
+            "sound": "default",
+            "title": title,
+            "body": message
+        }
+        for token in tokens
+    ]
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(EXPO_PUSH_URL, json=payloads)
+
+    return {
+        "status": "Notifications sent",
+        "tokens": tokens,
+        "expo_response": response.json()
+    }

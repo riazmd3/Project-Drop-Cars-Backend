@@ -10,6 +10,8 @@ from app.models.new_orders import NewOrder, OrderTypeEnum
 from app.models.hourly_rental import HourlyRental
 from app.models.order_assignments import OrderAssignment,AssignmentStatusEnum
 from sqlalchemy.sql import or_, and_
+from app.crud.notification import send_push_notifications
+import asyncio
 
 
 def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
@@ -36,6 +38,9 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
     db.add(master)
     db.commit()
     db.refresh(master)
+    asyncio.ensure_future(
+        send_push_notifications(db, f"New Order Alert ({new_order.trip_type.value})", f"A new order has been Received (ID: {master.id})")
+    )
     return master
 
 
@@ -56,12 +61,16 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         estimated_price = int(estimated_price),
         vendor_price = int(vendor_price),
         platform_fees_percent = 10,
+        trip_distance = hourly.package_hours['km_range'],
         max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order)),
         toll_charge_update=toll_charge_update
     )
     db.add(master)
     db.commit()
     db.refresh(master)
+    asyncio.ensure_future(
+        send_push_notifications(db, "Hourly Rental Alert (Hourly Rental)", f"A new order has been Received (ID: {master.id}) is created.")
+    )
     return master
 
 
