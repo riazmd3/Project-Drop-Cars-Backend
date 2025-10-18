@@ -9,7 +9,7 @@ from app.database.session import get_db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "ewebu34bi34b9934bbds044h034b"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 security = HTTPBearer()
 
@@ -43,6 +43,19 @@ def verify_token(token: str):
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+def get_current_user_sub(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = verify_token(token)
+        sub: str = payload.get("sub")
+        user: str = payload.get("user")
+        
+        if sub is None:
+            raise HTTPException(status_code=401, detail="Invalid JWT payload")
+        return sub,user
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Could not validate credentials")
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     """Get current authenticated vehicle owner from token"""
@@ -79,6 +92,8 @@ def get_current_vendor(credentials: HTTPAuthorizationCredentials = Depends(secur
     token = credentials.credentials
     payload = verify_token(token)
     vendor_id = payload.get("sub")
+    token_version = payload.get("token_version")
+    # print("Check token version",token_version)
     
     if vendor_id is None:
         raise HTTPException(
@@ -89,6 +104,12 @@ def get_current_vendor(credentials: HTTPAuthorizationCredentials = Depends(secur
     
     # Get vendor from database
     vendor = get_vendor_by_id(db, vendor_id)
+    if token_version != vendor.token_version:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Force Logout Action Raised",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if vendor is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

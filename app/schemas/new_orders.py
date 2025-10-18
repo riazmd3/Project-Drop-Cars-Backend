@@ -119,6 +119,37 @@ class UnifiedOrder(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class Vendor_Pending_Order_Responce(BaseModel):
+    id: int
+    source: OrderSource
+    source_order_id: int
+    vendor_id: UUID
+    trip_type: OrderType
+    car_type: CarType
+    pickup_drop_location: Dict[str, str]
+    start_date_time: datetime
+    customer_name: str
+    customer_number: Annotated[str, Field(
+        pattern=indian_phone_pattern,
+        description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
+    )]
+    trip_status: Optional[str] = None
+    pick_near_city: Optional[str] = None
+    trip_distance: Optional[int] = None
+    trip_time: Optional[str] = None
+    estimated_price: Optional[int] = None
+    vendor_price: Optional[int] = None
+    platform_fees_percent: Optional[int] = None
+    created_at: datetime
+    order_accept_status: bool
+    Driver_assigned : bool
+    Car_assigned : bool
+    # cost_per_km : Optional[int] = None
+    # vendor_profit : Optional[int] = None
+
+    class Config:
+        from_attributes = True
 
 
 class CloseOrderRequest(BaseModel):

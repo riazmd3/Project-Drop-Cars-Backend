@@ -8,7 +8,10 @@ from app.models.end_records import EndRecord
 from app.utils.gcs import upload_image_to_gcs
 from app.models.new_orders import NewOrder, OrderTypeEnum
 from app.models.hourly_rental import HourlyRental
+from app.models.order_assignments import OrderAssignment,AssignmentStatusEnum
 from sqlalchemy.sql import or_, and_
+from app.crud.notification import send_push_notifications_driver
+import asyncio
 
 
 def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
@@ -35,6 +38,9 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
     db.add(master)
     db.commit()
     db.refresh(master)
+    asyncio.ensure_future(
+        send_push_notifications_driver(db, f"New Order Alert ({new_order.trip_type.value})", f"A new order has been Received (ID: {master.id})")
+    )
     return master
 
 
@@ -55,12 +61,16 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
         estimated_price = int(estimated_price),
         vendor_price = int(vendor_price),
         platform_fees_percent = 10,
+        trip_distance = hourly.package_hours['km_range'],
         max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order)),
         toll_charge_update=toll_charge_update
     )
     db.add(master)
     db.commit()
     db.refresh(master)
+    asyncio.ensure_future(
+        send_push_notifications_driver(db, "Hourly Rental Alert (Hourly Rental)", f"A new order has been Received (ID: {master.id}) is created.")
+    )
     return master
 
 
@@ -149,6 +159,77 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
     return {**base_data, "source_data": source_data}
 
 
+def map_to_combined_schema_pending_orders(order, new_order=None, hourly_rental=None, db : Session = None):
+    # BaseOrderSchema fields
+    order_assignment = db.query(OrderAssignment).filter(OrderAssignment.order_id == order.id).first()
+    order_accept_status= (
+            order_assignment is not None and 
+            order_assignment.assignment_status in (AssignmentStatusEnum.PENDING, AssignmentStatusEnum.ASSIGNED)
+        )
+    base_data = {
+        "id": order.id,
+        "source": order.source.value,  # enum as string
+        "source_order_id": order.source_order_id,
+        "vendor_id": order.vendor_id,  # UUID, ensure correct type
+        "trip_type": order.trip_type.value,
+        "car_type": order.car_type.value,
+        "pickup_drop_location": order.pickup_drop_location,
+        "start_date_time": order.start_date_time,
+        "customer_name": order.customer_name,
+        "customer_number": order.customer_number,
+        "trip_status": order.trip_status,
+        "pick_near_city": order.pick_near_city,
+        "trip_distance": order.trip_distance,
+        "trip_time": order.trip_time,
+        "estimated_price": order.estimated_price,
+        "vendor_price": order.vendor_price,
+        "platform_fees_percent": order.platform_fees_percent,
+        "closed_vendor_price": order.closed_vendor_price,
+        "closed_driver_price": order.closed_driver_price,
+        "commision_amount": order.commision_amount,
+        "created_at": order.created_at,
+        "cost_per_km" : new_order.cost_per_km if new_order else None,
+        "venodr_profit" : order.vendor_profit if order else None,
+        "admin_profit" : order.admin_profit if order else None,
+        "order_accept_status": order_accept_status,
+        "Driver_assigned": (order_accept_status and order_assignment.driver_id is not None),
+        "Car_assigned": (order_accept_status and order_assignment.car_id is not None)
+        
+
+    }
+    print("Base Data:", base_data)
+
+    # source_data based on source type
+    if order.source == OrderSourceEnum.NEW_ORDERS and new_order:
+        source_data = {
+            "order_id": new_order.order_id,
+            "cost_per_km": new_order.cost_per_km,
+            "extra_cost_per_km": new_order.extra_cost_per_km,
+            "driver_allowance": new_order.driver_allowance,
+            "extra_driver_allowance": new_order.extra_driver_allowance,
+            "permit_charges": new_order.permit_charges,
+            "extra_permit_charges": new_order.extra_permit_charges,
+            "hill_charges": new_order.hill_charges,
+            "toll_charges": new_order.toll_charges,
+            "pickup_notes": new_order.pickup_notes,
+            # "cost_per_km" : order.cost_per_km if hasattr(order, 'cost_per_km') else None,
+            # "venodr_profit" : order.vendor_profit if order else None,
+        }
+    elif order.source == OrderSourceEnum.HOURLY_RENTAL and hourly_rental:
+        source_data = {
+            "id": hourly_rental.id,
+            "package_hours": hourly_rental.package_hours,
+            "cost_per_hour": hourly_rental.cost_per_hour,
+            "extra_cost_per_hour": hourly_rental.extra_cost_per_hour,
+            "cost_for_addon_km": hourly_rental.cost_for_addon_km,
+            "extra_cost_for_addon_km": hourly_rental.extra_cost_for_addon_km,
+            "pickup_notes": hourly_rental.pickup_notes,
+        }
+    else:
+        source_data = None
+
+    return {**base_data, "source_data": source_data}
+
 def get_vendor_orders(db: Session, vendor_id: str):
     query = (
         db.query(Order, NewOrder, HourlyRental)
@@ -199,7 +280,7 @@ def get_vendor_pending_orders(db: Session, vendor_id: str):
 
     # map each row to CombinedOrderSchema dict
     combined_orders = [
-        map_to_combined_schema(order, new_order, hourly_rental)
+        map_to_combined_schema_pending_orders(order, new_order, hourly_rental,db)
         for order, new_order, hourly_rental in results
     ]
 

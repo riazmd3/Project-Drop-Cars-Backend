@@ -4,7 +4,7 @@ from typing import List
 
 from app.database.session import get_db
 from app.core.security import get_current_vendor, get_current_driver, get_current_admin, get_current_vehicleOwner_id
-from app.schemas.new_orders import UnifiedOrder, CloseOrderResponse
+from app.schemas.new_orders import UnifiedOrder, CloseOrderResponse, Vendor_Pending_Order_Responce
 from app.schemas.order_details import AdminOrderDetailResponse, VendorOrderDetailResponse, VehicleOwnerOrderDetailResponse
 from app.crud.orders import get_all_orders, get_vendor_orders, close_order, get_vendor_pending_orders, set_vehicle_owner_visibility, get_max_time_to_assign_by_trip_type
 from app.crud.order_details import get_admin_order_details, get_vendor_order_details, get_vehicle_owner_pending_orders, get_vehicle_owner_non_pending_orders
@@ -27,11 +27,12 @@ def list_vendor_orders(
     print("Function executing")
     return get_vendor_orders(db, current_vendor.id)
 
-@router.get("/pending/vendor", response_model=List[UnifiedOrder])
+@router.get("/pending/vendor", response_model=List[Vendor_Pending_Order_Responce])
 def list_vendor_orders(
     db: Session = Depends(get_db),
     current_vendor=Depends(get_current_vendor),
 ):
+    print("function check")
     return get_vendor_pending_orders(db, current_vendor.id)
 
 

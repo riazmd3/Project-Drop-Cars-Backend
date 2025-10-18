@@ -74,6 +74,34 @@ class OrderAssignmentWithOrderDetails(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class BaseResponce_pending_orders(BaseModel):
+    order_id: int
+    trip_status: str
+    trip_type: str
+    car_type: str
+    pickup_drop_location: dict
+    start_date_time: datetime
+    pick_near_city:str
+    trip_distance: int
+    trip_time: str
+    estimated_price: int
+    toll_charge_update:bool
+    max_time_to_assign_order : Optional[datetime]
+    pickup_notes: Optional[str] = None
+    created_at: datetime
+    charges_to_deduct : int
+    
+    
+class vehicle_owner_pending_new_orders(BaseResponce_pending_orders):
+    class Config:
+        from_attributes = True
+
+class vehicle_owner_pending_horuly_rental(BaseResponce_pending_orders):
+    package:dict
+    cost_for_addon_km:int
+    class Config:
+        from_attributes = True
 
 class UpdateCarDriverRequest(BaseModel):
     driver_id: UUID

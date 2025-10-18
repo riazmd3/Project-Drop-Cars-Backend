@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List,Union
 
 from app.database.session import get_db
 from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver
@@ -15,7 +15,9 @@ from app.schemas.order_assignments import (
     EndTripRequest,
     EndTripResponse,
     DriverOrderListResponse,
-    DriverOrderReport
+    DriverOrderReport,
+    vehicle_owner_pending_new_orders,
+    vehicle_owner_pending_horuly_rental
 )
 from app.crud.order_assignments import (
     create_order_assignment,
@@ -64,7 +66,7 @@ async def get_available_cars(
     return available_cars
 
 
-@router.get("/vehicle_owner/pending", response_model=List[OrderAssignmentWithOrderDetails])
+@router.get("/vehicle_owner/pending", response_model=List[Union[vehicle_owner_pending_new_orders,vehicle_owner_pending_horuly_rental]])
 async def get_pending_orders_for_vehicle_owner(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)

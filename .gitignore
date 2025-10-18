@@ -16,3 +16,4 @@ app/core/drop-cars-468718-d08441443ada.json
 app/tests/*
 *test.py
 run_tests.py
+env.yaml

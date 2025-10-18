@@ -64,7 +64,7 @@ def get_driver_basic_info(db: Session, driver_id: str) -> Optional[DriverBasicIn
         secondary_number=driver.secondary_number,
         licence_number=driver.licence_number,
         address=driver.adress,
-        driver_status=driver.driver_status.value,
+        driver_status=driver.driver_status,
         created_at=driver.created_at
     )
 
@@ -78,9 +78,9 @@ def get_car_basic_info(db: Session, car_id: str) -> Optional[CarBasicInfo]:
     return CarBasicInfo(
         id=car.id,
         car_name=car.car_name,
-        car_type=car.car_type.value,
+        car_type=car.car_type,
         car_number=car.car_number,
-        car_status=car.car_status.value,
+        car_status=car.car_status,
         rc_front_img_url=car.rc_front_img_url,
         rc_back_img_url=car.rc_back_img_url,
         insurance_img_url=car.insurance_img_url,
@@ -105,8 +105,8 @@ def get_vehicle_owner_basic_info(db: Session, vehicle_owner_id: str) -> Optional
         full_name=owner_details.full_name,
         primary_number=owner_details.primary_number,
         secondary_number=owner_details.secondary_number,
-        address=owner_details.adress,
-        account_status=owner_creds.account_status.value,
+        address=owner_details.address,
+        account_status=owner_creds.account_status,
         created_at=owner_creds.created_at
     )
 
@@ -191,11 +191,11 @@ def get_admin_order_details(db: Session, order_id: int) -> Optional[AdminOrderDe
     
     return AdminOrderDetailResponse(
         id=order.id,
-        source=order.source.value,
+        source=order.source,
         source_order_id=order.source_order_id,
         vendor_id=order.vendor_id,
-        trip_type=order.trip_type.value,
-        car_type=order.car_type.value,
+        trip_type=order.trip_type,
+        car_type=order.car_type,
         pickup_drop_location=order.pickup_drop_location,
         start_date_time=order.start_date_time,
         customer_name=order.customer_name,
@@ -267,11 +267,11 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
     
     return VendorOrderDetailResponse(
         id=order.id,
-        source=order.source.value,
+        source=order.source,
         source_order_id=order.source_order_id,
         vendor_id=order.vendor_id,
-        trip_type=order.trip_type.value,
-        car_type=order.car_type.value,
+        trip_type=order.trip_type,
+        car_type=order.car_type,
         pickup_drop_location=order.pickup_drop_location,
         start_date_time=order.start_date_time,
         customer_name=order.customer_name,
