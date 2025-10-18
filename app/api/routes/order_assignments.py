@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List,Union
 
 from app.database.session import get_db
-from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver
+from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver, get_current_vendor
 from app.schemas.order_assignments import (
     OrderAssignmentCreate,
     OrderAssignmentResponse,
@@ -31,7 +31,8 @@ from app.crud.order_assignments import (
     update_assignment_car_driver,
     get_driver_assigned_orders,
     check_vehicle_owner_balance,
-    get_driver_assigned_orders_report
+    get_driver_assigned_orders_report,
+    cancel_order_by_vendor
 )
 from app.models.order_assignments import AssignmentStatusEnum
 
@@ -463,5 +464,27 @@ async def get_driver_trip_history(
     trip_history = get_driver_trip_history(db, driver_id)
     return trip_history
 
+
+@router.patch("/vendor/cancel-order/{order_id}")
+async def cancel_order_by_vendor_endpoint(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor)
+):
+    """Cancel an order by vendor (no money debited from vehicle owner)"""
+    try:
+        vendor_id = str(current_vendor.id)
+        result = cancel_order_by_vendor(db, order_id, vendor_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to cancel order: {str(e)}"
+        )
 
 

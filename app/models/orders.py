@@ -9,6 +9,10 @@ class Trip_status(str,enum.Enum):
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
 
+class CancelledByEnum(str, enum.Enum):
+    AUTO_CANCELLED = "AUTO_CANCELLED"
+    CANCELLED_BY_VENDOR = "CANCELLED_BY_VENDOR"
+
 class OrderSourceEnum(str, enum.Enum):
     NEW_ORDERS = "NEW_ORDERS"
     HOURLY_RENTAL = "HOURLY_RENTAL"
@@ -58,6 +62,9 @@ class Order(Base):
     vendor_profit = Column(Integer, nullable=True)
     driver_profit = Column(Integer, nullable=True)
     admin_profit = Column(Integer, nullable=True)
+
+    # Cancellation tracking
+    cancelled_by = Column(SqlEnum(CancelledByEnum, name="cancelled_by_enum"), nullable=True)
 
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
