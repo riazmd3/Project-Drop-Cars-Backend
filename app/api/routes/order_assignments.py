@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List,Union
-
+from app.crud.notification import send_push_notification_to_vendor
 from app.database.session import get_db
 from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver, get_current_vendor
 from app.schemas.order_assignments import (
@@ -19,6 +19,7 @@ from app.schemas.order_assignments import (
     vehicle_owner_pending_new_orders,
     vehicle_owner_pending_horuly_rental
 )
+import asyncio
 from app.crud.order_assignments import (
     create_order_assignment,
     get_order_assignment_by_id,
@@ -128,10 +129,12 @@ async def accept_order(
             order_id=payload.order_id,
             vehicle_owner_id=vehicle_owner_id
         )
-
         db.commit()
-        
+        print("Order is Accepted",assignment.order_id)
+        await send_push_notification_to_vendor(db, assignment.order_id, "Order Accepted", f"ORDER ID : {assignment.order_id} is Accepted by",assignment.vehicle_owner_id)
+
         return assignment
+    
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -178,7 +181,7 @@ async def get_assignments_by_vehicle_owner(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to view these assignments"
         )
-    
+    print("Order assignment")
     assignments = get_order_assignments_by_vehicle_owner_id(db, vehicle_owner_id)
     return assignments
 

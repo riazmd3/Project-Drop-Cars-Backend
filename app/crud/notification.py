@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate,NotificationUpdate, NotificationPermissionUpdate
 import httpx
+from app.models.orders import Order
+from app.models.vehicle_owner import VehicleOwnerCredentials
 
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
@@ -47,7 +49,7 @@ def update_permissions_only(db: Session, sub: str, data: NotificationPermissionU
     return notification
 
 def get_users_with_permission1(db: Session):
-    return db.query(Notification).filter(Notification.permission1 == True,Notification.user == "vendor").all()
+    return db.query(Notification).filter(Notification.permission1 == True,Notification.user == "vehicle_owner").all()
 
 async def send_push_notifications_driver(db: Session, title: str, message: str):
     users = get_users_with_permission1(db)
@@ -72,6 +74,49 @@ async def send_push_notifications_driver(db: Session, title: str, message: str):
 
     return {
         "status": "Notifications sent",
+        "tokens": tokens,
+        "expo_response": response.json()
+    }
+    
+def get_users_vendor_permission_2(db: Session, user_id: str):
+    return db.query(Notification).filter(
+        Notification.permission2 == True,
+        Notification.user == "vendor",
+        Notification.sub == user_id  # assuming this is a string
+    ).all()
+
+async def send_push_notification_to_vendor(db: Session, order_id: str, title: str, message: str, vehicle_owner_id):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    vehicle_owner = db.query(VehicleOwnerCredentials).filter()
+    if not order:
+        return {"status": "Order not found"}
+
+    user_id = str(order.vendor_id)  # convert UUID to string if necessary
+    notifications = get_users_vendor_permission_2(db, user_id)
+
+    # Extract tokens
+    tokens = [n.token for n in notifications if n.token]
+
+    if not tokens:
+        return {"status": f"No Expo push tokens found for vendor with ID: {user_id}"}
+
+    # Prepare payloads (one payload per token)
+    payloads = [
+        {
+            "to": token,
+            "sound": "default",
+            "title": title,
+            "body": message
+        }
+        for token in tokens
+    ]
+
+    # Send notification to Expo
+    async with httpx.AsyncClient() as client:
+        response = await client.post(EXPO_PUSH_URL, json=payloads)
+
+    return {
+        "status": "Notification(s) sent",
         "tokens": tokens,
         "expo_response": response.json()
     }

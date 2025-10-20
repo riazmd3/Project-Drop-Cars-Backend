@@ -375,6 +375,7 @@ def get_vehicle_owner_orders_by_assignment_status(
             closed_driver_price=order.closed_driver_price,
             commision_amount=order.commision_amount,
             created_at=order.created_at,
+            max_time_to_assign_order=order.max_time_to_assign_order,
             
             # Assignment information
             assignment_id=assignment.id,
@@ -449,7 +450,7 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
             if car:
                 assigned_car_name = car.car_name
                 assigned_car_number = car.car_number
-        
+
         # Apply vendor-controlled visibility for customer data
         show_customer = bool(order.data_visibility_vehicle_owner)
         result = VehicleOwnerOrderDetailResponse(
@@ -475,6 +476,7 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
             closed_driver_price=order.closed_driver_price,
             commision_amount=order.commision_amount,
             created_at=order.created_at,
+            cancelled_by = order.cancelled_by,
             
             # Assignment information
             assignment_id=assignment.id,

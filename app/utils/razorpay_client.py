@@ -21,7 +21,7 @@ class RazorpayClient:
 
     def create_order(self, amount_paise: int, currency: str = "INR", notes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         payload = {
-            "amount": amount_paise,
+            "amount": amount_paise*100,
             "currency": currency,
             "payment_capture": 1,
             "notes": notes or {},

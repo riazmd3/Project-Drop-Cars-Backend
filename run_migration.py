@@ -7,13 +7,13 @@ Run this script to apply the database migration for order cancellation tracking
 import psycopg2
 import os
 from sqlalchemy import create_engine, text
-from app.database.session import get_db_url
+from app.database.session import DATABASE_URL
 
 def run_migration():
     """Run the migration to add cancelled_by column"""
     
     # Get database URL from environment or use default
-    database_url = get_db_url()
+    database_url = DATABASE_URL
     
     try:
         # Create engine

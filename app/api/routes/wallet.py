@@ -79,7 +79,7 @@ def verify_rp_payment(
             new_balance, _ = credit_wallet(
                 db,
                 vehicle_owner_id=vehicle_owner_id,
-                amount=txn.amount,
+                amount=txn.amount/100,
                 reference_id=txn.rp_payment_id,
                 reference_type="RAZORPAY_PAYMENT",
                 notes="Wallet top-up via Razorpay",
