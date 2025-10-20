@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi_utils.tasks import repeat_every
 from app.database.session import SessionLocal
-from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin, hourly_rental, orders, wallet
+from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin, hourly_rental, orders, wallet, notification
 import app.models.admin
 import app.models.car_driver
 import app.models.vehicle_owner
@@ -37,6 +37,8 @@ app.include_router(order_assignments.router, prefix="/api/orders", tags=["OrderA
 app.include_router(transfer_transactions.router, prefix="/api", tags=["TransferTransactions"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
 app.include_router(wallet.router, prefix="/api", tags=["Wallet"]) 
+app.include_router(notification.router, prefix="/api", tags=["notifications"]) 
+
 
 
 @app.on_event("startup")

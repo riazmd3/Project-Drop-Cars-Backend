@@ -116,7 +116,7 @@ async def signin_car_driver(
         )
     
     # Create access token with driver ID as payload
-    access_token = create_access_token(data={"sub": str(driver.id)})
+    access_token = create_access_token(data={"sub": str(driver.id),"user":"driver"})
     
     return {
         "access_token": access_token,
