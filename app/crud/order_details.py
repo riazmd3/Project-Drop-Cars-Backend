@@ -8,6 +8,8 @@ from app.models.vendor_details import VendorDetails
 from app.models.car_driver import CarDriver
 from app.models.car_details import CarDetails
 from app.models.vehicle_owner import VehicleOwnerCredentials
+from app.models.new_orders import NewOrder
+from app.models.hourly_rental import HourlyRental
 from app.models.vehicle_owner_details import VehicleOwnerDetails
 from app.schemas.order_details import (
     AdminOrderDetailResponse, 
@@ -352,6 +354,14 @@ def get_vehicle_owner_orders_by_assignment_status(
         
         # Apply vendor-controlled visibility for customer data
         show_customer = bool(order.data_visibility_vehicle_owner)
+        if order.source == "NEW_ORDER":
+            new_order = db.query(NewOrder).filter(NewOrder.id == order.id).first()
+            if new_order:
+                pickup_notes = new_order.pickup_notes
+        elif order.source == "HOURLY_RENTAL":
+            hourly_rental = db.query(HourlyRental).filter(HourlyRental.id == order.id).first()
+            if hourly_rental:
+                pickup_notes = hourly_rental.pickup_notes
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -394,7 +404,8 @@ def get_vehicle_owner_orders_by_assignment_status(
             assigned_driver_name=assigned_driver_name,
             assigned_driver_phone=assigned_driver_phone,
             assigned_car_name=assigned_car_name,
-            assigned_car_number=assigned_car_number
+            assigned_car_number=assigned_car_number,
+
         )
         
         results.append(result)
