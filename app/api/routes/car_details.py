@@ -299,7 +299,7 @@ async def update_car_document(
         raise HTTPException(status_code=404, detail="Car details not found")
     
     # Verify that the car belongs to the authenticated vehicle owner
-    if car.vehicle_owner_id != current_user.id:
+    if car.vehicle_owner_id != current_user.vehicle_owner_id:
         raise HTTPException(status_code=403, detail="Access denied. You can only view your own cars.")
     
     valid_document_types = ["rc_front", "rc_back", "insurance", "fc", "car_img"]
@@ -350,3 +350,61 @@ async def update_car_document(
             status_code=500,
             detail=f"Failed to update document: {str(e)}"
         )
+
+
+@router.get("/cardetails/all-document-status", response_model=List[DocumentStatusListResponse])
+def get_all_cars_document_status(
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get document status for all cars belonging to vehicle owner"""
+    from app.crud.car_details import get_all_cars
+    
+    cars = get_all_cars(db, str(current_user.id))
+    
+    car_statuses = []
+    for car in cars:
+        documents = {}
+        if car.rc_front_img_url:
+            documents["rc_front"] = {
+                "document_type": "rc_front",
+                "status": car.rc_front_status.value if car.rc_front_status else "Pending",
+                "image_url": car.rc_front_img_url,
+                "updated_at": None
+            }
+        if car.rc_back_img_url:
+            documents["rc_back"] = {
+                "document_type": "rc_back",
+                "status": car.rc_back_status.value if car.rc_back_status else "Pending",
+                "image_url": car.rc_back_img_url,
+                "updated_at": None
+            }
+        if car.insurance_img_url:
+            documents["insurance"] = {
+                "document_type": "insurance",
+                "status": car.insurance_status.value if car.insurance_status else "Pending",
+                "image_url": car.insurance_img_url,
+                "updated_at": None
+            }
+        if car.fc_img_url:
+            documents["fc"] = {
+                "document_type": "fc",
+                "status": car.fc_status.value if car.fc_status else "Pending",
+                "image_url": car.fc_img_url,
+                "updated_at": None
+            }
+        if car.car_img_url:
+            documents["car_img"] = {
+                "document_type": "car_img",
+                "status": car.car_img_status.value if car.car_img_status else "Pending",
+                "image_url": car.car_img_url,
+                "updated_at": None
+            }
+        
+        car_statuses.append(DocumentStatusListResponse(
+            entity_id=car.id,
+            entity_type="car",
+            documents=documents
+        ))
+    
+    return car_statuses

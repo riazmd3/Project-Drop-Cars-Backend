@@ -2,8 +2,8 @@ import enum
 
 
 class DocumentStatusEnum(enum.Enum):
-	PENDING = "Pending"
-	VERIFIED = "Verified"
-	INVALID = "Invalid"
+	PENDING = "PENDING"
+	VERIFIED = "VERIFIED"
+	INVALID = "INVALID"
 
 

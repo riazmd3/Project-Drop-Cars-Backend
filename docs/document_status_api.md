@@ -4,6 +4,8 @@
 
 The Document Status API provides functionality to track and manage the verification status of documents uploaded to Google Cloud Storage (GCS). This system allows users to check document statuses and update documents when they are marked as invalid.
 
+**Important**: Driver and Car document status APIs are only accessible by Vehicle Owners, not by drivers themselves.
+
 ## Document Status Enum
 
 ```python
@@ -37,7 +39,7 @@ class DocumentStatusEnum(enum.Enum):
 
 ### 1. Get Document Status
 
-#### Vendor Document Status
+#### Vendor Document Status (Vendor Authentication)
 ```
 GET /api/users/vendor/document-status
 ```
@@ -58,19 +60,35 @@ GET /api/users/vendor/document-status
 }
 ```
 
-#### Vehicle Owner Document Status
+#### Vehicle Owner Document Status (Vehicle Owner Authentication)
 ```
 GET /api/users/vehicle-owner/document-status
 ```
 
-#### Driver Document Status
+#### Get All Document Statuses (Vehicle Owner Authentication)
 ```
-GET /api/users/cardriver/document-status
+GET /api/users/vehicle-owner/all-document-status
+```
+**Returns**: All documents for vehicle owner, their cars, and their drivers
+
+#### Driver Document Status (Vehicle Owner Authentication Only)
+```
+GET /api/users/cardriver/{driver_id}/document-status
 ```
 
-#### Car Document Status
+#### All Drivers Document Status (Vehicle Owner Authentication Only)
+```
+GET /api/users/cardriver/all-document-status/check
+```
+
+#### Car Document Status (Vehicle Owner Authentication Only)
 ```
 GET /api/users/cardetails/{car_id}/document-status
+```
+
+#### All Cars Document Status (Vehicle Owner Authentication Only)
+```
+GET /api/users/cardetails/all-document-status
 ```
 
 ### 2. Update Document Status (Admin Only)
@@ -92,12 +110,12 @@ PATCH /api/users/vendor/document-status
 PATCH /api/users/vehicle-owner/document-status
 ```
 
-#### Update Driver Document Status
+#### Update Driver Document Status (Vehicle Owner Authentication Only)
 ```
-PATCH /api/users/cardriver/document-status
+PATCH /api/users/cardriver/{driver_id}/document-status
 ```
 
-#### Update Car Document Status
+#### Update Car Document Status (Vehicle Owner Authentication Only)
 ```
 PATCH /api/users/cardetails/{car_id}/document-status?document_type=rc_front
 ```
@@ -122,16 +140,16 @@ POST /api/users/vehicle-owner/update-document
 - `document_type`: "aadhar"
 - `aadhar_image`: File upload
 
-#### Update Driver Document
+#### Update Driver Document (Vehicle Owner Authentication Only)
 ```
-POST /api/users/cardriver/update-document
+POST /api/users/cardriver/{driver_id}/update-document
 ```
 
 **Form Data:**
 - `document_type`: "licence"
 - `licence_image`: File upload
 
-#### Update Car Document
+#### Update Car Document (Vehicle Owner Authentication Only)
 ```
 POST /api/users/cardetails/{car_id}/update-document
 ```
@@ -198,10 +216,26 @@ POST /api/users/cardetails/{car_id}/update-document
 ## Authentication
 
 All endpoints require proper authentication:
-- Vendor endpoints require vendor authentication
-- Vehicle Owner endpoints require vehicle owner authentication
-- Driver endpoints require driver authentication
-- Car endpoints require vehicle owner authentication (car must belong to authenticated user)
+
+### Vendor Endpoints
+- **Authentication**: Vendor token required
+- **Endpoints**: `/api/users/vendor/document-status`, `/api/users/vendor/update-document`
+
+### Vehicle Owner Endpoints  
+- **Authentication**: Vehicle Owner token required
+- **Endpoints**: 
+  - `/api/users/vehicle-owner/document-status` - Own documents
+  - `/api/users/vehicle-owner/all-document-status` - All documents (owner + cars + drivers)
+  - `/api/users/cardriver/{driver_id}/document-status` - Specific driver documents
+  - `/api/users/cardriver/all-document-status` - All drivers documents
+  - `/api/users/cardetails/{car_id}/document-status` - Specific car documents
+  - `/api/users/cardetails/all-document-status` - All cars documents
+
+### Important Notes
+- **Driver and Car document APIs are ONLY accessible by Vehicle Owners**
+- **Drivers cannot access their own document status APIs**
+- **Vehicle Owners can manage all documents for their cars and drivers**
+- **All document updates require Vehicle Owner authentication**
 
 ## Migration
 

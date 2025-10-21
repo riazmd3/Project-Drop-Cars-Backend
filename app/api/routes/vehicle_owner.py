@@ -7,6 +7,7 @@ from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url  # Utility
 from app.core.security import create_access_token, get_current_vehicleOwner_id,get_current_user
 from app.schemas.document_status import DocumentStatusListResponse, UpdateDocumentStatusRequest, UpdateDocumentRequest, DocumentUpdateResponse
 from app.models.common_enums import DocumentStatusEnum
+from typing import List
 
 router = APIRouter()
 
@@ -255,3 +256,98 @@ async def update_vehicle_owner_document(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update document: {str(e)}"
         )
+
+
+@router.get("/vehicle-owner/all-document-status", response_model=List[DocumentStatusListResponse])
+def get_all_document_statuses(
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    """Get document status for all entities (vehicle owner, cars, drivers) belonging to vehicle owner"""
+    from app.crud.car_details import get_all_cars
+    from app.crud.car_driver import get_drivers_by_vehicleOwner_id
+    
+    all_statuses = []
+    
+    # 1. Get vehicle owner's own document status
+    owner_details = get_vehicle_owner_by_id(db, vehicle_owner_id)
+    if owner_details and owner_details.aadhar_front_img:
+        owner_documents = {
+            "aadhar": {
+                "document_type": "aadhar",
+                "status": owner_details.aadhar_status.value if owner_details.aadhar_status else "Pending",
+                "image_url": owner_details.aadhar_front_img,
+                "updated_at": None
+            }
+        }
+        all_statuses.append(DocumentStatusListResponse(
+            entity_id=owner_details.vehicle_owner_id,
+            entity_type="vehicle_owner",
+            documents=owner_documents
+        ))
+    
+    # 2. Get all cars' document statuses
+    cars = get_all_cars(db, str(vehicle_owner_id))
+    for car in cars:
+        car_documents = {}
+        if car.rc_front_img_url:
+            car_documents["rc_front"] = {
+                "document_type": "rc_front",
+                "status": car.rc_front_status.value if car.rc_front_status else "Pending",
+                "image_url": car.rc_front_img_url,
+                "updated_at": None
+            }
+        if car.rc_back_img_url:
+            car_documents["rc_back"] = {
+                "document_type": "rc_back",
+                "status": car.rc_back_status.value if car.rc_back_status else "Pending",
+                "image_url": car.rc_back_img_url,
+                "updated_at": None
+            }
+        if car.insurance_img_url:
+            car_documents["insurance"] = {
+                "document_type": "insurance",
+                "status": car.insurance_status.value if car.insurance_status else "Pending",
+                "image_url": car.insurance_img_url,
+                "updated_at": None
+            }
+        if car.fc_img_url:
+            car_documents["fc"] = {
+                "document_type": "fc",
+                "status": car.fc_status.value if car.fc_status else "Pending",
+                "image_url": car.fc_img_url,
+                "updated_at": None
+            }
+        if car.car_img_url:
+            car_documents["car_img"] = {
+                "document_type": "car_img",
+                "status": car.car_img_status.value if car.car_img_status else "Pending",
+                "image_url": car.car_img_url,
+                "updated_at": None
+            }
+        
+        all_statuses.append(DocumentStatusListResponse(
+            entity_id=car.id,
+            entity_type="car",
+            documents=car_documents
+        ))
+    
+    # 3. Get all drivers' document statuses
+    drivers = get_drivers_by_vehicleOwner_id(db, str(vehicle_owner_id))
+    for driver in drivers:
+        driver_documents = {}
+        if driver.licence_front_img:
+            driver_documents["licence"] = {
+                "document_type": "licence",
+                "status": driver.licence_front_status.value if driver.licence_front_status else "Pending",
+                "image_url": driver.licence_front_img,
+                "updated_at": None
+            }
+        
+        all_statuses.append(DocumentStatusListResponse(
+            entity_id=driver.id,
+            entity_type="driver",
+            documents=driver_documents
+        ))
+    
+    return all_statuses
