@@ -131,7 +131,7 @@ async def accept_order(
         )
         db.commit()
         print("Order is Accepted",assignment.order_id)
-        await send_push_notification_to_vendor(db, assignment.order_id, "Order Accepted", f"ORDER ID : {assignment.order_id} is Accepted by",assignment.vehicle_owner_id)
+        await send_push_notification_to_vendor(db, assignment.order_id, "Order Accepted", f"ORDER ID : {assignment.order_id} is Accepted by",str(assignment.vehicle_owner_id))
 
         return assignment
     

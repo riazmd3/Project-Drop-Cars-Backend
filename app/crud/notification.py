@@ -3,7 +3,7 @@ from app.models.notification import Notification
 from app.schemas.notification import NotificationCreate,NotificationUpdate, NotificationPermissionUpdate
 import httpx
 from app.models.orders import Order
-from app.models.vehicle_owner import VehicleOwnerCredentials
+from app.models.vehicle_owner_details import VehicleOwnerDetails
 
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
@@ -85,9 +85,9 @@ def get_users_vendor_permission_2(db: Session, user_id: str):
         Notification.sub == user_id  # assuming this is a string
     ).all()
 
-async def send_push_notification_to_vendor(db: Session, order_id: str, title: str, message: str, vehicle_owner_id):
+async def send_push_notification_to_vendor(db: Session, order_id: str, title: str, message: str, vehicle_owner_id : str):
     order = db.query(Order).filter(Order.id == order_id).first()
-    vehicle_owner = db.query(VehicleOwnerCredentials).filter()
+    vehicle_owner = db.query(VehicleOwnerDetails).filter(VehicleOwnerDetails.vehicle_owner_id == vehicle_owner_id).first()
     if not order:
         return {"status": "Order not found"}
 
@@ -106,7 +106,7 @@ async def send_push_notification_to_vendor(db: Session, order_id: str, title: st
             "to": token,
             "sound": "default",
             "title": title,
-            "body": message
+            "body": message + str(vehicle_owner.full_name)
         }
         for token in tokens
     ]
