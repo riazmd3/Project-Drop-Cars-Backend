@@ -62,6 +62,8 @@ def create_car_driver(db: Session, driver_data: CarDriverForm) -> CarDriver:
 
 def update_driver_license_image(db: Session, driver_id: UUID, license_img_url: str) -> CarDriver:
     """Update the license front image URL for an existing car driver record"""
+    from app.models.common_enums import DocumentStatusEnum
+    
     driver = db.query(CarDriver).filter(
         CarDriver.id == driver_id
     ).first()
@@ -73,6 +75,7 @@ def update_driver_license_image(db: Session, driver_id: UUID, license_img_url: s
         )
     
     driver.licence_front_img = license_img_url
+    driver.licence_front_status = DocumentStatusEnum.PENDING  # Set status to Pending when image is updated
     db.commit()
     db.refresh(driver)
     

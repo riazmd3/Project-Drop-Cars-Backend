@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 import enum
 from app.database.session import Base
+from app.models.common_enums import DocumentStatusEnum
 
 class VendorDetails(Base):
     __tablename__ = "vendor_details"
@@ -19,6 +20,7 @@ class VendorDetails(Base):
     gpay_number = Column(String, unique=True, nullable=False)
     aadhar_number = Column(String, unique=True, nullable=False)
     aadhar_front_img = Column(String, unique=True, nullable=True)
+    aadhar_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     adress = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     

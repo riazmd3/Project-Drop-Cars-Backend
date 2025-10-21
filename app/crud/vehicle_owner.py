@@ -80,6 +80,8 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
 
 def update_aadhar_image(db: Session, vehicle_owner_id: UUID, aadhar_img_url: str) -> VehicleOwnerDetails:
     """Update the aadhar_front_img URL for an existing vehicle owner"""
+    from app.models.common_enums import DocumentStatusEnum
+    
     details = db.query(VehicleOwnerDetails).filter(
         VehicleOwnerDetails.vehicle_owner_id == vehicle_owner_id
     ).first()
@@ -91,6 +93,7 @@ def update_aadhar_image(db: Session, vehicle_owner_id: UUID, aadhar_img_url: str
         )
     
     details.aadhar_front_img = aadhar_img_url
+    details.aadhar_status = DocumentStatusEnum.PENDING  # Set status to Pending when image is updated
     db.commit()
     db.refresh(details)
     

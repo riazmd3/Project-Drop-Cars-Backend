@@ -9,6 +9,8 @@ from app.models.vehicle_owner import VehicleOwnerCredentials
 from typing import List
 from app.models.car_driver import CarDriver
 from app.core.security import get_current_driver
+from app.schemas.document_status import DocumentStatusListResponse, UpdateDocumentStatusRequest, UpdateDocumentRequest, DocumentUpdateResponse
+from app.models.common_enums import DocumentStatusEnum
 
 router = APIRouter()
 
@@ -244,3 +246,101 @@ def get_driver_by_mobile(
         raise HTTPException(status_code=403, detail="Access denied. You can only view your own drivers.")
     
     return driver
+
+
+@router.get("/cardriver/document-status", response_model=DocumentStatusListResponse)
+def get_driver_document_status(
+    db: Session = Depends(get_db),
+    current_driver: CarDriver = Depends(get_current_driver),
+):
+    """Get document status for driver"""
+    documents = {}
+    if current_driver.licence_front_img:
+        documents["licence"] = {
+            "document_type": "licence",
+            "status": current_driver.licence_front_status.value if current_driver.licence_front_status else "Pending",
+            "image_url": current_driver.licence_front_img,
+            "updated_at": None
+        }
+    
+    return DocumentStatusListResponse(
+        entity_id=current_driver.id,
+        entity_type="driver",
+        documents=documents
+    )
+
+
+@router.patch("/cardriver/document-status", response_model=DocumentUpdateResponse)
+def update_driver_document_status(
+    status_update: UpdateDocumentStatusRequest,
+    db: Session = Depends(get_db),
+    current_driver: CarDriver = Depends(get_current_driver),
+):
+    """Update document status for driver (admin only)"""
+    # Update licence status
+    current_driver.licence_front_status = status_update.status
+    db.commit()
+    db.refresh(current_driver)
+    
+    return DocumentUpdateResponse(
+        message="Document status updated successfully",
+        document_type="licence",
+        new_image_url=current_driver.licence_front_img,
+        new_status=status_update.status.value
+    )
+
+
+@router.post("/cardriver/update-document", response_model=DocumentUpdateResponse)
+async def update_driver_document(
+    document_type: str = Form(...),
+    licence_image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_driver: CarDriver = Depends(get_current_driver),
+):
+    """Update driver document (upload new image)"""
+    if document_type != "licence":
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid document type for driver"
+        )
+    
+    # Validate image file
+    if not licence_image.content_type or not licence_image.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Please upload an image file"
+        )
+    
+    if licence_image.size and licence_image.size > 5 * 1024 * 1024:  # 5MB
+        raise HTTPException(
+            status_code=400,
+            detail="Image file is too large. Please upload an image smaller than 5MB"
+        )
+    
+    try:
+        # Delete old image if exists
+        if current_driver.licence_front_img:
+            delete_gcs_file_by_url(current_driver.licence_front_img)
+        
+        # Upload new image
+        folder_path = f"car_driver/{current_driver.id}/license"
+        new_image_url = upload_image_to_gcs(licence_image, folder_path)
+        
+        # Update database
+        current_driver.licence_front_img = new_image_url
+        current_driver.licence_front_status = DocumentStatusEnum.PENDING
+        db.commit()
+        db.refresh(current_driver)
+        
+        return DocumentUpdateResponse(
+            message="Document updated successfully",
+            document_type="licence",
+            new_image_url=new_image_url,
+            new_status="Pending"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update document: {str(e)}"
+        )

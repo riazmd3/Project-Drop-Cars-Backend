@@ -7,6 +7,8 @@ from app.database.session import get_db
 from typing import Optional
 from app.schemas.vendor import VendorDetailsResponse
 from app.core.security import get_current_vendor
+from app.schemas.document_status import DocumentStatusListResponse, UpdateDocumentStatusRequest, UpdateDocumentRequest, DocumentUpdateResponse
+from app.models.common_enums import DocumentStatusEnum
 
 router = APIRouter()
 
@@ -190,3 +192,127 @@ def get_my_vendor_details(
         aadhar_front_img=vendor_details.aadhar_front_img,
         created_at=vendor_details.created_at,
     )
+
+
+@router.get("/vendor/document-status", response_model=DocumentStatusListResponse)
+def get_vendor_document_status(
+    db: Session = Depends(get_db),
+    vendor_id: str = Depends(get_current_vendor),
+):
+    """Get document status for vendor"""
+    vendor_credentials, vendor_details = get_vendor_with_details(db, str(vendor_id.id))
+    
+    if not vendor_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vendor details not found"
+        )
+    
+    documents = {}
+    if vendor_details.aadhar_front_img:
+        documents["aadhar"] = {
+            "document_type": "aadhar",
+            "status": vendor_details.aadhar_status.value if vendor_details.aadhar_status else "Pending",
+            "image_url": vendor_details.aadhar_front_img,
+            "updated_at": None
+        }
+    
+    return DocumentStatusListResponse(
+        entity_id=vendor_details.id,
+        entity_type="vendor",
+        documents=documents
+    )
+
+
+@router.patch("/vendor/document-status", response_model=DocumentUpdateResponse)
+def update_vendor_document_status(
+    status_update: UpdateDocumentStatusRequest,
+    db: Session = Depends(get_db),
+    vendor_id: str = Depends(get_current_vendor),
+):
+    """Update document status for vendor (admin only)"""
+    vendor_credentials, vendor_details = get_vendor_with_details(db, str(vendor_id.id))
+    
+    if not vendor_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vendor details not found"
+        )
+    
+    # Update aadhar status
+    vendor_details.aadhar_status = status_update.status
+    db.commit()
+    db.refresh(vendor_details)
+    
+    return DocumentUpdateResponse(
+        message="Document status updated successfully",
+        document_type="aadhar",
+        new_image_url=vendor_details.aadhar_front_img,
+        new_status=status_update.status.value
+    )
+
+
+@router.post("/vendor/update-document", response_model=DocumentUpdateResponse)
+async def update_vendor_document(
+    document_type: str = Form(...),
+    aadhar_image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    vendor_id: str = Depends(get_current_vendor),
+):
+    """Update vendor document (upload new image)"""
+    if document_type != "aadhar":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid document type for vendor"
+        )
+    
+    # Validate image file
+    if not aadhar_image.content_type or not aadhar_image.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Please upload an image file"
+        )
+    
+    if aadhar_image.size and aadhar_image.size > 5 * 1024 * 1024:  # 5MB
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file is too large. Please upload an image smaller than 5MB"
+        )
+    
+    vendor_credentials, vendor_details = get_vendor_with_details(db, str(vendor_id.id))
+    
+    if not vendor_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vendor details not found"
+        )
+    
+    # Upload new image to GCS
+    from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url
+    
+    try:
+        # Delete old image if exists
+        if vendor_details.aadhar_front_img:
+            delete_gcs_file_by_url(vendor_details.aadhar_front_img)
+        
+        # Upload new image
+        new_image_url = upload_image_to_gcs(aadhar_image, "vendor_details/aadhar")
+        
+        # Update database
+        vendor_details.aadhar_front_img = new_image_url
+        vendor_details.aadhar_status = DocumentStatusEnum.PENDING
+        db.commit()
+        db.refresh(vendor_details)
+        
+        return DocumentUpdateResponse(
+            message="Document updated successfully",
+            document_type="aadhar",
+            new_image_url=new_image_url,
+            new_status="Pending"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update document: {str(e)}"
+        )

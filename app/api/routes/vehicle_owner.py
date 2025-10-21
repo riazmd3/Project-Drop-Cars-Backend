@@ -5,6 +5,8 @@ from app.crud.vehicle_owner import create_user, update_aadhar_image, authenticat
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, delete_gcs_file_by_url  # Utility functions
 from app.core.security import create_access_token, get_current_vehicleOwner_id,get_current_user
+from app.schemas.document_status import DocumentStatusListResponse, UpdateDocumentStatusRequest, UpdateDocumentRequest, DocumentUpdateResponse
+from app.models.common_enums import DocumentStatusEnum
 
 router = APIRouter()
 
@@ -132,3 +134,124 @@ async def get_available_drivers(
     from app.crud.car_driver import get_all_drivers
     available_drivers = get_all_drivers(db, vehicle_owner_id)
     return available_drivers
+
+
+@router.get("/vehicle-owner/document-status", response_model=DocumentStatusListResponse)
+def get_vehicle_owner_document_status(
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    """Get document status for vehicle owner"""
+    owner_details = get_vehicle_owner_by_id(db, vehicle_owner_id)
+    
+    if not owner_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle owner details not found"
+        )
+    
+    documents = {}
+    if owner_details.aadhar_front_img:
+        documents["aadhar"] = {
+            "document_type": "aadhar",
+            "status": owner_details.aadhar_status.value if owner_details.aadhar_status else "Pending",
+            "image_url": owner_details.aadhar_front_img,
+            "updated_at": None
+        }
+    
+    return DocumentStatusListResponse(
+        entity_id=owner_details.vehicle_owner_id,
+        entity_type="vehicle_owner",
+        documents=documents
+    )
+
+
+@router.patch("/vehicle-owner/document-status", response_model=DocumentUpdateResponse)
+def update_vehicle_owner_document_status(
+    status_update: UpdateDocumentStatusRequest,
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    """Update document status for vehicle owner (admin only)"""
+    owner_details = get_vehicle_owner_by_id(db, vehicle_owner_id)
+    
+    if not owner_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle owner details not found"
+        )
+    
+    # Update aadhar status
+    owner_details.aadhar_status = status_update.status
+    db.commit()
+    db.refresh(owner_details)
+    
+    return DocumentUpdateResponse(
+        message="Document status updated successfully",
+        document_type="aadhar",
+        new_image_url=owner_details.aadhar_front_img,
+        new_status=status_update.status.value
+    )
+
+
+@router.post("/vehicle-owner/update-document", response_model=DocumentUpdateResponse)
+async def update_vehicle_owner_document(
+    document_type: str = Form(...),
+    aadhar_image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    vehicle_owner_id: str = Depends(get_current_vehicleOwner_id),
+):
+    """Update vehicle owner document (upload new image)"""
+    if document_type != "aadhar":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid document type for vehicle owner"
+        )
+    
+    # Validate image file
+    if not aadhar_image.content_type or not aadhar_image.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Please upload an image file"
+        )
+    
+    if aadhar_image.size and aadhar_image.size > 5 * 1024 * 1024:  # 5MB
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file is too large. Please upload an image smaller than 5MB"
+        )
+    
+    owner_details = get_vehicle_owner_by_id(db, vehicle_owner_id)
+    
+    if not owner_details:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Vehicle owner details not found"
+        )
+    
+    try:
+        # Delete old image if exists
+        if owner_details.aadhar_front_img:
+            delete_gcs_file_by_url(owner_details.aadhar_front_img)
+        
+        # Upload new image
+        new_image_url = upload_image_to_gcs(aadhar_image, "vehicle_owner_details/aadhar")
+        
+        # Update database
+        owner_details.aadhar_front_img = new_image_url
+        owner_details.aadhar_status = DocumentStatusEnum.PENDING
+        db.commit()
+        db.refresh(owner_details)
+        
+        return DocumentUpdateResponse(
+            message="Document updated successfully",
+            document_type="aadhar",
+            new_image_url=new_image_url,
+            new_status="Pending"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update document: {str(e)}"
+        )
