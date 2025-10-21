@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List,Union
-
+from app.crud.notification import send_push_notification_to_vendor
 from app.database.session import get_db
-from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver
+from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver, get_current_vendor
 from app.schemas.order_assignments import (
     OrderAssignmentCreate,
     OrderAssignmentResponse,
@@ -19,6 +19,7 @@ from app.schemas.order_assignments import (
     vehicle_owner_pending_new_orders,
     vehicle_owner_pending_horuly_rental
 )
+import asyncio
 from app.crud.order_assignments import (
     create_order_assignment,
     get_order_assignment_by_id,
@@ -31,7 +32,8 @@ from app.crud.order_assignments import (
     update_assignment_car_driver,
     get_driver_assigned_orders,
     check_vehicle_owner_balance,
-    get_driver_assigned_orders_report
+    get_driver_assigned_orders_report,
+    cancel_order_by_vendor
 )
 from app.models.order_assignments import AssignmentStatusEnum
 
@@ -127,10 +129,12 @@ async def accept_order(
             order_id=payload.order_id,
             vehicle_owner_id=vehicle_owner_id
         )
-
         db.commit()
-        
+        print("Order is Accepted",assignment.order_id)
+        await send_push_notification_to_vendor(db, assignment.order_id, "Order Accepted", f"ORDER ID : {assignment.order_id} is Accepted by",str(assignment.vehicle_owner_id))
+
         return assignment
+    
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -177,7 +181,7 @@ async def get_assignments_by_vehicle_owner(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to view these assignments"
         )
-    
+    print("Order assignment")
     assignments = get_order_assignments_by_vehicle_owner_id(db, vehicle_owner_id)
     return assignments
 
@@ -463,5 +467,27 @@ async def get_driver_trip_history(
     trip_history = get_driver_trip_history(db, driver_id)
     return trip_history
 
+
+@router.patch("/vendor/cancel-order/{order_id}")
+async def cancel_order_by_vendor_endpoint(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor)
+):
+    """Cancel an order by vendor (no money debited from vehicle owner)"""
+    try:
+        vendor_id = str(current_vendor.id)
+        result = cancel_order_by_vendor(db, order_id, vendor_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to cancel order: {str(e)}"
+        )
 
 

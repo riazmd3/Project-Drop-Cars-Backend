@@ -212,6 +212,8 @@ class VehicleOwnerOrderDetailResponse(BaseModel):
     closed_driver_price: Optional[int] = None
     commision_amount: Optional[int] = None
     created_at: datetime
+    cancelled_by : Optional[str] = None
+    max_time_to_assign_order : Optional[datetime] = None
 
     # Assignment information for this vehicle owner
     assignment_id: int

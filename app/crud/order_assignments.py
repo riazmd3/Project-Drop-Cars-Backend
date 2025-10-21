@@ -48,9 +48,13 @@ def create_order_assignment(
 
 def cancel_timed_out_pending_assignments(db: Session) -> int:
     """Cancel PENDING assignments that exceeded order's max_time_to_assign_order and have no driver/car assigned.
+    Also debits penalty amount from vehicle owner's wallet and updates order status.
 
     Returns number of assignments cancelled in this run.
     """
+    from app.models.orders import CancelledByEnum
+    from app.crud.wallet import debit_wallet, get_owner_balance
+    
     now = datetime.utcnow()
     # Find pending assignments whose order's max_time_to_assign_order has passed
     pending_assignments = (
@@ -67,11 +71,58 @@ def cancel_timed_out_pending_assignments(db: Session) -> int:
 
     cancelled_count = 0
     for assignment in pending_assignments:
-        assignment.assignment_status = AssignmentStatusEnum.CANCELLED
-        assignment.cancelled_at = now
-        for column in assignment.__tablename__.columns:
-            print(column.name)
-        cancelled_count += 1
+        try:
+            # Get the order details
+            order = db.query(Order).filter(Order.id == assignment.order_id).first()
+            if not order:
+                continue
+                
+            # Calculate penalty amount (vendor_price - estimated_price)
+            penalty_amount = 0
+            if order.vendor_price and order.estimated_price:
+                penalty_amount = order.vendor_price - order.estimated_price
+            
+            # Check if vehicle owner has sufficient balance
+            vehicle_owner_id = str(assignment.vehicle_owner_id)
+            current_balance = get_owner_balance(db, vehicle_owner_id)
+            
+            if penalty_amount > 0 and current_balance >= penalty_amount:
+                # Debit penalty amount from vehicle owner's wallet
+                try:
+                    new_balance, ledger_entry = debit_wallet(
+                        db=db,
+                        vehicle_owner_id=vehicle_owner_id,
+                        amount=penalty_amount,
+                        reference_id=str(assignment.id),
+                        reference_type="AUTO_CANCELLATION_PENALTY",
+                        notes=f"Auto-cancellation penalty for order {order.id}"
+                    )
+                    print(f"Debited {penalty_amount} from vehicle owner {vehicle_owner_id} for auto-cancellation")
+                except Exception as e:
+                    print(f"Failed to debit penalty from vehicle owner {vehicle_owner_id}: {str(e)}")
+                    # Continue with cancellation even if debit fails
+            elif penalty_amount > 0:
+                print(f"Vehicle owner {vehicle_owner_id} does not have enough money. Required: {penalty_amount}, Available: {current_balance}")
+            
+            # Update assignment status
+            assignment.assignment_status = AssignmentStatusEnum.CANCELLED
+            assignment.cancelled_at = now
+            
+            # Update order status and cancellation tracking
+            order.trip_status = "CANCELLED"
+            # Only set cancelled_by if the column exists (for backward compatibility)
+            try:
+                order.cancelled_by = CancelledByEnum.AUTO_CANCELLED
+            except AttributeError:
+                # Column doesn't exist yet, skip setting it
+                pass
+            
+            cancelled_count += 1
+            
+        except Exception as e:
+            print(f"Error processing auto-cancellation for assignment {assignment.id}: {str(e)}")
+            # Continue with other assignments even if one fails
+            continue
 
     if cancelled_count:
         db.commit()
@@ -423,3 +474,51 @@ def check_vehicle_owner_balance(db: Session, vehicle_owner_id: str, required_amo
         return balance >= required_amount
     except:
         return False
+
+
+def cancel_order_by_vendor(db: Session, order_id: int, vendor_id: str) -> dict:
+    """Cancel an order by vendor without debiting money from vehicle owner"""
+    from app.models.orders import CancelledByEnum
+    
+    # Get the order and verify vendor ownership
+    order = db.query(Order).filter(
+        Order.id == order_id,
+        Order.vendor_id == vendor_id
+    ).first()
+    
+    if not order:
+        raise ValueError("Order not found or you don't have permission to cancel this order")
+    
+    # Check if order is already cancelled
+    if order.trip_status == "CANCELLED":
+        raise ValueError("Order is already cancelled")
+    
+    # Get the latest assignment for this order
+    latest_assignment = db.query(OrderAssignment).filter(
+        OrderAssignment.order_id == order_id
+    ).order_by(desc(OrderAssignment.created_at)).first()
+    
+    now = datetime.utcnow()
+    
+    # Update order status
+    order.trip_status = "CANCELLED"
+    # Only set cancelled_by if the column exists (for backward compatibility)
+    try:
+        order.cancelled_by = CancelledByEnum.CANCELLED_BY_VENDOR
+    except AttributeError:
+        # Column doesn't exist yet, skip setting it
+        pass
+    
+    # Update assignment status if exists
+    if latest_assignment:
+        latest_assignment.assignment_status = AssignmentStatusEnum.CANCELLED
+        latest_assignment.cancelled_at = now
+    
+    db.commit()
+    
+    return {
+        "message": "Order cancelled successfully by vendor",
+        "order_id": order_id,
+        "cancelled_by": "CANCELLED_BY_VENDOR",
+        "cancelled_at": now.isoformat()
+    }
