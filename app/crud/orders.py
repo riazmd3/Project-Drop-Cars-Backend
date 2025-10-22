@@ -10,7 +10,7 @@ from app.models.new_orders import NewOrder, OrderTypeEnum
 from app.models.hourly_rental import HourlyRental
 from app.models.order_assignments import OrderAssignment,AssignmentStatusEnum
 from sqlalchemy.sql import or_, and_
-from app.crud.notification import send_push_notifications_driver
+from app.crud.notification import send_push_notifications_vehicle_owner
 import asyncio
 
 
@@ -39,7 +39,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
     db.commit()
     db.refresh(master)
     asyncio.ensure_future(
-        send_push_notifications_driver(db, f"New Order Alert ({new_order.trip_type.value})", f"A new order has been Received (ID: {master.id})")
+        send_push_notifications_vehicle_owner(db, f"New Order Alert ({new_order.trip_type.value})", f"A new order has been Received (ID: {master.id})")
     )
     return master
 
@@ -69,7 +69,7 @@ def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_ci
     db.commit()
     db.refresh(master)
     asyncio.ensure_future(
-        send_push_notifications_driver(db, "Hourly Rental Alert (Hourly Rental)", f"A new order has been Received (ID: {master.id}) is created.")
+        send_push_notifications_vehicle_owner(db, "Hourly Rental Alert (Hourly Rental)", f"A new order has been Received (ID: {master.id}) is created.")
     )
     return master
 

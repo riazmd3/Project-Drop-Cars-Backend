@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import List,Union
-from app.crud.notification import send_push_notification_to_vendor
+from app.crud.notification import send_push_notification_to_vendor, send_push_notification_to_vendor_driver
 from app.database.session import get_db
 from app.core.security import get_current_user, get_current_vehicleOwner_id, get_current_driver, get_current_vendor
 from app.schemas.order_assignments import (
@@ -330,7 +330,16 @@ async def assign_car_driver(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to assign car and driver"
         )
-    
+        
+    if updated_assignment.car_id or updated_assignment.driver_id:
+        await send_push_notification_to_vendor_driver(
+            db,
+            order_id=str(updated_assignment.order_id),
+            vehicle_owner_id=str(updated_assignment.vehicle_owner_id),
+            driver_id = str(updated_assignment.driver_id),
+            car_id = str(updated_assignment.car_id)
+        )
+        
     return updated_assignment
 
 
@@ -382,7 +391,7 @@ async def start_trip(
         
         # Create start trip record
         from app.crud.end_records import create_start_trip_record
-        trip_record = create_start_trip_record(
+        trip_record = await create_start_trip_record(
             db=db,
             order_id=order_id,
             driver_id=str(current_driver.id),
@@ -429,7 +438,7 @@ async def end_trip(
         
         # Update end trip record
         from app.crud.end_records import update_end_trip_record
-        result = update_end_trip_record(
+        result = await update_end_trip_record(
             db=db,
             order_id=order_id,
             driver_id=str(current_driver.id),

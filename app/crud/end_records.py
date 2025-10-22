@@ -7,8 +7,8 @@ from app.models.orders import Order
 from app.models.new_orders import NewOrder
 from app.models.hourly_rental import HourlyRental
 from app.models.car_driver import CarDriver, AccountStatusEnum
-
-def create_start_trip_record(
+from app.crud.notification import send_trip_status_notification_to_vendor_and_vehicle_owner
+async def create_start_trip_record(
     db: Session,
     order_id: int,
     driver_id: str,
@@ -58,10 +58,10 @@ def create_start_trip_record(
     if driver:
         driver.driver_status = AccountStatusEnum.DRIVING
         db.commit()
-    
+    await send_trip_status_notification_to_vendor_and_vehicle_owner(db, order_id=order_id, status="started")
     return trip_record
 
-def update_end_trip_record(
+async def update_end_trip_record(
     db: Session,
     order_id: int,
     driver_id: str,
@@ -285,7 +285,7 @@ def update_end_trip_record(
     
     db.commit()
     db.refresh(trip_record)
-    
+    await send_trip_status_notification_to_vendor_and_vehicle_owner(db, order_id=17, status="ended")
     return {
         "trip_record": trip_record,
         "total_km": total_km,

@@ -9,6 +9,8 @@ from app.models.end_records import EndRecord
 from app.models.hourly_rental import HourlyRental
 from app.models.orders import OrderSourceEnum
 from fastapi import HTTPException
+from app.crud.vendor_wallet import credit_vendor_wallet
+from app.crud.notification import notify_vendor_auto_cancelled_order
 
 
 def create_order_assignment(
@@ -46,7 +48,7 @@ def create_order_assignment(
     return db_assignment
 
 
-def cancel_timed_out_pending_assignments(db: Session) -> int:
+async def cancel_timed_out_pending_assignments(db: Session) -> int:
     """Cancel PENDING assignments that exceeded order's max_time_to_assign_order and have no driver/car assigned.
     Also debits penalty amount from vehicle owner's wallet and updates order status.
 
@@ -98,6 +100,23 @@ def cancel_timed_out_pending_assignments(db: Session) -> int:
                         notes=f"Auto-cancellation penalty for order {order.id}"
                     )
                     print(f"Debited {penalty_amount} from vehicle owner {vehicle_owner_id} for auto-cancellation")
+                    
+                    await notify_vendor_auto_cancelled_order(
+                        db=db,
+                        vendor_id = order.vendor_id,
+                        order_id = assignment.order_id,
+                        penalty_amount = penalty_amount
+                                                       )
+                    
+                    after , entry = credit_vendor_wallet(
+                        db = db,
+                        vendor_id=order.vendor_id,
+                        amount=penalty_amount,
+                        order_id=assignment.order_id,
+                        notes=f"Auto-cancellation penalty for order {order.id}"
+                        )
+                    
+                    
                 except Exception as e:
                     print(f"Failed to debit penalty from vehicle owner {vehicle_owner_id}: {str(e)}")
                     # Continue with cancellation even if debit fails
