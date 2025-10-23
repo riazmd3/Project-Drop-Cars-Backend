@@ -120,6 +120,7 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         "closed_driver_price": order.closed_driver_price,
         "commision_amount": order.commision_amount,
         "created_at": order.created_at,
+        "cancelled_by" : order.cancelled_by,
         "cost_per_km" : new_order.cost_per_km if new_order else None,
         "venodr_profit" : order.vendor_profit if order else None,
         "admin_profit" : order.admin_profit if order else None,

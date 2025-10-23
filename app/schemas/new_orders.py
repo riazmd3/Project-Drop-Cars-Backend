@@ -115,6 +115,7 @@ class UnifiedOrder(BaseModel):
     platform_fees_percent: Optional[int] = None
     created_at: datetime
     # cost_per_km : Optional[int] = None
+    # cancelled_by: Optional[str] = None
     vendor_profit : Optional[int] = None
 
     class Config:
