@@ -512,11 +512,15 @@ def cancel_order_by_vendor(db: Session, order_id: int, vendor_id: str) -> dict:
     if order.trip_status == "CANCELLED":
         raise ValueError("Order is already cancelled")
     
+    end_records_check = db.query(EndRecord).filter(EndRecord.order_id == order_id).first()
+    if end_records_check:
+        raise ValueError("The Trip is already Started and Cannot able to Cancel it.")
+    
     # Get the latest assignment for this order
     latest_assignment = db.query(OrderAssignment).filter(
         OrderAssignment.order_id == order_id
     ).order_by(desc(OrderAssignment.created_at)).first()
-    
+
     now = datetime.utcnow()
     
     # Update order status
