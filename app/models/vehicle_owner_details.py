@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 import enum
 from app.database.session import Base
+from app.models.common_enums import DocumentStatusEnum
 
 class VehicleOwnerDetails(Base):
     __tablename__ = "vehicle_owner_details"
@@ -17,6 +18,7 @@ class VehicleOwnerDetails(Base):
     wallet_balance = Column(Integer, nullable=False, default=0)
     aadhar_number = Column(String, unique=True, nullable=False)
     aadhar_front_img = Column(String, unique=True, nullable=True)
+    aadhar_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     address = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     # owner_profile_status = Column(Boolean, nullable=False, default=False)

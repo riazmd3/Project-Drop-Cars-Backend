@@ -12,3 +12,4 @@ __pycache__/
 .gcloud/
 *.json
 venv
+cloud_push.sh

@@ -8,6 +8,8 @@ from app.models.vendor_details import VendorDetails
 from app.models.car_driver import CarDriver
 from app.models.car_details import CarDetails
 from app.models.vehicle_owner import VehicleOwnerCredentials
+from app.models.new_orders import NewOrder
+from app.models.hourly_rental import HourlyRental
 from app.models.vehicle_owner_details import VehicleOwnerDetails
 from app.schemas.order_details import (
     AdminOrderDetailResponse, 
@@ -337,6 +339,7 @@ def get_vehicle_owner_orders_by_assignment_status(
         assigned_driver_phone = None
         assigned_car_name = None
         assigned_car_number = None
+        pickup_notes = None
         
         if assignment.driver_id:
             driver = db.query(CarDriver).filter(CarDriver.id == assignment.driver_id).first()
@@ -352,6 +355,15 @@ def get_vehicle_owner_orders_by_assignment_status(
         
         # Apply vendor-controlled visibility for customer data
         show_customer = bool(order.data_visibility_vehicle_owner)
+        if order.source == "NEW_ORDERS":
+            new_order = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
+            print("checck new order")
+            if new_order:
+                pickup_notes = new_order.pickup_notes
+        elif order.source == "HOURLY_RENTAL":
+            hourly_rental = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+            if hourly_rental:
+                pickup_notes = hourly_rental.pickup_notes
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -376,6 +388,7 @@ def get_vehicle_owner_orders_by_assignment_status(
             commision_amount=order.commision_amount,
             created_at=order.created_at,
             max_time_to_assign_order=order.max_time_to_assign_order,
+            pickup_notes = pickup_notes,
             
             # Assignment information
             assignment_id=assignment.id,
@@ -394,7 +407,8 @@ def get_vehicle_owner_orders_by_assignment_status(
             assigned_driver_name=assigned_driver_name,
             assigned_driver_phone=assigned_driver_phone,
             assigned_car_name=assigned_car_name,
-            assigned_car_number=assigned_car_number
+            assigned_car_number=assigned_car_number,
+
         )
         
         results.append(result)

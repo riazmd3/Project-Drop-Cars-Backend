@@ -43,12 +43,12 @@ app.include_router(notification.router, prefix="/api", tags=["notifications"])
 
 @app.on_event("startup")
 @repeat_every(seconds=180, wait_first=True)  # every 3 minutes
-def cancel_expired_assignments_task() -> None:
+async def cancel_expired_assignments_task() -> None:
     """Background job: cancel pending assignments that exceeded their max assignment time."""
     db = SessionLocal()
     try:
         from app.crud.order_assignments import cancel_timed_out_pending_assignments
-        cancelled = cancel_timed_out_pending_assignments(db)
+        cancelled = await cancel_timed_out_pending_assignments(db)
         if cancelled:
             print(f"Auto-cancelled {cancelled} timed-out assignment(s)")
     finally:

@@ -9,6 +9,8 @@ from app.models.end_records import EndRecord
 from app.models.hourly_rental import HourlyRental
 from app.models.orders import OrderSourceEnum
 from fastapi import HTTPException
+from app.crud.vendor_wallet import credit_vendor_wallet
+from app.crud.notification import notify_vendor_auto_cancelled_order
 
 
 def create_order_assignment(
@@ -46,7 +48,7 @@ def create_order_assignment(
     return db_assignment
 
 
-def cancel_timed_out_pending_assignments(db: Session) -> int:
+async def cancel_timed_out_pending_assignments(db: Session) -> int:
     """Cancel PENDING assignments that exceeded order's max_time_to_assign_order and have no driver/car assigned.
     Also debits penalty amount from vehicle owner's wallet and updates order status.
 
@@ -98,6 +100,23 @@ def cancel_timed_out_pending_assignments(db: Session) -> int:
                         notes=f"Auto-cancellation penalty for order {order.id}"
                     )
                     print(f"Debited {penalty_amount} from vehicle owner {vehicle_owner_id} for auto-cancellation")
+                    
+                    await notify_vendor_auto_cancelled_order(
+                        db=db,
+                        vendor_id = order.vendor_id,
+                        order_id = assignment.order_id,
+                        penalty_amount = penalty_amount
+                                                       )
+                    
+                    after , entry = credit_vendor_wallet(
+                        db = db,
+                        vendor_id=order.vendor_id,
+                        amount=penalty_amount,
+                        order_id=assignment.order_id,
+                        notes=f"Auto-cancellation penalty for order {order.id}"
+                        )
+                    
+                    
                 except Exception as e:
                     print(f"Failed to debit penalty from vehicle owner {vehicle_owner_id}: {str(e)}")
                     # Continue with cancellation even if debit fails
@@ -358,8 +377,8 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
                 "id": assignment.id,
                 "order_id": assignment.order_id,
                 "assignment_status": assignment.assignment_status,
-                "customer_name": order.customer_name,
-                "customer_number": order.customer_number,
+                "customer_name": order.customer_name if order.data_visibility_vehicle_owner else "Hidden",
+                "customer_number": order.customer_number if order.data_visibility_vehicle_owner else "Hidden",
                 "pickup_drop_location": order.pickup_drop_location,
                 "start_date_time": order.start_date_time,
                 "trip_type": order.trip_type.value if order.trip_type else "Unknown",
@@ -493,11 +512,15 @@ def cancel_order_by_vendor(db: Session, order_id: int, vendor_id: str) -> dict:
     if order.trip_status == "CANCELLED":
         raise ValueError("Order is already cancelled")
     
+    end_records_check = db.query(EndRecord).filter(EndRecord.order_id == order_id).first()
+    if end_records_check:
+        raise ValueError("The Trip is already Started and Cannot able to Cancel it.")
+    
     # Get the latest assignment for this order
     latest_assignment = db.query(OrderAssignment).filter(
         OrderAssignment.order_id == order_id
     ).order_by(desc(OrderAssignment.created_at)).first()
-    
+
     now = datetime.utcnow()
     
     # Update order status

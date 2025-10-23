@@ -214,6 +214,7 @@ class VehicleOwnerOrderDetailResponse(BaseModel):
     created_at: datetime
     cancelled_by : Optional[str] = None
     max_time_to_assign_order : Optional[datetime] = None
+    pickup_notes : Optional[str] = None
 
     # Assignment information for this vehicle owner
     assignment_id: int

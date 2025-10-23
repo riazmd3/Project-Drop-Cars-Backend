@@ -83,6 +83,7 @@ class BaseOrderSchema(BaseModel):
     closed_driver_price: Optional[int]
     commision_amount: Optional[int]
     created_at: datetime
+    cancelled_by : Optional[str] = None
     cost_per_km: Optional[int]
     venodr_profit: Optional[int]
     admin_profit: Optional[int]

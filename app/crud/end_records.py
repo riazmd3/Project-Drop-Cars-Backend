@@ -7,8 +7,8 @@ from app.models.orders import Order
 from app.models.new_orders import NewOrder
 from app.models.hourly_rental import HourlyRental
 from app.models.car_driver import CarDriver, AccountStatusEnum
-
-def create_start_trip_record(
+from app.crud.notification import send_trip_status_notification_to_vendor_and_vehicle_owner
+async def create_start_trip_record(
     db: Session,
     order_id: int,
     driver_id: str,
@@ -16,6 +16,9 @@ def create_start_trip_record(
     speedometer_img_url: str
 ) -> EndRecord:
     """Create start trip record"""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order.trip_status == "CANCELLED":
+        raise ValueError("The Trip is Already Cancelled and Cannot be able to Start It")
     # Check if driver is assigned to this order
     assignment = db.query(OrderAssignment).filter(
         OrderAssignment.order_id == order_id,
@@ -58,10 +61,10 @@ def create_start_trip_record(
     if driver:
         driver.driver_status = AccountStatusEnum.DRIVING
         db.commit()
-    
+    await send_trip_status_notification_to_vendor_and_vehicle_owner(db, order_id=order_id, status="started")
     return trip_record
 
-def update_end_trip_record(
+async def update_end_trip_record(
     db: Session,
     order_id: int,
     driver_id: str,
@@ -98,6 +101,8 @@ def update_end_trip_record(
         if order.trip_distance is not None and total_km <= int(order.trip_distance):
             raise ValueError("Updated total KM must be greater than the original trip distance")
     
+    if order.trip_status == "CANCELLED":
+        raise ValueError("The Trip is Already Cancelled and Cannot stop the Trip")
     # Get order details for fare calculation
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -193,8 +198,9 @@ def update_end_trip_record(
 
         order.closed_vendor_price = cal_vendor_price
         order.closed_driver_price = cal_driver_price
-
-        order.vendor_profit = cal_vendor_profit - cal_admin_profit
+        vendor_profit = cal_vendor_profit - cal_admin_profit
+        admin_profit = cal_admin_profit
+        order.vendor_profit = vendor_profit
         order.admin_profit = cal_admin_profit
         order.driver_profit = cal_vendor_price - cal_vendor_profit
         order.commision_amount = commision_amount
@@ -251,10 +257,11 @@ def update_end_trip_record(
         from app.models.wallet_ledger import WalletEntryTypeEnum
         
         try:
+            print("check vendor profit")
             debit_wallet(
                 db,
                 vehicle_owner_id=str(assignment.vehicle_owner_id),
-                amount=calculated_fare,
+                amount=vendor_profit+admin_profit,
                 reference_id=str(order_id),
                 reference_type="TRIP_COMPLETION",
                 notes=f"Trip completion - {total_km} km"
@@ -285,7 +292,7 @@ def update_end_trip_record(
     
     db.commit()
     db.refresh(trip_record)
-    
+    await send_trip_status_notification_to_vendor_and_vehicle_owner(db, order_id=17, status="ended")
     return {
         "trip_record": trip_record,
         "total_km": total_km,

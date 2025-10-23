@@ -4,6 +4,7 @@ import uuid
 import enum
 from sqlalchemy.dialects.postgresql import UUID
 from app.database.session import Base
+from app.models.common_enums import DocumentStatusEnum
 
 class CarStatusEnum(enum.Enum):
     ONLINE = "ONLINE"
@@ -30,10 +31,15 @@ class CarDetails(Base):
     car_number = Column(String, nullable=False, unique=True)
     
     rc_front_img_url = Column(String, nullable=True, unique=True)     # GCS public URL
+    rc_front_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     rc_back_img_url = Column(String, nullable=True, unique=True)      # GCS public URL
+    rc_back_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     insurance_img_url = Column(String , nullable=True, unique=True)  # GCS public URL
+    insurance_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     fc_img_url = Column(String, nullable=True, unique=True)  # GCS public URL
+    fc_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     car_img_url = Column(String, nullable=True, unique=True)  # GCS public URL
+    car_img_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     
     car_status = Column(
         SqlEnum(CarStatusEnum, name="car_status_enum"),

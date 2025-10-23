@@ -9,6 +9,8 @@ from app.models.vehicle_owner import VehicleOwnerCredentials
 from typing import List
 from app.models.car_driver import CarDriver
 from app.core.security import get_current_driver
+from app.schemas.document_status import DocumentStatusListResponse, UpdateDocumentStatusRequest, UpdateDocumentRequest, DocumentUpdateResponse
+from app.models.common_enums import DocumentStatusEnum
 
 router = APIRouter()
 
@@ -244,3 +246,181 @@ def get_driver_by_mobile(
         raise HTTPException(status_code=403, detail="Access denied. You can only view your own drivers.")
     
     return driver
+
+
+@router.get("/cardriver/{driver_id}/document-status", response_model=DocumentStatusListResponse)
+def get_driver_document_status(
+    driver_id: str,
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get document status for specific driver (vehicle owner only)"""
+    from app.crud.car_driver import get_driver_by_id
+    from uuid import UUID
+    
+    try:
+        driver_uuid = UUID(driver_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid driver ID format")
+    
+    driver = get_driver_by_id(db, driver_uuid)
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    # Verify that the driver belongs to the authenticated vehicle owner
+    if driver.vehicle_owner_id != current_user.vehicle_owner_id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only view your own drivers.")
+    
+    documents = {}
+    if driver.licence_front_img:
+        documents["licence"] = {
+            "document_type": "licence",
+            "status": driver.licence_front_status.value if driver.licence_front_status else "Pending",
+            "image_url": driver.licence_front_img,
+            "updated_at": None
+        }
+    
+    return DocumentStatusListResponse(
+        entity_id=driver.id,
+        entity_type="driver",
+        documents=documents
+    )
+
+
+@router.patch("/cardriver/{driver_id}/document-status", response_model=DocumentUpdateResponse)
+def update_driver_document_status(
+    driver_id: str,
+    status_update: UpdateDocumentStatusRequest,
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update document status for specific driver (vehicle owner only)"""
+    from app.crud.car_driver import get_driver_by_id
+    from uuid import UUID
+    
+    try:
+        driver_uuid = UUID(driver_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid driver ID format")
+    
+    driver = get_driver_by_id(db, driver_uuid)
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    # Verify that the driver belongs to the authenticated vehicle owner
+    if driver.vehicle_owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only update your own drivers.")
+    
+    # Update licence status
+    driver.licence_front_status = status_update.status
+    db.commit()
+    db.refresh(driver)
+    
+    return DocumentUpdateResponse(
+        message="Document status updated successfully",
+        document_type="licence",
+        new_image_url=driver.licence_front_img,
+        new_status=status_update.status.value
+    )
+
+
+@router.post("/cardriver/{driver_id}/update-document", response_model=DocumentUpdateResponse)
+async def update_driver_document(
+    driver_id: str,
+    document_type: str = Form(...),
+    licence_image: UploadFile = File(...),
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update driver document (upload new image) - vehicle owner only"""
+    from app.crud.car_driver import get_driver_by_id
+    from uuid import UUID
+    
+    try:
+        driver_uuid = UUID(driver_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid driver ID format")
+    
+    driver = get_driver_by_id(db, driver_uuid)
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    # Verify that the driver belongs to the authenticated vehicle owner
+    if driver.vehicle_owner_id != current_user.vehicle_owner_id:
+        raise HTTPException(status_code=403, detail="Access denied. You can only update your own drivers.")
+    
+    if document_type != "licence":
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid document type for driver"
+        )
+    
+    # Validate image file
+    if not licence_image.content_type or not licence_image.content_type.startswith('image/'):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Please upload an image file"
+        )
+    
+    if licence_image.size and licence_image.size > 5 * 1024 * 1024:  # 5MB
+        raise HTTPException(
+            status_code=400,
+            detail="Image file is too large. Please upload an image smaller than 5MB"
+        )
+    
+    try:
+        # Delete old image if exists
+        if driver.licence_front_img:
+            delete_gcs_file_by_url(driver.licence_front_img)
+        
+        # Upload new image
+        folder_path = f"car_driver/{driver.id}/license"
+        new_image_url = upload_image_to_gcs(licence_image, folder_path)
+        
+        # Update database
+        driver.licence_front_img = new_image_url
+        driver.licence_front_status = DocumentStatusEnum.PENDING
+        db.commit()
+        db.refresh(driver)
+        
+        return DocumentUpdateResponse(
+            message="Document updated successfully",
+            document_type="licence",
+            new_image_url=new_image_url,
+            new_status="Pending"
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update document: {str(e)}"
+        )
+
+
+@router.get("/cardriver/all-document-status/check", response_model=List[DocumentStatusListResponse])
+def get_all_drivers_document_status(
+    current_user: VehicleOwnerCredentials = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get document status for all drivers belonging to vehicle owner"""
+    print("checking document status for all drivers belonging to vehicle owner")
+    from app.crud.car_driver import get_drivers_by_vehicleOwner_id
+    drivers = get_drivers_by_vehicleOwner_id(db, str(current_user.vehicle_owner_id))
+    driver_statuses = []
+    for driver in drivers:
+        documents = {}
+        if driver.licence_front_img:
+            documents["licence"] = {
+                "document_type": "licence",
+                "status": driver.licence_front_status.value if driver.licence_front_status else "Pending",
+                "image_url": driver.licence_front_img,
+                "updated_at": None
+            }
+        
+        driver_statuses.append(DocumentStatusListResponse(
+            entity_id=driver.id,
+            entity_type="driver",
+            documents=documents
+        ))
+    
+    return driver_statuses

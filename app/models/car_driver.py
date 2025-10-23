@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.database.session import Base
 import uuid
 import enum
+from app.models.common_enums import DocumentStatusEnum
 class AccountStatusEnum(enum.Enum):
     ONLINE = "ONLINE"
     OFFLINE = "OFFLINE"
@@ -24,6 +25,7 @@ class CarDriver(Base):
     hashed_password = Column(String, nullable=False)
     licence_number = Column(String, nullable=False, unique=True)
     licence_front_img = Column(String, nullable=True, unique=True)
+    licence_front_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     adress = Column(String, nullable=False)
     driver_status = Column(
         SqlEnum(AccountStatusEnum, name="driver_status_enum"),

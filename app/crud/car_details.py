@@ -41,6 +41,8 @@ def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
 
 def update_car_images(db: Session, car_id: UUID, image_urls: dict) -> CarDetails:
     """Update the image URLs for an existing car details record"""
+    from app.models.common_enums import DocumentStatusEnum
+    
     car_details = db.query(CarDetails).filter(
         CarDetails.id == car_id
     ).first()
@@ -51,17 +53,22 @@ def update_car_images(db: Session, car_id: UUID, image_urls: dict) -> CarDetails
             detail=f"Car details not found for ID: {car_id}"
         )
     
-    # Update image URLs
+    # Update image URLs and set status to Pending for updated images
     if 'rc_front_img_url' in image_urls:
         car_details.rc_front_img_url = image_urls['rc_front_img_url']
+        car_details.rc_front_status = DocumentStatusEnum.PENDING
     if 'rc_back_img_url' in image_urls:
         car_details.rc_back_img_url = image_urls['rc_back_img_url']
+        car_details.rc_back_status = DocumentStatusEnum.PENDING
     if 'insurance_img_url' in image_urls:
         car_details.insurance_img_url = image_urls['insurance_img_url']
+        car_details.insurance_status = DocumentStatusEnum.PENDING
     if 'fc_img_url' in image_urls:
         car_details.fc_img_url = image_urls['fc_img_url']
+        car_details.fc_status = DocumentStatusEnum.PENDING
     if 'car_img_url' in image_urls:
         car_details.car_img_url = image_urls['car_img_url']
+        car_details.car_img_status = DocumentStatusEnum.PENDING
     
     db.commit()
     db.refresh(car_details)

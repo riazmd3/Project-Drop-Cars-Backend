@@ -9,7 +9,7 @@ from app.database.session import get_db
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "ewebu34bi34b9934bbds044h034b"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
 security = HTTPBearer()
 
