@@ -16,6 +16,9 @@ async def create_start_trip_record(
     speedometer_img_url: str
 ) -> EndRecord:
     """Create start trip record"""
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order.trip_status == "CANCELLED":
+        raise ValueError("The Trip is Already Cancelled and Cannot be able to Start It")
     # Check if driver is assigned to this order
     assignment = db.query(OrderAssignment).filter(
         OrderAssignment.order_id == order_id,
@@ -98,6 +101,8 @@ async def update_end_trip_record(
         if order.trip_distance is not None and total_km <= int(order.trip_distance):
             raise ValueError("Updated total KM must be greater than the original trip distance")
     
+    if order.trip_status == "CANCELLED":
+        raise ValueError("The Trip is Already Cancelled and Cannot stop the Trip")
     # Get order details for fare calculation
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -193,8 +198,9 @@ async def update_end_trip_record(
 
         order.closed_vendor_price = cal_vendor_price
         order.closed_driver_price = cal_driver_price
-
-        order.vendor_profit = cal_vendor_profit - cal_admin_profit
+        vendor_profit = cal_vendor_profit - cal_admin_profit
+        admin_profit = cal_admin_profit
+        order.vendor_profit = vendor_profit
         order.admin_profit = cal_admin_profit
         order.driver_profit = cal_vendor_price - cal_vendor_profit
         order.commision_amount = commision_amount
@@ -251,10 +257,11 @@ async def update_end_trip_record(
         from app.models.wallet_ledger import WalletEntryTypeEnum
         
         try:
+            print("check vendor profit")
             debit_wallet(
                 db,
                 vehicle_owner_id=str(assignment.vehicle_owner_id),
-                amount=calculated_fare,
+                amount=vendor_profit+admin_profit,
                 reference_id=str(order_id),
                 reference_type="TRIP_COMPLETION",
                 notes=f"Trip completion - {total_km} km"
