@@ -11,6 +11,7 @@ from app.models.orders import OrderSourceEnum
 from fastapi import HTTPException
 from app.crud.vendor_wallet import credit_vendor_wallet
 from app.crud.notification import notify_vendor_auto_cancelled_order
+from app.models.vendor_details import VendorDetails
 
 
 def create_order_assignment(
@@ -372,6 +373,8 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
     for assignment in assignments:
         # Get order details
         order = db.query(Order).filter(Order.id == assignment.order_id).first()
+        vendor_detail_show = db.query(VendorDetails).filter(VendorDetails.vendor_id == order.vendor_id).first()
+        
         if order:
             result.append({
                 "id": assignment.id,
@@ -379,6 +382,9 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
                 "assignment_status": assignment.assignment_status,
                 "customer_name": order.customer_name if order.data_visibility_vehicle_owner else "Hidden",
                 "customer_number": order.customer_number if order.data_visibility_vehicle_owner else "Hidden",
+                "vendor_name" : vendor_detail_show.full_name,
+                "vendor_primary_number" : vendor_detail_show.primary_number,
+                "vendor_secondary_number" : vendor_detail_show.secondary_number,
                 "pickup_drop_location": order.pickup_drop_location,
                 "start_date_time": order.start_date_time,
                 "trip_type": order.trip_type.value if order.trip_type else "Unknown",
@@ -406,6 +412,7 @@ def get_driver_assigned_orders_report(db: Session, driver_id: str, order_id : in
     
     result = []
     order = db.query(Order).filter(Order.id == order_id,).first()
+    vendor_detail_show = db.query(VendorDetails).filter(VendorDetails.vendor_id == order.vendor_id).first()
     if order and assignment:
         if order and order.source == OrderSourceEnum.HOURLY_RENTAL:
             print(order.source)
@@ -433,6 +440,9 @@ def get_driver_assigned_orders_report(db: Session, driver_id: str, order_id : in
 
                     "updated_toll_charge": order.updated_toll_charges,
                     "customer_price": order.closed_vendor_price,
+                    "vendor_name" : vendor_detail_show.full_name,
+                    "vendor_primary_number" : vendor_detail_show.primary_number,
+                    "vendor_secondary_number" : vendor_detail_show.secondary_number,
                     
                     
                     #Hourly Rental details
@@ -466,7 +476,9 @@ def get_driver_assigned_orders_report(db: Session, driver_id: str, order_id : in
                 "trip_distance": order.trip_distance if order.trip_distance else 0,
                 "toll_charges": order.updated_toll_charges if order.updated_toll_charges else new_order.toll_charges,
                 "customer_price": order.closed_vendor_price,
-                
+                "vendor_name" : vendor_detail_show.full_name,
+                "vendor_primary_number" : vendor_detail_show.primary_number,
+                "vendor_secondary_number" : vendor_detail_show.secondary_number,
                 #New Order details
                 "cost_per_km": new_order.cost_per_km + new_order.extra_cost_per_km,
                 "driver_allowance": new_order.driver_allowance + new_order.extra_driver_allowance,

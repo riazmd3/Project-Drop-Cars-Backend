@@ -147,6 +147,9 @@ class DriverOrderListResponse(BaseModel):
     assignment_status: AssignmentStatusEnum
     customer_name: str
     customer_number: str
+    vendor_name: Optional[str] = None
+    vendor_primary_number: Optional[str] = None
+    vendor_secondary_number: Optional[str] = None
     pickup_drop_location: dict
     start_date_time: datetime
     trip_type: str
@@ -203,6 +206,9 @@ class DriverOrderReport(BaseModel):
     trip_distance: Optional[float] = None
     toll_charges: Optional[float]
     customer_price: Optional[float]
+    vendor_name: Optional[str] = None
+    vendor_primary_number: Optional[str] = None
+    vendor_secondary_number: Optional[str] = None
 
     # Hourly Rental details (optional - only if hourly_rental is present)
     package_hours: Optional[dict] = None

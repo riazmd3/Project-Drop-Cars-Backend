@@ -114,13 +114,13 @@ async def accept_order(
             )
         
         # Determine required hold amount (use estimated price or minimum)
-        hold_amount = order.estimated_price or 100  # Minimum 1 INR in paise
+        hold_amount = int(order.vendor_price - order.estimated_price + 100 )or 100  # Minimum 1 INR in paise
         
         # Check if vehicle owner has sufficient balance
         if not check_vehicle_owner_balance(db, vehicle_owner_id, hold_amount):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Insufficient balance. Required: {hold_amount/100} INR"
+                detail=f"Insufficient balance. Required Atleast Minimum of {hold_amount} INR"
             )
 
         # Create the order assignment (without debiting yet)
