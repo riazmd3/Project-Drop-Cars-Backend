@@ -76,6 +76,7 @@ async def get_vendor_order_details_endpoint(
     - No personal details like addresses, IDs, etc.
     """
     print("checksss 3")
+    print(current_vendor.id)
     order_details = get_vendor_order_details(db, order_id, str(current_vendor.id))
     if not order_details:
         raise HTTPException(

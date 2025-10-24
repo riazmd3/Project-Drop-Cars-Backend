@@ -410,7 +410,7 @@ def get_hourly_rental_by_id(db: Session, rental_id: int) -> HourlyRental:
     return db.query(HourlyRental).filter(HourlyRental.id == rental_id).first()
 
 
-def recreate_order(db: Session, order_id: int, current_vendor_id: str) -> Dict[str, any]:
+def recreate_order(db: Session, order_id: int, current_vendor_id: str, max_time_to_assign_order: int = 15) -> Dict[str, any]:
     """
     Recreate an order based on an existing order ID.
     Validates that the order belongs to the current vendor and is auto_cancelled.
@@ -469,7 +469,7 @@ def recreate_order(db: Session, order_id: int, current_vendor_id: str) -> Dict[s
         new_master_order = create_master_from_new_order(
             db, 
             new_order, 
-            max_time_to_assign_order=15, 
+            max_time_to_assign_order=max_time_to_assign_order, 
             toll_charge_update=master_order.toll_charge_update
         )
         
@@ -518,7 +518,7 @@ def recreate_order(db: Session, order_id: int, current_vendor_id: str) -> Dict[s
             trip_time=str(new_hourly_order.package_hours.get("hours", 0)),
             estimated_price=master_order.estimated_price,
             vendor_price=master_order.vendor_price,
-            max_time_to_assign_order=15,
+            max_time_to_assign_order=max_time_to_assign_order,
             toll_charge_update=master_order.toll_charge_update,
         )
         

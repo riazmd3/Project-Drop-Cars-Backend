@@ -348,7 +348,7 @@ async def recreate_order_endpoint(
     """
     try:
         print("ORder is executing")
-        result = recreate_order(db, payload.order_id, str(current_vendor.id))
+        result = recreate_order(db, payload.order_id, str(current_vendor.id), payload.max_time_to_assign_order)
         return result
     except ValueError as e:
         raise HTTPException(

@@ -16,13 +16,15 @@ Requires vendor authentication via JWT token in the Authorization header.
 ### RecreateOrderRequest
 ```json
 {
-  "order_id": 123
+  "order_id": 123,
+  "max_time_to_assign_order": 30
 }
 ```
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | order_id | integer | Yes | The ID of the order to recreate |
+| max_time_to_assign_order | integer | No | Maximum time in minutes to assign the order (default: 15 minutes) |
 
 ## Response Schema
 
@@ -135,7 +137,8 @@ curl -X POST "http://localhost:8000/api/v1/new-orders/recreate" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
-    "order_id": 123
+    "order_id": 123,
+    "max_time_to_assign_order": 30
   }'
 ```
 
@@ -149,7 +152,8 @@ headers = {
     "Authorization": "Bearer YOUR_JWT_TOKEN"
 }
 payload = {
-    "order_id": 123
+    "order_id": 123,
+    "max_time_to_assign_order": 30  # Optional, defaults to 15
 }
 
 response = requests.post(url, json=payload, headers=headers)

@@ -267,13 +267,52 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
             if owner_details:
                 vehicle_owner_name = owner_details.full_name
     
+    # Get source-specific details
+    cost_per_km = None
+    extra_cost_per_km = None
+    driver_allowance = None
+    extra_driver_allowance = None
+    permit_charges = None
+    extra_permit_charges = None
+    hill_charges = None
+    toll_charges = None
+    pickup_notes = None
+    package_hours = None
+    cost_per_hour = None
+    extra_cost_per_hour = None
+    cost_for_addon_km = None
+    extra_cost_for_addon_km = None
+    
+    # Get source-specific data based on order source
+    if order.source.value == "NEW_ORDERS":
+        new_order = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
+        if new_order:
+            cost_per_km = new_order.cost_per_km
+            extra_cost_per_km = new_order.extra_cost_per_km
+            driver_allowance = new_order.driver_allowance
+            extra_driver_allowance = new_order.extra_driver_allowance
+            permit_charges = new_order.permit_charges
+            extra_permit_charges = new_order.extra_permit_charges
+            hill_charges = new_order.hill_charges
+            toll_charges = new_order.toll_charges
+            pickup_notes = new_order.pickup_notes
+    elif order.source.value == "HOURLY_RENTAL":
+        hourly_order = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+        if hourly_order:
+            package_hours = hourly_order.package_hours
+            cost_per_hour = hourly_order.cost_per_hour
+            extra_cost_per_hour = hourly_order.extra_cost_per_hour
+            cost_for_addon_km = hourly_order.cost_for_addon_km
+            extra_cost_for_addon_km = hourly_order.extra_cost_for_addon_km
+            pickup_notes = hourly_order.pickup_notes
+    
     return VendorOrderDetailResponse(
         id=order.id,
-        source=order.source,
+        source=order.source.value,
         source_order_id=order.source_order_id,
         vendor_id=order.vendor_id,
-        trip_type=order.trip_type,
-        car_type=order.car_type,
+        trip_type=order.trip_type.value,
+        car_type=order.car_type.value,
         pickup_drop_location=order.pickup_drop_location,
         start_date_time=order.start_date_time,
         customer_name=order.customer_name,
@@ -289,6 +328,24 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         closed_driver_price=order.closed_driver_price,
         commision_amount=order.commision_amount,
         created_at=order.created_at,
+        cancelled_by=order.cancelled_by.value if order.cancelled_by else None,
+        max_time_to_assign_order=order.max_time_to_assign_order,
+        toll_charge_update=order.toll_charge_update,
+        data_visibility_vehicle_owner=order.data_visibility_vehicle_owner,
+        cost_per_km=cost_per_km,
+        extra_cost_per_km=extra_cost_per_km,
+        driver_allowance=driver_allowance,
+        extra_driver_allowance=extra_driver_allowance,
+        permit_charges=permit_charges,
+        extra_permit_charges=extra_permit_charges,
+        hill_charges=hill_charges,
+        toll_charges=toll_charges,
+        pickup_notes=pickup_notes,
+        package_hours=package_hours,
+        cost_per_hour=cost_per_hour,
+        extra_cost_per_hour=extra_cost_per_hour,
+        cost_for_addon_km=cost_for_addon_km,
+        extra_cost_for_addon_km=extra_cost_for_addon_km,
         assignments=assignments,
         end_records=end_records,
         assigned_driver_name=assigned_driver_name,
@@ -296,9 +353,8 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         assigned_car_name=assigned_car_name,
         assigned_car_number=assigned_car_number,
         vehicle_owner_name=vehicle_owner_name,
-        # cost_per_km = new_order.cost_per_km if new_order else None,
-        vendor_profit = order.vendor_profit if order else None,
-        admin_profit = order.admin_profit if order else None
+        vendor_profit=order.vendor_profit,
+        admin_profit=order.admin_profit
     )
 
 

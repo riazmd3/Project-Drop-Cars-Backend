@@ -179,6 +179,10 @@ class CloseOrderResponse(BaseModel):
 
 class RecreateOrderRequest(BaseModel):
     order_id: int = Field(description="The ID of the order to recreate")
+    max_time_to_assign_order: Optional[int] = Field(
+        default=15, 
+        description="Maximum time in minutes to assign the order (default: 15 minutes)"
+    )
 
 
 class OnewayQuoteRequest(BaseModel):

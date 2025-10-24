@@ -167,6 +167,28 @@ class VendorOrderDetailResponse(BaseModel):
     closed_driver_price: Optional[int] = None
     commision_amount: Optional[int] = None
     created_at: datetime
+    cancelled_by: Optional[str] = None
+    max_time_to_assign_order: Optional[datetime] = None
+    toll_charge_update: Optional[bool] = None
+    data_visibility_vehicle_owner: Optional[bool] = None
+
+    # Source-specific details for NEW_ORDERS
+    cost_per_km: Optional[int] = None
+    extra_cost_per_km: Optional[int] = None
+    driver_allowance: Optional[int] = None
+    extra_driver_allowance: Optional[int] = None
+    permit_charges: Optional[int] = None
+    extra_permit_charges: Optional[int] = None
+    hill_charges: Optional[int] = None
+    toll_charges: Optional[int] = None
+    pickup_notes: Optional[str] = None
+
+    # Source-specific details for HOURLY_RENTAL
+    package_hours: Optional[Dict[str, Any]] = None
+    cost_per_hour: Optional[int] = None
+    extra_cost_per_hour: Optional[int] = None
+    cost_for_addon_km: Optional[int] = None
+    extra_cost_for_addon_km: Optional[int] = None
 
     # Limited assignment info (no sensitive user data)
     assignments: List[OrderAssignmentDetail] = []
@@ -178,9 +200,8 @@ class VendorOrderDetailResponse(BaseModel):
     assigned_car_name: Optional[str] = None
     assigned_car_number: Optional[str] = None
     vehicle_owner_name: Optional[str] = None
-    # cost_per_km : Optional[int] = None
-    vendor_profit : Optional[int] = None
-    admin_profit : Optional[int] = None
+    vendor_profit: Optional[int] = None
+    admin_profit: Optional[int] = None
     
     
 
