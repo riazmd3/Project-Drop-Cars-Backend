@@ -395,3 +395,145 @@ def close_order(
     return order, end_record, img_url
 
 
+def get_order_by_id(db: Session, order_id: int) -> Order:
+    """Get order by ID"""
+    return db.query(Order).filter(Order.id == order_id).first()
+
+
+def get_new_order_by_id(db: Session, order_id: int) -> NewOrder:
+    """Get new order by ID"""
+    return db.query(NewOrder).filter(NewOrder.order_id == order_id).first()
+
+
+def get_hourly_rental_by_id(db: Session, rental_id: int) -> HourlyRental:
+    """Get hourly rental by ID"""
+    return db.query(HourlyRental).filter(HourlyRental.id == rental_id).first()
+
+
+def recreate_order(db: Session, order_id: int, current_vendor_id: str) -> Dict[str, any]:
+    """
+    Recreate an order based on an existing order ID.
+    Validates that the order belongs to the current vendor and is auto_cancelled.
+    """
+    # Get the master order
+    master_order = get_order_by_id(db, order_id)
+    if not master_order:
+        raise ValueError("Order not found")
+    
+    # Validate vendor ownership
+    if str(master_order.vendor_id) != str(current_vendor_id):
+        raise ValueError("Order does not belong to the current vendor")
+    
+    # Validate that order is auto_cancelled
+    if master_order.cancelled_by != "AUTO_CANCELLED":
+        raise ValueError("Order can only be recreated if it was auto_cancelled")
+    
+    # Get source order data based on source type
+    if master_order.source == OrderSourceEnum.NEW_ORDERS:
+        source_order = get_new_order_by_id(db, master_order.source_order_id)
+        if not source_order:
+            raise ValueError("Source new order not found")
+        
+        # Create new order with same data
+        new_order = NewOrder(
+            vendor_id=source_order.vendor_id,
+            trip_type=source_order.trip_type,
+            car_type=source_order.car_type,
+            pickup_drop_location=source_order.pickup_drop_location,
+            start_date_time=source_order.start_date_time,
+            customer_name=source_order.customer_name,
+            customer_number=source_order.customer_number,
+            cost_per_km=source_order.cost_per_km,
+            extra_cost_per_km=source_order.extra_cost_per_km,
+            driver_allowance=source_order.driver_allowance,
+            extra_driver_allowance=source_order.extra_driver_allowance,
+            permit_charges=source_order.permit_charges,
+            extra_permit_charges=source_order.extra_permit_charges,
+            hill_charges=source_order.hill_charges,
+            toll_charges=source_order.toll_charges,
+            pickup_notes=source_order.pickup_notes,
+            trip_status="PENDING",
+            pick_near_city=source_order.pick_near_city,
+            trip_distance=source_order.trip_distance,
+            trip_time=source_order.trip_time,
+            platform_fees_percent=source_order.platform_fees_percent,
+            estimated_price=source_order.estimated_price,
+            vendor_price=source_order.vendor_price,
+        )
+        
+        db.add(new_order)
+        db.commit()
+        db.refresh(new_order)
+        
+        # Create new master order
+        new_master_order = create_master_from_new_order(
+            db, 
+            new_order, 
+            max_time_to_assign_order=15, 
+            toll_charge_update=master_order.toll_charge_update
+        )
+        
+        return {
+            "order_id": new_master_order.id,
+            "trip_status": new_master_order.trip_status,
+            "pick_near_city": new_master_order.pick_near_city,
+            "trip_type": new_master_order.trip_type.value,
+            "vendor_price": new_master_order.vendor_price,
+            "estimated_price": new_master_order.estimated_price,
+            "trip_time": new_master_order.trip_time,
+            "source": "NEW_ORDERS"
+        }
+        
+    elif master_order.source == OrderSourceEnum.HOURLY_RENTAL:
+        source_order = get_hourly_rental_by_id(db, master_order.source_order_id)
+        if not source_order:
+            raise ValueError("Source hourly rental not found")
+        
+        # Create new hourly rental with same data
+        new_hourly_order = HourlyRental(
+            vendor_id=source_order.vendor_id,
+            trip_type=source_order.trip_type,
+            car_type=source_order.car_type,
+            pickup_drop_location=source_order.pickup_drop_location,
+            start_date_time=source_order.start_date_time,
+            customer_name=source_order.customer_name,
+            customer_number=source_order.customer_number,
+            package_hours=source_order.package_hours,
+            cost_per_hour=source_order.cost_per_hour,
+            extra_cost_per_hour=source_order.extra_cost_per_hour,
+            cost_for_addon_km=source_order.cost_for_addon_km,
+            extra_cost_for_addon_km=source_order.extra_cost_for_addon_km,
+            pickup_notes=source_order.pickup_notes,
+        )
+        
+        db.add(new_hourly_order)
+        db.commit()
+        db.refresh(new_hourly_order)
+        
+        # Create new master order
+        new_master_order = create_master_from_hourly(
+            db,
+            new_hourly_order,
+            pick_near_city=master_order.pick_near_city,
+            trip_time=str(new_hourly_order.package_hours.get("hours", 0)),
+            estimated_price=master_order.estimated_price,
+            vendor_price=master_order.vendor_price,
+            max_time_to_assign_order=15,
+            toll_charge_update=master_order.toll_charge_update,
+        )
+        
+        return {
+            "order_id": new_master_order.id,
+            "order_status": new_master_order.trip_status,
+            "picup_near_city": new_master_order.pick_near_city,
+            "vendor_price": new_master_order.vendor_price,
+            "estimated_price": new_master_order.estimated_price,
+            "trip_type": new_master_order.trip_type.value,
+            "trip_time": new_master_order.trip_time,
+            "source": "HOURLY_RENTAL"
+        }
+    
+    else:
+        raise ValueError("Unknown order source type")
+
+

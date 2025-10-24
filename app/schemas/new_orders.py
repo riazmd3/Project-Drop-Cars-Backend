@@ -177,6 +177,10 @@ class CloseOrderResponse(BaseModel):
     img_url: str
 
 
+class RecreateOrderRequest(BaseModel):
+    order_id: int = Field(description="The ID of the order to recreate")
+
+
 class OnewayQuoteRequest(BaseModel):
     vendor_id: UUID
     trip_type: OrderType = Field(default=OrderType.ONEWAY)

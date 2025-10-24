@@ -13,14 +13,14 @@ from app.schemas.new_orders import (
     RoundTripConfirmRequest,
     MulticityQuoteRequest,
     MulticityConfirmRequest,
-    FareBreakdown,NewOrderResponse
+    FareBreakdown,NewOrderResponse,RecreateOrderRequest
 )
 from app.crud.new_orders import calculate_oneway_fare, calculate_multisegment_fare, create_oneway_order, get_pending_all_city_orders, get_orders_by_vendor_id
 from app.crud.order_assignments import get_vendor_orders_with_assignments
 from app.schemas.order_assignments import OrderAssignmentWithOrderDetails
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
 from app.schemas.baseorder import BaseOrderSchema
-from app.crud.orders import get_vendor_orders
+from app.crud.orders import get_vendor_orders, recreate_order
 
 
 router = APIRouter()
@@ -333,3 +333,30 @@ def get_vendor_orders_with_assignmentss(
     """Get all orders for the authenticated vendor with their latest assignment details"""
     print("current_vendor", current_vendor.id)
     return get_vendor_orders_with_assignments(db, str(current_vendor.id))
+
+
+@router.post("/recreate", status_code=status.HTTP_201_CREATED)
+async def recreate_order_endpoint(
+    payload: RecreateOrderRequest,
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor),
+):
+    """
+    Recreate an order based on an existing order ID.
+    Validates that the order belongs to the current vendor and is auto_cancelled.
+    Supports all order types: oneway, roundtrip, multicity, and hourly rental.
+    """
+    try:
+        print("ORder is executing")
+        result = recreate_order(db, payload.order_id, str(current_vendor.id))
+        return result
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to recreate order: {str(e)}",
+        )
