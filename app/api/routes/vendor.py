@@ -9,6 +9,7 @@ from app.schemas.vendor import VendorDetailsResponse
 from app.core.security import get_current_vendor
 from app.schemas.document_status import DocumentStatusListResponse, UpdateDocumentStatusRequest, UpdateDocumentRequest, DocumentUpdateResponse
 from app.models.common_enums import DocumentStatusEnum
+from app.utils.gcs import generate_signed_url_from_gcs
 
 router = APIRouter()
 
@@ -189,7 +190,8 @@ def get_my_vendor_details(
         wallet_balance=vendor_details.wallet_balance,
         bank_balance=vendor_details.bank_balance,
         aadhar_number=vendor_details.aadhar_number,
-        aadhar_front_img=vendor_details.aadhar_front_img,
+        aadhar_front_img=generate_signed_url_from_gcs(vendor_details.aadhar_front_img) if vendor_details.aadhar_front_img else None,
+        aadhar_status = vendor_details.aadhar_status,
         created_at=vendor_details.created_at,
     )
 

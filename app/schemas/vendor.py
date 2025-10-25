@@ -180,6 +180,7 @@ class VendorDetailsResponse(BaseModel):
     aadhar_front_img: Optional[str]
     address: str
     account_status: str
+    aadhar_status:str
     created_at: datetime
 
     class Config:
