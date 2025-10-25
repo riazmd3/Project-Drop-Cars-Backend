@@ -232,6 +232,12 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
     if str(order.vendor_id) != vendor_id:
         return None
     
+    # Calculate max_time in minutes
+    max_time = None
+    if order.max_time_to_assign_order and order.created_at:
+        time_diff = (order.max_time_to_assign_order - order.created_at).total_seconds() / 60
+        max_time = int(time_diff)
+    
     # Get assignments
     assignments = get_order_assignments(db, order_id)
     
@@ -330,6 +336,7 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         created_at=order.created_at,
         cancelled_by=order.cancelled_by.value if order.cancelled_by else None,
         max_time_to_assign_order=order.max_time_to_assign_order,
+        max_time=max_time,
         toll_charge_update=order.toll_charge_update,
         data_visibility_vehicle_owner=order.data_visibility_vehicle_owner,
         cost_per_km=cost_per_km,

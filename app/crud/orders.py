@@ -97,6 +97,12 @@ def set_vehicle_owner_visibility(db: Session, order_id: int, vendor_id: str, vis
 
 
 def map_to_combined_schema(order, new_order=None, hourly_rental=None):
+    # Calculate max_time in minutes
+    max_time = None
+    if order.max_time_to_assign_order and order.created_at:
+        time_diff = (order.max_time_to_assign_order - order.created_at).total_seconds() / 60
+        max_time = int(time_diff)
+    
     # BaseOrderSchema fields
     base_data = {
         "id": order.id,
@@ -120,6 +126,7 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         "closed_driver_price": order.closed_driver_price,
         "commision_amount": order.commision_amount,
         "created_at": order.created_at,
+        "max_time": max_time,
         "cancelled_by" : order.cancelled_by,
         "cost_per_km" : new_order.cost_per_km if new_order else None,
         "venodr_profit" : order.vendor_profit if order else None,

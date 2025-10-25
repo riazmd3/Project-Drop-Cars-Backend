@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form, Body
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 
 from app.database.session import get_db
 from app.core.security import get_current_vendor, get_current_driver, get_current_admin, get_current_vehicleOwner_id
@@ -197,6 +198,37 @@ async def hide_customer_from_vehicle_owner(
     try:
         order = set_vehicle_owner_visibility(db, order_id, str(current_vendor.id), False)
         return {"order_id": order.id, "data_visibility_vehicle_owner": False}
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+class UpdateVisibilityRequest(BaseModel):
+    data_visibility_vehicle_owner: bool
+
+
+@router.patch("/{order_id}/visibility/vehicle-owner")
+async def update_data_visibility_vehicle_owner(
+    order_id: int,
+    request: UpdateVisibilityRequest,
+    db: Session = Depends(get_db),
+    current_vendor=Depends(get_current_vendor),
+):
+    """
+    Vendor-only: Update visibility of customer data for vehicle owners.
+    
+    Args:
+        order_id: The ID of the order
+        request: Request body containing data_visibility_vehicle_owner boolean
+    
+    Returns:
+        Updated order ID and visibility status
+    """
+    try:
+        order = set_vehicle_owner_visibility(db, order_id, str(current_vendor.id), request.data_visibility_vehicle_owner)
+        return {
+            "order_id": order.id, 
+            "data_visibility_vehicle_owner": request.data_visibility_vehicle_owner
+        }
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
