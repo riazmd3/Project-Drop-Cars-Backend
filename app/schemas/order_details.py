@@ -169,6 +169,7 @@ class VendorOrderDetailResponse(BaseModel):
     created_at: datetime
     cancelled_by: Optional[str] = None
     max_time_to_assign_order: Optional[datetime] = None
+    max_time: Optional[int] = None
     toll_charge_update: Optional[bool] = None
     data_visibility_vehicle_owner: Optional[bool] = None
 
