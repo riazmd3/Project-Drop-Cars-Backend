@@ -2,6 +2,9 @@ from google.cloud import storage
 import uuid
 import os
 from fastapi import UploadFile
+from datetime import timedelta
+
+
 
 GCS_CREDENTIALS = "app/core/drop-cars-468718-d08441443ada.json"
 GCS_BUCKET_NAME = "drop-cars-test-bucket"
@@ -37,3 +40,21 @@ def delete_gcs_file_by_url(public_url: str) -> None:
     except Exception:
         # Best-effort cleanup; ignore failures
         return
+
+def generate_signed_url_from_gcs(public_url: str, expiry_minutes: int = 2) -> str:
+    """Generate a signed URL for a private GCS file given its public-style URL."""
+    prefix = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/"
+    if not public_url.startswith(prefix):
+        raise ValueError("Invalid GCS URL format")
+
+    blob_name = public_url[len(prefix):]
+    blob = bucket.blob(blob_name)
+
+    # Generate a temporary signed URL (GET access)
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=expiry_minutes),
+        method="GET",
+    )
+
+    return signed_url
