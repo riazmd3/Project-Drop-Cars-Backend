@@ -78,6 +78,7 @@ class BaseOrderSchema(BaseModel):
     trip_time: Optional[str]
     estimated_price: Optional[int]
     vendor_price: Optional[int]
+    max_time : Optional[int]
     platform_fees_percent: Optional[int]
     closed_vendor_price: Optional[int]
     closed_driver_price: Optional[int]
