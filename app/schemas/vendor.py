@@ -202,6 +202,7 @@ class VendorDetailsResponse(BaseModel):
     city: str
     pincode: str
     account_status: str
+    aadhar_status:str
     created_at: datetime
 
     class Config:

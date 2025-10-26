@@ -85,7 +85,10 @@ def set_vehicle_owner_visibility(db: Session, order_id: int, vendor_id: str, vis
         raise ValueError("Order not found")
     if str(order.vendor_id) != str(vendor_id):
         raise ValueError("Not authorized to modify this order")
-    order.data_visibility_vehicle_owner = bool(visible)
+    if order.data_visibility_vehicle_owner:
+        order.data_visibility_vehicle_owner = not order.data_visibility_vehicle_owner
+    else:
+        order.data_visibility_vehicle_owner = bool(visible)    
     db.commit()
     db.refresh(order)
     return order

@@ -22,6 +22,7 @@ from app.schemas.order_details import (
     OrderAssignmentDetail,
     EndRecordDetail
 )
+from app.utils.gcs import generate_signed_url_from_gcs
 
 
 def get_order_by_id(db: Session, order_id: int) -> Optional[Order]:
@@ -147,8 +148,8 @@ def get_order_end_records(db: Session, order_id: int) -> list[EndRecordDetail]:
             start_km=record.start_km,
             end_km=record.end_km,
             contact_number=record.contact_number,
-            img_url=record.img_url,
-            close_speedometer_image=record.close_speedometer_image,
+            img_url= generate_signed_url_from_gcs(record.img_url) if record.img_url else None,
+            close_speedometer_image=generate_signed_url_from_gcs(record.close_speedometer_image) if record.close_speedometer_image else None,
             created_at=record.created_at,
             updated_at=record.updated_at
         )
@@ -334,7 +335,7 @@ def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Opti
         closed_driver_price=order.closed_driver_price,
         commision_amount=order.commision_amount,
         created_at=order.created_at,
-        cancelled_by=order.cancelled_by.value if order.cancelled_by else None,
+        cancelled_by=order.cancelled_by if order.cancelled_by else None,
         max_time_to_assign_order=order.max_time_to_assign_order,
         max_time=max_time,
         toll_charge_update=order.toll_charge_update,
