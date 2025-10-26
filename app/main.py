@@ -43,7 +43,7 @@ app.include_router(notification.router, prefix="/api", tags=["notifications"])
 
 
 @app.on_event("startup")
-@repeat_every(seconds=180, wait_first=True)  # every 3 minutes
+@repeat_every(seconds=20, wait_first=True)  # every 3 minutes
 async def cancel_expired_assignments_task() -> None:
     """Background job: cancel pending assignments that exceeded their max assignment time."""
     db = SessionLocal()

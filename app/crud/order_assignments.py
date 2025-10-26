@@ -80,9 +80,14 @@ async def cancel_timed_out_pending_assignments(db: Session) -> int:
             if not order:
                 continue
             
-            if order.source == "HOURLY_RENTAL":
-                dneworder = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
+            print(order.source)
+            dneworder = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first() if order.source == "NEW_ORDERS" else None
             # Calculate penalty amount (vendor_price - estimated_price)
+            # print(dneworder.cost_per_km)
+            # print(dneworder.trip_distance)
+            # print(order.platform_fees_percent)
+            # s = ((dneworder.cost_per_km*dneworder.trip_distance)*(order.platform_fees_percent))/100
+            # print(s)
             penalty_amount = 0
             if order.vendor_price and order.estimated_price:
                 penalty_amount = order.vendor_price - order.estimated_price
@@ -90,20 +95,20 @@ async def cancel_timed_out_pending_assignments(db: Session) -> int:
             # Check if vehicle owner has sufficient balance
             vehicle_owner_id = str(assignment.vehicle_owner_id)
             current_balance = get_owner_balance(db, vehicle_owner_id)
-            
             if penalty_amount > 0 and current_balance >= penalty_amount:
                 # Debit penalty amount from vehicle owner's wallet
                 try:
+                    if order.source == "NEW_ORDERS":
+                        penalty_amount = penalty_amount + round(((dneworder.cost_per_km*dneworder.trip_distance)*order.platform_fees_percent)/100)
                     new_balance, ledger_entry = debit_wallet(
-                        db=db,
-                        vehicle_owner_id=vehicle_owner_id,
-                        amount=penalty_amount if order.source == "HOURLY_RENTAL" else penalty_amount + round((dneworder.cost_per_km*dneworder.trip_distance)*(order.commision_amount/100)),
-                        reference_id=str(assignment.id),
-                        reference_type="AUTO_CANCELLATION_PENALTY",
-                        notes=f"Auto-cancellation penalty for order {order.id}"
+                    db=db,
+                    vehicle_owner_id=vehicle_owner_id,
+                    amount=penalty_amount,
+                    reference_id=str(assignment.id),
+                    reference_type="AUTO_CANCELLATION_PENALTY",
+                    notes=f"Auto-cancellation penalty for order {order.id}"
                     )
                     print(f"Debited {penalty_amount} from vehicle owner {vehicle_owner_id} for auto-cancellation")
-                    
                     await notify_vendor_auto_cancelled_order(
                         db=db,
                         vendor_id = order.vendor_id,
