@@ -166,12 +166,13 @@ class UserLogin(BaseModel):
 class VehicleOwnerDetailsResponse(BaseModel):
     id: UUID
     vehicle_owner_id: UUID
-    organization_id: Optional[str]
     full_name: str
     primary_number: str
     secondary_number: Optional[str]
     wallet_balance: int
     aadhar_number: str
+    city:Optional[str]
+    pincode: Optional[str]
     aadhar_front_img: Optional[str]
     address: str
     created_at: datetime
