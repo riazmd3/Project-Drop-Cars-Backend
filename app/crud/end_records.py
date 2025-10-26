@@ -7,6 +7,7 @@ from app.models.orders import Order
 from app.models.new_orders import NewOrder
 from app.models.hourly_rental import HourlyRental
 from app.models.car_driver import CarDriver, AccountStatusEnum
+from app.models.vendor_details import VendorDetails
 from app.crud.notification import send_trip_status_notification_to_vendor_and_vehicle_owner
 async def create_start_trip_record(
     db: Session,
@@ -268,14 +269,23 @@ async def update_end_trip_record(
             )
         except ValueError as e:
             raise ValueError(f"Wallet debit failed: {str(e)}")
-        # Credit vendor wallet with vendor_profit via vendor ledger
+        
+        # Get admin_id (use first admin)
+        from app.models.admin import Admin
+        admin = db.query(Admin).first()
+        admin_id = str(admin.id) if admin else None
+        
+        # Credit vendor wallet with vendor_profit and deduct admin_profit
         try:
             credit_vendor_wallet(
                 db,
                 vendor_id=str(order.vendor_id),
                 amount=int(order.vendor_profit or 0),
                 order_id=order_id,
-                notes=f"Trip {order_id} vendor profit"
+                notes=f"Trip {order_id} vendor profit",
+                deduct_admin_profit=True,
+                admin_profit=int(order.admin_profit or 0) if order.admin_profit else None,
+                admin_id=admin_id
             )
         except ValueError as e:
             raise ValueError(f"Vendor wallet credit failed: {str(e)}")

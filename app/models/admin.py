@@ -17,6 +17,9 @@ class Admin(Base):
     # organization_id = Column(String)
     organization_id = Column(UUID(as_uuid=True), default=uuid.uuid4, nullable=False)
     
+    # Admin balance tracking
+    balance = Column(Integer, nullable=False, default=0)
+    
     # Timestamp In UTC Format
     created_at = Column(
         TIMESTAMP(timezone=True),
