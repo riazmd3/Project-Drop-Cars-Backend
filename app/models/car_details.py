@@ -25,10 +25,10 @@ class CarDetails(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     vehicle_owner_id = Column(UUID(as_uuid=True), ForeignKey("vehicle_owner.id"), nullable=False)
-    organization_id = Column(String)
     car_name = Column(String, nullable=False)
     car_type = Column(SqlEnum(CarTypeEnum,name="car_type_enum"),nullable=False)  # sedan, suv, muv, innova
     car_number = Column(String, nullable=False, unique=True)
+    year_of_the_car = Column(String, nullable=True)
     
     rc_front_img_url = Column(String, nullable=True, unique=True)     # GCS public URL
     rc_front_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)

@@ -41,10 +41,8 @@ async def signup_car_driver(
         )
     
     # Step 2: Create car driver in database first (without image)
-    # Set vehicle_owner_id and organization_id from authenticated user
+    # Set vehicle_owner_id from authenticated user
     driver_form.vehicle_owner_id = driver_form.vehicle_owner_id
-    if not driver_form.organization_id:
-        driver_form.organization_id = current_user.organization_id
     
     try:
         db_driver = create_car_driver(db, driver_form)
@@ -212,20 +210,15 @@ def get_car_driver(
     
     return driver
 
-@router.get("/cardriver/organization/{organization_id}", response_model=List[CarDriverOut])
-def get_drivers_by_organization(
-    organization_id: str, 
+@router.get("/cardriver/all", response_model=List[CarDriverOut])
+def get_all_drivers(
     current_user: VehicleOwnerCredentials = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get all drivers for a specific organization (only for authenticated vehicle owner)"""
-    from app.crud.car_driver import get_drivers_by_organization
+    """Get all drivers for the authenticated vehicle owner"""
+    from app.crud.car_driver import get_drivers_by_vehicleOwner_id
     
-    # Verify that the organization_id matches the authenticated user's organization
-    if organization_id != current_user.organization_id:
-        raise HTTPException(status_code=403, detail="Access denied. You can only view drivers from your own organization.")
-    
-    drivers = get_drivers_by_organization(db, organization_id)
+    drivers = get_drivers_by_vehicleOwner_id(db, str(current_user.id))
     return drivers
 
 @router.get("/cardriver/mobile/{mobile_number}", response_model=CarDriverOut)

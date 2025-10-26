@@ -20,6 +20,8 @@ class VendorBase(BaseModel):
     )]] = None
     password: str
     address: str
+    city: str
+    pincode: str
     aadhar_number: str
     gpay_number: str
     wallet_balance: int = 0
@@ -47,6 +49,16 @@ class VendorSignupForm(BaseModel):
     address: Annotated[str, Field(
         min_length=10,
         description="Address must be at least 10 characters long"
+    )]
+    city: Annotated[str, Field(
+        min_length=2,
+        max_length=100,
+        description="City must be between 2 and 100 characters"
+    )]
+    pincode: Annotated[str, Field(
+        min_length=6,
+        max_length=6,
+        description="Pincode must be exactly 6 digits"
     )]
     aadhar_number: Annotated[str, Field(
         min_length=12,
@@ -83,6 +95,8 @@ class VendorSignupForm(BaseModel):
         secondary_number: Optional[str] = Form(None, description="Secondary mobile number (optional)"),
         password: str = Form(..., description="Password (min 6 characters)"),
         address: str = Form(..., description="Address (min 10 characters)"),
+        city: str = Form(..., description="City"),
+        pincode: str = Form(..., description="Pincode (6 digits)"),
         aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
         gpay_number: str = Form(..., description="GPay number"),
     ):
@@ -92,6 +106,8 @@ class VendorSignupForm(BaseModel):
             secondary_number=secondary_number,
             password=password,
             address=address,
+            city=city,
+            pincode=pincode,
             aadhar_number=aadhar_number,
             gpay_number=gpay_number,
         )
@@ -120,6 +136,8 @@ class VendorOut(BaseModel):
     aadhar_number: str
     aadhar_front_img: Optional[str]
     address: str
+    city: str
+    pincode: str
     account_status: str
     created_at: datetime
 
@@ -136,7 +154,9 @@ class VendorOut(BaseModel):
                 "bank_balance": 0,
                 "aadhar_number": "123456789012",
                 "aadhar_front_img": "https://storage.googleapis.com/drop-cars-files/vendor_details/aadhar/uuid.jpg",
-                "address": "123 Main Street, Mumbai",
+                "address": "123 Main Street",
+                "city": "Mumbai",
+                "pincode": "400001",
                 "account_status": "Pending",
                 "created_at": "2025-08-13T12:00:00Z"
             }
@@ -179,6 +199,8 @@ class VendorDetailsResponse(BaseModel):
     aadhar_number: str
     aadhar_front_img: Optional[str]
     address: str
+    city: str
+    pincode: str
     account_status: str
     created_at: datetime
 

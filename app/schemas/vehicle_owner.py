@@ -25,6 +25,8 @@ class VehicleOwnerBase(BaseModel):
 
     password: str
     address: str
+    city: str
+    pincode: str
     aadhar_number: str
     aadhar_front_img: str
 
@@ -62,7 +64,16 @@ class VehicleOwnerForm(BaseModel):
         min_length=10,
         description="Address must be at least 10 characters long"
     )]
-    
+    city: Annotated[str, Field(
+        min_length=2,
+        max_length=100,
+        description="City must be between 2 and 100 characters"
+    )]
+    pincode: Annotated[str, Field(
+        min_length=6,
+        max_length=6,
+        description="Pincode must be exactly 6 digits"
+    )]
     aadhar_number: Annotated[str, Field(
         min_length=12,
         max_length=12,
@@ -94,6 +105,8 @@ class VehicleOwnerForm(BaseModel):
         secondary_number: Optional[str] = Form(None, description="Secondary mobile number (optional)"),
         password: str = Form(..., description="Password (min 6 characters)"),
         address: str = Form(..., description="Address (min 10 characters)"),
+        city: str = Form(..., description="City"),
+        pincode: str = Form(..., description="Pincode (6 digits)"),
         aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
         organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
@@ -103,6 +116,8 @@ class VehicleOwnerForm(BaseModel):
             secondary_number=secondary_number,
             password=password,
             address=address,
+            city=city,
+            pincode=pincode,
             aadhar_number=aadhar_number,
             organization_id=organization_id,
         )

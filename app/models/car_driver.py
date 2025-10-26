@@ -18,7 +18,6 @@ class CarDriver(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     vehicle_owner_id = Column(UUID(as_uuid=True), ForeignKey("vehicle_owner.id"), nullable=False)
-    organization_id = Column(String)
     full_name = Column(String, nullable=False)
     primary_number = Column(String, nullable=False, unique=True)
     secondary_number = Column(String, nullable=True, unique=True)
@@ -26,7 +25,9 @@ class CarDriver(Base):
     licence_number = Column(String, nullable=False, unique=True)
     licence_front_img = Column(String, nullable=True, unique=True)
     licence_front_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
-    adress = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+    city = Column(String, nullable=False)
+    pincode = Column(String, nullable=False)
     driver_status = Column(
         SqlEnum(AccountStatusEnum, name="driver_status_enum"),
         default=AccountStatusEnum.OFFLINE,

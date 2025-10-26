@@ -14,7 +14,6 @@ class VehicleOwnerCredentials(Base):
     __tablename__ = "vehicle_owner"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
-    organization_id = Column(String)
     primary_number = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     account_status = Column(

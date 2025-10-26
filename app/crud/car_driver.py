@@ -43,14 +43,15 @@ def create_car_driver(db: Session, driver_data: CarDriverForm) -> CarDriver:
     # Create car driver object
     car_driver = CarDriver(
         vehicle_owner_id=driver_data.vehicle_owner_id,
-        organization_id=driver_data.organization_id,
         full_name=driver_data.full_name,
         primary_number=driver_data.primary_number,
         secondary_number=driver_data.secondary_number,
         hashed_password=hashed_password,
         licence_number=driver_data.licence_number,
         licence_front_img=None,  # Will be updated after GCS upload
-        adress=driver_data.adress,
+        address=driver_data.address,
+        city=driver_data.city,
+        pincode=driver_data.pincode,
         driver_status=AccountStatusEnum.PROCESSING  # Explicitly set the enum value
     )
 
@@ -85,9 +86,6 @@ def get_driver_by_id(db: Session, driver_id: UUID) -> Optional[CarDriver]:
     """Get car driver by ID"""
     return db.query(CarDriver).filter(CarDriver.id == driver_id).first()
 
-def get_drivers_by_organization(db: Session, organization_id: str) -> list[CarDriver]:
-    """Get all drivers for a specific organization"""
-    return db.query(CarDriver).filter(CarDriver.organization_id == organization_id).all()
 
 def get_driver_by_mobile(db: Session, mobile_number: str) -> Optional[CarDriver]:
     """Get car driver by mobile number"""
