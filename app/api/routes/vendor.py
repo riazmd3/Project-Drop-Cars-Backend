@@ -201,7 +201,7 @@ def get_my_vendor_details(
         bank_balance=vendor_details.bank_balance,
         aadhar_number=vendor_details.aadhar_number,
         aadhar_front_img=generate_signed_url_from_gcs(vendor_details.aadhar_front_img) if vendor_details.aadhar_front_img else None,
-        aadhar_status = vendor_details.aadhar_status,
+        aadhar_status=vendor_details.aadhar_status.value if vendor_details.aadhar_status else None,
         created_at=vendor_details.created_at,
     )
 
