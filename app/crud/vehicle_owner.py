@@ -47,7 +47,6 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
 
     # Step 2: Create credentials object
     credentials = VehicleOwnerCredentials(
-        organization_id=user_in.organization_id,
         primary_number=user_in.primary_number,
         hashed_password=hashed_password,
         account_status="INACTIVE",
@@ -61,14 +60,15 @@ def create_user(db: Session, user_in: VehicleOwnerForm) -> VehicleOwnerCredentia
     # Step 3: Create details object (without aadhar_front_img initially)
     details = VehicleOwnerDetails(
         vehicle_owner_id=credentials.id,
-        organization_id=user_in.organization_id,
         full_name=user_in.full_name,
         primary_number=user_in.primary_number,
         secondary_number=user_in.secondary_number,
         wallet_balance=0,
         aadhar_number=user_in.aadhar_number,
         aadhar_front_img=None,  # Will be updated after GCS upload
-        address=user_in.address
+        address=user_in.address,
+        city=user_in.city,
+        pincode=user_in.pincode
     )
 
     db.add(details)
@@ -138,7 +138,7 @@ def authenticate_user(db: Session, login_data: UserLogin) -> Optional[VehicleOwn
     return user
 
 
-def get_vehicle_owner_counts(db: Session, vehicle_owner_id: UUID, organization_id: str):
+def get_vehicle_owner_counts(db: Session, vehicle_owner_id: UUID):
     """Get counts of car_driver and car_details records for a vehicle owner"""
     from app.models.car_driver import CarDriver
     from app.models.car_details import CarDetails

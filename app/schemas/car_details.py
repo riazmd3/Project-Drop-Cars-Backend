@@ -15,7 +15,6 @@ class CarTypeEnum(str, Enum):
 
 class CarDetailsForm(BaseModel):
     vehicle_owner_id: Optional[UUID] = Field(None, description="Vehicle owner ID (auto-set from token)")
-    organization_id: Optional[str] = None
     
     car_name: Annotated[str, Field(
         min_length=2,
@@ -32,6 +31,11 @@ class CarDetailsForm(BaseModel):
         max_length=20,
         description="Car registration number (5-20 characters)"
     )]
+    
+    year_of_the_car: Optional[str] = Field(
+        None,
+        description="Year of the car"
+    )
 
     @validator('car_number')
     def validate_car_number(cls, v):
@@ -47,22 +51,23 @@ class CarDetailsForm(BaseModel):
         car_name: str = Form(..., description="Car name (2-100 characters)"),
         car_type: CarTypeEnum = Form(..., description="Car type: SEDAN, SUV, or INNOVA"),
         car_number: str = Form(..., description="Car registration number"),
-        organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
+        year_of_the_car: Optional[str] = Form(None, description="Year of the car"),
     ):
         return cls(
             vehicle_owner_id=UUID(vehicle_owner_id) if vehicle_owner_id else None,
             car_name=car_name,
             car_type=car_type,
             car_number=car_number,
-            organization_id=organization_id,
+            year_of_the_car=year_of_the_car,
         )
 
 class CarDetailsOut(BaseModel):
     id: UUID
-    organization_id: Optional[str]
+    vehicle_owner_id: UUID
     car_name: str
     car_type: CarTypeEnum
     car_number: str
+    year_of_the_car: Optional[str]
     rc_front_img_url: Optional[str]
     rc_back_img_url: Optional[str]
     insurance_img_url: Optional[str]

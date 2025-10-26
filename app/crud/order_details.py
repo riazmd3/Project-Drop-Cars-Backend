@@ -47,7 +47,7 @@ def get_vendor_basic_info(db: Session, vendor_id: str) -> Optional[VendorBasicIn
         secondary_number=vendor_details.secondary_number,
         gpay_number=vendor_details.gpay_number,
         aadhar_number=vendor_details.aadhar_number,
-        address=vendor_details.adress,
+        address=vendor_details.address,
         wallet_balance=vendor_details.wallet_balance,
         bank_balance=vendor_details.bank_balance,
         created_at=vendor_creds.created_at
@@ -66,7 +66,7 @@ def get_driver_basic_info(db: Session, driver_id: str) -> Optional[DriverBasicIn
         primary_number=driver.primary_number,
         secondary_number=driver.secondary_number,
         licence_number=driver.licence_number,
-        address=driver.adress,
+        address=driver.address,
         driver_status=driver.driver_status,
         created_at=driver.created_at
     )

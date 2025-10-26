@@ -52,10 +52,8 @@ async def signup_car_details(
             )
     
     # Step 2: Create car details in database first (without images)
-    # Set vehicle_owner_id and organization_id from authenticated user
+    # Set vehicle_owner_id from authenticated user
     car_form.vehicle_owner_id = car_form.vehicle_owner_id
-    if not car_form.organization_id:
-        car_form.organization_id = current_user.organization_id
     
     try:
         db_car = create_car_details(db, car_form)
@@ -143,20 +141,15 @@ def get_car_details(
     
     return car
 
-@router.get("/cardetails/organization/{organization_id}", response_model=List[CarDetailsOut])
-def get_cars_by_organization(
-    organization_id: str, 
+@router.get("/cardetails/all", response_model=List[CarDetailsOut])
+def get_all_cars(
     current_user: VehicleOwnerCredentials = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get all cars for a specific organization (only for authenticated vehicle owner)"""
-    from app.crud.car_details import get_cars_by_organization
+    """Get all cars for the authenticated vehicle owner"""
+    from app.crud.car_details import get_all_cars
     
-    # Verify that the organization_id matches the authenticated user's organization
-    if organization_id != current_user.organization_id:
-        raise HTTPException(status_code=403, detail="Access denied. You can only view cars from your own organization.")
-    
-    cars = get_cars_by_organization(db, organization_id)
+    cars = get_all_cars(db, str(current_user.id))
     return cars
 
 

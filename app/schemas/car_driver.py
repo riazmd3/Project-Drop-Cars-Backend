@@ -46,9 +46,19 @@ class CarDriverForm(BaseModel):
         description="License number (5-20 characters)"
     )]
     
-    adress: Annotated[str, Field(
+    address: Annotated[str, Field(
         min_length=10,
         description="Address must be at least 10 characters long"
+    )]
+    city: Annotated[str, Field(
+        min_length=2,
+        max_length=100,
+        description="City must be between 2 and 100 characters"
+    )]
+    pincode: Annotated[str, Field(
+        min_length=6,
+        max_length=6,
+        description="Pincode must be exactly 6 digits"
     )]
 
     @validator('primary_number', 'secondary_number')
@@ -75,7 +85,9 @@ class CarDriverForm(BaseModel):
         secondary_number: Optional[str] = Form(None, description="Secondary mobile number"),
         password: str = Form(..., description="Password (min 6 characters)"),
         licence_number: str = Form(..., description="License number"),
-        adress: str = Form(..., description="Address (min 10 characters)"),
+        address: str = Form(..., description="Address (min 10 characters)"),
+        city: str = Form(..., description="City"),
+        pincode: str = Form(..., description="Pincode (6 digits)"),
         organization_id: Optional[str] = Form(None, description="Organization ID (optional)"),
     ):
         return cls(
@@ -85,19 +97,22 @@ class CarDriverForm(BaseModel):
             secondary_number=secondary_number,
             password=password,
             licence_number=licence_number,
-            adress=adress,
+            address=address,
+            city=city,
+            pincode=pincode,
             organization_id=organization_id,
         )
 
 class CarDriverOut(BaseModel):
     id: UUID
-    organization_id: Optional[str]
     full_name: str
     primary_number: str
     secondary_number: str
     licence_number: str
     licence_front_img: Optional[str]
-    adress: str
+    address: str
+    city: str
+    pincode: str
     driver_status: AccountStatusEnum
     created_at: datetime
 

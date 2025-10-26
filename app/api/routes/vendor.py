@@ -20,6 +20,8 @@ async def vendor_signup(
     secondary_number: Optional[str] = Form(None, description="Secondary mobile number (optional)"),
     password: str = Form(..., description="Password (min 6 characters)"),
     address: str = Form(..., description="Address (min 10 characters)"),
+    city: str = Form(..., description="City"),
+    pincode: str = Form(..., description="Pincode (6 digits)"),
     aadhar_number: str = Form(..., description="Aadhar number (12 digits)"),
     gpay_number: str = Form(..., description="GPay number"),
     aadhar_image: Optional[UploadFile] = File(None, description="Aadhar front image"),
@@ -45,6 +47,8 @@ async def vendor_signup(
             secondary_number=secondary_number,
             password=password,
             address=address,
+            city=city,
+            pincode=pincode,
             aadhar_number=aadhar_number,
             gpay_number=gpay_number
         )
@@ -81,7 +85,9 @@ async def vendor_signup(
             bank_balance=vendor_details.bank_balance,
             aadhar_number=vendor_details.aadhar_number,
             aadhar_front_img=vendor_details.aadhar_front_img,
-            address=vendor_details.adress,
+            address=vendor_details.address,
+            city=vendor_details.city,
+            pincode=vendor_details.pincode,
             account_status=vendor_credentials.account_status.value,
             created_at=vendor_details.created_at
         )
@@ -152,7 +158,9 @@ async def vendor_signin(
             bank_balance=vendor_details.bank_balance,
             aadhar_number=vendor_details.aadhar_number,
             aadhar_front_img=vendor_details.aadhar_front_img,
-            address=vendor_details.adress,
+            address=vendor_details.address,
+            city=vendor_details.city,
+            pincode=vendor_details.pincode,
             account_status=vendor_credentials.account_status.value,
             created_at=vendor_details.created_at
         )
@@ -181,7 +189,9 @@ def get_my_vendor_details(
 
     return VendorDetailsResponse(
         id=str(vendor_details.id),
-        address=vendor_details.adress,  # mapping from 'adress' in DB
+        address=vendor_details.address,
+        city=vendor_details.city,
+        pincode=vendor_details.pincode,
         account_status=vendor_credentials.account_status.value,
         full_name=vendor_details.full_name,
         primary_number=vendor_details.primary_number,

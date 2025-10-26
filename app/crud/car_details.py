@@ -22,10 +22,10 @@ def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
     # Create car details object
     car_details = CarDetails(
         vehicle_owner_id=car_data.vehicle_owner_id,
-        organization_id=car_data.organization_id,
         car_name=car_data.car_name,
         car_type=car_data.car_type,
         car_number=car_data.car_number,
+        year_of_the_car=car_data.year_of_the_car,
         rc_front_img_url=None,  # Will be updated after GCS upload
         rc_back_img_url=None,   # Will be updated after GCS upload
         insurance_img_url=None, # Will be updated after GCS upload
@@ -79,9 +79,6 @@ def get_car_by_id(db: Session, car_id: UUID) -> Optional[CarDetails]:
     """Get car details by ID"""
     return db.query(CarDetails).filter(CarDetails.id == car_id).first()
 
-def get_cars_by_organization(db: Session, organization_id: str) -> list[CarDetails]:
-    """Get all cars for a specific organization"""
-    return db.query(CarDetails).filter(CarDetails.organization_id == organization_id).all()
 
 def get_car_detail_by_id(db: Session, car_id: UUID) -> Optional[CarDetails]:
     return db.query(CarDetails).filter(CarDetails.id == car_id).first()
