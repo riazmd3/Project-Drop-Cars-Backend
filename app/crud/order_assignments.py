@@ -79,7 +79,9 @@ async def cancel_timed_out_pending_assignments(db: Session) -> int:
             order = db.query(Order).filter(Order.id == assignment.order_id).first()
             if not order:
                 continue
-                
+            
+            if order.source == "HOURLY_RENTAL":
+                dneworder = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
             # Calculate penalty amount (vendor_price - estimated_price)
             penalty_amount = 0
             if order.vendor_price and order.estimated_price:
@@ -95,7 +97,7 @@ async def cancel_timed_out_pending_assignments(db: Session) -> int:
                     new_balance, ledger_entry = debit_wallet(
                         db=db,
                         vehicle_owner_id=vehicle_owner_id,
-                        amount=penalty_amount,
+                        amount=penalty_amount if order.source == "HOURLY_RENTAL" else penalty_amount + round((dneworder.cost_per_km*dneworder.trip_distance)*(order.commision_amount/100)),
                         reference_id=str(assignment.id),
                         reference_type="AUTO_CANCELLATION_PENALTY",
                         notes=f"Auto-cancellation penalty for order {order.id}"

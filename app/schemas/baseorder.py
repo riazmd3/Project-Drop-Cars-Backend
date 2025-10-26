@@ -86,6 +86,8 @@ class BaseOrderSchema(BaseModel):
     created_at: datetime
     cancelled_by : Optional[str] = None
     cost_per_km: Optional[int]
+    h_cost_for_addon_km : Optional[int] = None
+    h_extra_cost_for_addon_km : Optional[int] = None
     venodr_profit: Optional[int]
     admin_profit: Optional[int]
 

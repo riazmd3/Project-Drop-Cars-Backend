@@ -131,6 +131,8 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         "created_at": order.created_at,
         "max_time": max_time,
         "cancelled_by" : order.cancelled_by,
+        "h_cost_for_addon_km": hourly_rental.cost_for_addon_km if hourly_rental else None,
+        "h_extra_cost_for_addon_km": hourly_rental.extra_cost_for_addon_km if hourly_rental else None,
         "cost_per_km" : new_order.cost_per_km if new_order else None,
         "venodr_profit" : order.vendor_profit if order else None,
         "admin_profit" : order.admin_profit if order else None,
@@ -155,6 +157,7 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
             
         }
     elif order.source == OrderSourceEnum.HOURLY_RENTAL and hourly_rental:
+        print("checking hours ..")
         source_data = {
             "id": hourly_rental.id,
             "package_hours": hourly_rental.package_hours,
