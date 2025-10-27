@@ -295,7 +295,7 @@ async def update_car_document(
     if car.vehicle_owner_id != current_user.vehicle_owner_id:
         raise HTTPException(status_code=403, detail="Access denied. You can only view your own cars.")
     
-    valid_document_types = ["rc_front", "rc_back", "insurance", "fc", "car_img"]
+    valid_document_types = ["rc_front", "rc_back", "insurance", "fc", "car"]
     if document_type not in valid_document_types:
         raise HTTPException(
             status_code=400,
@@ -327,7 +327,7 @@ async def update_car_document(
         
         # Update database
         setattr(car, f"{document_type}_img_url", new_image_url)
-        setattr(car, f"{document_type}_status", DocumentStatusEnum.PENDING)
+        setattr(car, f"{document_type}_status", DocumentStatusEnum.PENDING) if document_type != "car" else setattr(car, f"{document_type}img_status", DocumentStatusEnum.PENDING)
         db.commit()
         db.refresh(car)
         
