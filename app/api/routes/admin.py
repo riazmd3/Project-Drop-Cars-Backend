@@ -1,11 +1,15 @@
 # api/routes/admin.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.schemas.admin import AdminSignup, AdminSignin, AdminTokenResponse, AdminOut, AdminUpdate
+from app.schemas.admin_add_money import VehicleOwnerInfoResponse, SearchVehicleOwnerRequest, AdminAddMoneyRequest, AdminAddMoneyResponse
 from app.crud.admin import create_admin, authenticate_admin, get_admin_by_id, update_admin, get_all_admins
+from app.crud.admin_add_money import get_vehicle_owner_by_primary_number, create_admin_add_money_transaction
 from app.core.security import create_access_token, get_current_admin
 from app.database.session import get_db
-from typing import List
+from app.utils.gcs import upload_image_to_gcs
+from typing import List, Optional
+import os
 
 router = APIRouter()
 
@@ -269,6 +273,109 @@ async def get_admin_by_id_route(
     except HTTPException:
         raise
     except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@router.post("/admin/search-vehicle-owner", response_model=VehicleOwnerInfoResponse, status_code=status.HTTP_200_OK)
+async def search_vehicle_owner(
+    search_request: SearchVehicleOwnerRequest,
+    current_admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Search Vehicle Owner by Primary Number
+    
+    Searches for a vehicle owner by their primary phone number.
+    Returns vehicle owner information including wallet balance and profile details.
+    
+    Requires admin authentication.
+    
+    Returns:
+        - Vehicle owner information
+        - Wallet balance
+        - Profile details
+    """
+    try:
+        vehicle_owner_info = get_vehicle_owner_by_primary_number(db, search_request.primary_number)
+        return VehicleOwnerInfoResponse(**vehicle_owner_info)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@router.post("/admin/add-money-to-vehicle-owner", response_model=AdminAddMoneyResponse, status_code=status.HTTP_201_CREATED)
+async def add_money_to_vehicle_owner(
+    vehicle_owner_id: str = Form(..., description="ID of the vehicle owner"),
+    transaction_value: int = Form(..., description="Transaction amount in paise (mandatory)"),
+    notes: Optional[str] = Form(None, description="Transaction notes"),
+    reference_value: Optional[str] = Form(None, description="Optional reference string for the transaction"),
+    transaction_img: UploadFile = File(None),
+    current_admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Add Money to Vehicle Owner
+    
+    Creates a payment transaction to add money to a vehicle owner's wallet.
+    
+    Requires admin authentication.
+    
+    Steps:
+    1. Validates vehicle owner exists
+    2. Uploads transaction image to GCS if provided (optional)
+    3. Updates vehicle owner's wallet balance
+    4. Creates wallet ledger entry
+    5. Records transaction in admin_add_money_to_vehicle_owner table
+    
+    Returns:
+        - Transaction details
+        - New wallet balance
+        - Transaction ID
+    """
+    try:
+        transaction_img_url = None
+        
+        # Upload transaction image to GCS if provided
+        if transaction_img:
+            # Validate file type
+            allowed_extensions = {'.jpg', '.jpeg', '.png', '.pdf'}
+            file_ext = os.path.splitext(transaction_img.filename)[-1].lower()
+            if file_ext not in allowed_extensions:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+                )
+            
+            # Upload to GCS
+            transaction_img_url = upload_image_to_gcs(
+                transaction_img,
+                folder="admin_transactions"
+            )
+        
+        # Create transaction
+        result = create_admin_add_money_transaction(
+            db=db,
+            vehicle_owner_id=vehicle_owner_id,
+            transaction_value=transaction_value,
+            transaction_img=transaction_img_url,
+            notes=notes,
+            reference_value=reference_value
+        )
+        
+        return AdminAddMoneyResponse(**result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Internal server error: {str(e)}"

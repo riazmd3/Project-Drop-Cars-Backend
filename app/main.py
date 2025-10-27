@@ -18,6 +18,7 @@ import app.models.wallet_ledger
 import app.models.razorpay_transactions
 import app.models.vendor_wallet_ledger
 import app.models.admin_wallet_ledger
+import app.models.admin_add_money_to_vehicle_owner
 from app.database.session import Base, engine
 import app.models.end_records
 
