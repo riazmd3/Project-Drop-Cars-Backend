@@ -358,7 +358,8 @@ def update_assignment_car_driver(
     assignment = get_order_assignment_by_id(db, assignment_id)
     if not assignment:
         return None
-    
+    if assignment.assignment_status == AssignmentStatusEnum.CANCELLED:
+        raise ValueError("Sorry, You Can't make the Assignment The Order is Already Cancelled, Check the Trip History to know the reason")
     assignment.driver_id = driver_id
     assignment.car_id = car_id
     assignment.assignment_status = AssignmentStatusEnum.ASSIGNED

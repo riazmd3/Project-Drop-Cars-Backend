@@ -301,46 +301,53 @@ async def assign_car_driver(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    """Assign car and driver to an accepted order"""
-    # Get the assignment first to check authorization
-    assignment = get_order_assignment_by_id(db, assignment_id)
-    if not assignment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Assignment not found"
+    try:
+        """Assign car and driver to an accepted order"""
+        # Get the assignment first to check authorization
+        assignment = get_order_assignment_by_id(db, assignment_id)
+        if not assignment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Assignment not found"
+            )
+
+        # Check if the current user is the vehicle owner of this assignment
+        if str(assignment.vehicle_owner_id) != str(current_user.vehicle_owner_id):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized to update this assignment"
+            )
+
+        # Update the assignment with car and driver
+        updated_assignment = update_assignment_car_driver(
+            db, 
+            assignment_id, 
+            str(payload.driver_id), 
+            str(payload.car_id)
         )
+
+        if not updated_assignment:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to assign car and driver"
+            )
+            
+        if updated_assignment.car_id or updated_assignment.driver_id:
+            await send_push_notification_to_vendor_driver(
+                db,
+                order_id=str(updated_assignment.order_id),
+                vehicle_owner_id=str(updated_assignment.vehicle_owner_id),
+                driver_id = str(updated_assignment.driver_id),
+                car_id = str(updated_assignment.car_id)
+            )
+            
+        return updated_assignment
     
-    # Check if the current user is the vehicle owner of this assignment
-    if str(assignment.vehicle_owner_id) != str(current_user.vehicle_owner_id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this assignment"
-        )
-    
-    # Update the assignment with car and driver
-    updated_assignment = update_assignment_car_driver(
-        db, 
-        assignment_id, 
-        str(payload.driver_id), 
-        str(payload.car_id)
-    )
-    
-    if not updated_assignment:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to assign car and driver"
-        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start trip: {str(e)}")
         
-    if updated_assignment.car_id or updated_assignment.driver_id:
-        await send_push_notification_to_vendor_driver(
-            db,
-            order_id=str(updated_assignment.order_id),
-            vehicle_owner_id=str(updated_assignment.vehicle_owner_id),
-            driver_id = str(updated_assignment.driver_id),
-            car_id = str(updated_assignment.car_id)
-        )
-        
-    return updated_assignment
 
 
 @router.get("/driver/assigned-orders/{order_id}", response_model=List[DriverOrderReport])
