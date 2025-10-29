@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func, text
 from typing import Optional, List
 from datetime import datetime, timedelta
 from app.models.order_assignments import OrderAssignment, AssignmentStatusEnum
@@ -33,7 +33,14 @@ def create_order_assignment(
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise ValueError("Order not found")
-    expires_at = order.max_time_to_assign_order or (datetime.utcnow() + timedelta(minutes=15))
+    # expires_at = order.max_time_to_assign_order or (datetime.utcnow() + timedelta(minutes=15))
+    # expires_at = order.max_time_to_assign_order or (datetime.utcnow() + timedelta(minutes=15))
+    now = datetime.utcnow()
+    # compute the time difference
+    time_diff =  order.max_time_to_assign_order - order.created_at# timedelta
+    # add that difference to now
+    expires_at = now + time_diff
+    
     
     db_assignment = OrderAssignment(
         order_id=order_id,
@@ -67,10 +74,29 @@ async def cancel_timed_out_pending_assignments(db: Session) -> int:
             OrderAssignment.assignment_status == AssignmentStatusEnum.PENDING,
             OrderAssignment.driver_id.is_(None),
             OrderAssignment.car_id.is_(None),
-            Order.max_time_to_assign_order <= now
+            OrderAssignment.expires_at <= now
+            # (OrderAssignment.created_at + timedelta(minutes = (((Order.created_at - Order.max_time_to_assign_order).total_seconds() / 60))) <= now)
         )
         .all()
     )
+#     pending_assignments = (
+#     db.query(OrderAssignment)
+#     .join(Order, Order.id == OrderAssignment.order_id)
+#     .filter(
+#         OrderAssignment.assignment_status == AssignmentStatusEnum.PENDING,
+#         OrderAssignment.driver_id.is_(None),
+#         OrderAssignment.car_id.is_(None),
+#         (
+#             # created_at + (created_at - max_time_to_assign_order) <= now
+#             func.datetime(OrderAssignment.created_at, 
+#                 func.printf('+%s seconds', 
+#                     func.strftime('%s', Order.created_at) - func.strftime('%s', Order.max_time_to_assign_order)
+#                 )
+#             ) <= now
+#         )
+#     )
+#     .all()
+# )
 
     cancelled_count = 0
     for assignment in pending_assignments:

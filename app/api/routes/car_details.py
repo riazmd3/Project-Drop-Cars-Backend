@@ -327,7 +327,7 @@ async def update_car_document(
         
         # Update database
         setattr(car, f"{document_type}_img_url", new_image_url)
-        setattr(car, f"{document_type}_status", DocumentStatusEnum.PENDING) if document_type != "car" else setattr(car, f"{document_type}img_status", DocumentStatusEnum.PENDING)
+        setattr(car, f"{document_type}_status", DocumentStatusEnum.PENDING) if document_type != "car" else setattr(car, f"{document_type}_img_status", DocumentStatusEnum.PENDING)
         db.commit()
         db.refresh(car)
         
