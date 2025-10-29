@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi_utils.tasks import repeat_every
 from app.database.session import SessionLocal
 from app.api.routes import vendor, vehicle_owner, car_details, car_driver, new_orders, order_assignments, transfer_transactions, admin, hourly_rental, orders, wallet, notification
+from app.api.routes import cities as cities_router
+from app.utils.cities import load_cities_once
 import app.models.admin
 import app.models.car_driver
 import app.models.vehicle_owner
@@ -40,7 +42,17 @@ app.include_router(transfer_transactions.router, prefix="/api", tags=["TransferT
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
 app.include_router(wallet.router, prefix="/api", tags=["Wallet"]) 
 app.include_router(notification.router, prefix="/api", tags=["notifications"]) 
+app.include_router(cities_router.router, prefix="/api", tags=["Cities"]) 
 
+
+
+@app.on_event("startup")
+async def load_cities_startup() -> None:
+    # Load cities into cache once at startup
+    try:
+        load_cities_once(".")
+    except Exception as e:
+        print(f"Failed to load cities.json: {e}")
 
 
 @app.on_event("startup")

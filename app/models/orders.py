@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey, Boolean, Interval
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 import enum
 from app.database.session import Base
 from app.models.new_orders import OrderTypeEnum, CarTypeEnum
@@ -35,7 +35,7 @@ class Order(Base):
 
     # Optional shared financials/summaries
     trip_status = Column(SqlEnum(Trip_status,name="Trip_status"),nullable=False)
-    pick_near_city = Column(String, nullable=True)
+    pick_near_city = Column(ARRAY(String), nullable=True)
     trip_distance = Column(Integer, nullable=True)
     trip_time = Column(String, nullable=True)
     estimated_price = Column(Integer, nullable=True)

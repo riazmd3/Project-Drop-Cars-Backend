@@ -44,7 +44,7 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
     return master
 
 
-def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: str, trip_time : int, estimated_price: int, vendor_price:int, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
+def create_master_from_hourly(db: Session, hourly: HourlyRental, *, pick_near_city: list, trip_time : int, estimated_price: int, vendor_price:int, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
     master = Order(
         source=OrderSourceEnum.HOURLY_RENTAL,
         source_order_id=hourly.id,
@@ -107,6 +107,16 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         max_time = int(time_diff)
     
     # BaseOrderSchema fields
+    # Normalize pick_near_city list to string for API compatibility
+    def _pick_near_city_to_str(val):
+        if isinstance(val, list):
+            if not val:
+                return None
+            if "ALL" in val:
+                return "ALL"
+            return ",".join(val)
+        return val
+
     base_data = {
         "id": order.id,
         "source": order.source.value,  # enum as string
@@ -119,7 +129,7 @@ def map_to_combined_schema(order, new_order=None, hourly_rental=None):
         "customer_name": order.customer_name,
         "customer_number": order.customer_number,
         "trip_status": order.trip_status,
-        "pick_near_city": order.pick_near_city,
+        "pick_near_city": _pick_near_city_to_str(order.pick_near_city),
         "trip_distance": order.trip_distance,
         "trip_time": order.trip_time,
         "estimated_price": order.estimated_price,
@@ -192,7 +202,7 @@ def map_to_combined_schema_pending_orders(order, new_order=None, hourly_rental=N
         "customer_name": order.customer_name,
         "customer_number": order.customer_number,
         "trip_status": order.trip_status,
-        "pick_near_city": order.pick_near_city,
+        "pick_near_city": _pick_near_city_to_str(order.pick_near_city),
         "trip_distance": order.trip_distance,
         "trip_time": order.trip_time,
         "estimated_price": order.estimated_price,

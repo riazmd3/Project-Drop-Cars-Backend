@@ -62,12 +62,19 @@ async def oneway_confirm(
         vendor_id = current_vendor.id
 
         # Validate send_to / near_city
-        pick_near_city = payload.near_city if payload.send_to == "NEAR_CITY" else "ALL"
         if payload.send_to == "NEAR_CITY" and not payload.near_city:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="near_city is required when send_to is NEAR_CITY",
             )
+        # Normalize to list for storage
+        if payload.send_to == "NEAR_CITY":
+            if isinstance(payload.near_city, list):
+                pick_near_city = [str(c) for c in payload.near_city if str(c).strip()]
+            else:
+                pick_near_city = [str(payload.near_city)]
+        else:
+            pick_near_city = ["ALL"]
             
         fare = calculate_oneway_fare(
             payload.pickup_drop_location,
@@ -112,7 +119,7 @@ async def oneway_confirm(
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
-            pick_near_city=new_order.pick_near_city,
+            pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
             trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
@@ -158,12 +165,18 @@ async def roundtrip_confirm(
 ):
     try:
         vendor_id = current_vendor.id
-        pick_near_city = payload.near_city if payload.send_to == "NEAR_CITY" else "ALL"
         if payload.send_to == "NEAR_CITY" and not payload.near_city:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="near_city is required when send_to is NEAR_CITY",
             )
+        if payload.send_to == "NEAR_CITY":
+            if isinstance(payload.near_city, list):
+                pick_near_city = [str(c) for c in payload.near_city if str(c).strip()]
+            else:
+                pick_near_city = [str(payload.near_city)]
+        else:
+            pick_near_city = ["ALL"]
 
         fare = calculate_multisegment_fare(
             payload.pickup_drop_location,
@@ -206,7 +219,7 @@ async def roundtrip_confirm(
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
-            pick_near_city=new_order.pick_near_city,
+            pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
             trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
@@ -252,12 +265,18 @@ async def multicity_confirm(
 ):
     try:
         vendor_id = current_vendor.id
-        pick_near_city = payload.near_city if payload.send_to == "NEAR_CITY" else "ALL"
         if payload.send_to == "NEAR_CITY" and not payload.near_city:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="near_city is required when send_to is NEAR_CITY",
             )
+        if payload.send_to == "NEAR_CITY":
+            if isinstance(payload.near_city, list):
+                pick_near_city = [str(c) for c in payload.near_city if str(c).strip()]
+            else:
+                pick_near_city = [str(payload.near_city)]
+        else:
+            pick_near_city = ["ALL"]
 
         fare = calculate_multisegment_fare(
             payload.pickup_drop_location,
@@ -300,7 +319,7 @@ async def multicity_confirm(
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
-            pick_near_city=new_order.pick_near_city,
+            pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
             trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )

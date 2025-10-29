@@ -108,7 +108,7 @@ async def hourly_confirm(
         master_order = create_master_from_hourly(
             db,
             order,
-            pick_near_city=payload.pick_near_city,
+            pick_near_city=["ALL"] if str(payload.pick_near_city).upper() == "ALL" else [str(payload.pick_near_city)],
             trip_time=str(payload.package_hours.get("hours", 0)),
             estimated_price=int(fare["estimate_price"]),
             vendor_price=int(fare["vendor_amount"]),
@@ -118,7 +118,7 @@ async def hourly_confirm(
 
         return {"order_id": master_order.id,
                 "order_status": master_order.trip_status,
-                "picup_near_city": master_order.pick_near_city,
+                "picup_near_city": ",".join(master_order.pick_near_city) if isinstance(master_order.pick_near_city, list) else str(master_order.pick_near_city),
                 "vendor_price" : master_order.vendor_price,
                 "estimated_price" : master_order.estimated_price,
                 "trip_type" : master_order.trip_type,

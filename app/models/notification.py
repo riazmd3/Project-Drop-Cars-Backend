@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Boolean
+from sqlalchemy.dialects.postgresql import ARRAY
 from app.database.session import Base
 
 class Notification(Base):
@@ -8,3 +9,4 @@ class Notification(Base):
     permission1 = Column(Boolean, default=False)
     permission2 = Column(Boolean, default=False)
     token = Column(String, nullable=True)  # Expo push token
+    selected_city = Column(ARRAY(String), nullable=True)

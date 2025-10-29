@@ -1,10 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class NotificationBase(BaseModel):
     permission1: Optional[bool] = False
     permission2: Optional[bool] = False
     token: Optional[str] = None
+    selected_city: Optional[List[str]] = None
 
 class NotificationCreate(NotificationBase):
     pass

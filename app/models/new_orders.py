@@ -1,6 +1,6 @@
 # models/new_orders.py
 from sqlalchemy import Column, String, TIMESTAMP, Integer, func, JSON, Enum as SqlEnum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 import uuid
 import enum
 from app.database.session import Base
@@ -47,7 +47,7 @@ class NewOrder(Base):
     toll_charges = Column(Integer, nullable=False)
     pickup_notes = Column(String, nullable=True)
     trip_status = Column(String, nullable=False)
-    pick_near_city = Column(String, nullable=False)
+    pick_near_city = Column(ARRAY(String), nullable=False)
     trip_distance = Column(Integer,nullable=False)
     trip_time = Column(String, nullable=False)
     platform_fees_percent = Column(Integer,nullable=False)

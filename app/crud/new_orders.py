@@ -116,7 +116,7 @@ def create_oneway_order(
     trip_distance = int,
     trip_time = str,
     platform_fees_percent = int,
-    pick_near_city: str,
+    pick_near_city: list,
     max_time_to_assign_order: int = 15,
     toll_charge_update: bool = False,
 ) -> Tuple[NewOrder, int]:
