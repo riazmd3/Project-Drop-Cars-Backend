@@ -118,7 +118,7 @@ class AdminOrderDetailResponse(BaseModel):
     customer_name: str
     customer_number: str
     trip_status: Optional[str] = None
-    pick_near_city: Optional[str] = None
+    pick_near_city: Optional[List[str]] = None
     trip_distance: Optional[int] = None
     trip_time: Optional[str] = None
     estimated_price: Optional[int] = None
@@ -157,7 +157,7 @@ class VendorOrderDetailResponse(BaseModel):
     customer_name: str
     customer_number: str
     trip_status: Optional[str] = None
-    pick_near_city: Optional[str] = None
+    pick_near_city: Optional[List[str]] = None
     trip_distance: Optional[int] = None
     trip_time: Optional[str] = None
     estimated_price: Optional[int] = None
@@ -224,7 +224,7 @@ class VehicleOwnerOrderDetailResponse(BaseModel):
     customer_name: str
     customer_number: str
     trip_status: Optional[str] = None
-    pick_near_city: Optional[str] = None
+    pick_near_city: Optional[List[str]] = None
     trip_distance: Optional[int] = None
     trip_time: Optional[str] = None
     estimated_price: Optional[int] = None

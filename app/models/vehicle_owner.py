@@ -22,6 +22,4 @@ class VehicleOwnerCredentials(Base):
         nullable=False
     )
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-    driver_profile = Column(Integer, nullable=False, default=0)
-    car_profile = Column(Integer, nullable=False, default=0)
     

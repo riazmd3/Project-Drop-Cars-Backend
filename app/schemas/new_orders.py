@@ -31,7 +31,7 @@ class RentalOrderRequest(BaseModel):
     pickup_drop_location: Dict[str, str] = Field(
         description="Object mapping indices to location names, e.g. {\"0\": \"Chennai\", \"1\": \"Bangalore\"}"
     )
-    pick_near_city: str
+    pick_near_city: List[str]
     start_date_time: datetime
     customer_name: str
     customer_number: Annotated[str, Field(
@@ -107,7 +107,7 @@ class UnifiedOrder(BaseModel):
         description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
     trip_status: Optional[str] = None
-    pick_near_city: Optional[str] = None
+    pick_near_city: Optional[List[str]] = None
     trip_distance: Optional[int] = None
     trip_time: Optional[str] = None
     estimated_price: Optional[int] = None
@@ -137,7 +137,7 @@ class Vendor_Pending_Order_Responce(BaseModel):
         description="Customer mobile number must be a valid 10-digit Indian mobile number (starting with 6-9)"
     )]
     trip_status: Optional[str] = None
-    pick_near_city: Optional[str] = None
+    pick_near_city: Optional[List[str]] = None
     trip_distance: Optional[int] = None
     trip_time: Optional[str] = None
     estimated_price: Optional[int] = None
@@ -233,7 +233,7 @@ class OnewayConfirmRequest(OnewayQuoteRequest):
     send_to: Literal["ALL", "NEAR_CITY"] = Field(
         description="Whether to send to all or only near city drivers"
     )
-    near_city: Optional[str] = Field(
+    near_city: Optional[List[str]] = Field(
         default=None, description="City name when send_to is NEAR_CITY"
     )
 
@@ -276,7 +276,7 @@ class OnewayQuoteResponse(BaseModel):
 class OnewayConfirmResponse(BaseModel):
     order_id: int
     trip_status: str
-    pick_near_city: str
+    pick_near_city: List[str]
     trip_type : OrderType
     fare: FareBreakdown
 
@@ -302,7 +302,7 @@ class NewOrderResponse(BaseModel):
     toll_charges: int
     pickup_notes: Optional[str]
     trip_status: str
-    pick_near_city: str
+    pick_near_city: List[str]
     trip_distance: int
     trip_time: str
     estimated_price: int

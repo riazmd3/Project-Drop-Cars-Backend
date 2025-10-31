@@ -119,7 +119,12 @@ async def oneway_confirm(
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
-            pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
+            # pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
+            pick_near_city=(
+                new_order.pick_near_city
+                if isinstance(new_order.pick_near_city, list)
+                else [new_order.pick_near_city]  # convert single string into list
+            ),
             trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
@@ -219,7 +224,12 @@ async def roundtrip_confirm(
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
-            pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
+            # pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
+            pick_near_city=(
+                new_order.pick_near_city
+                if isinstance(new_order.pick_near_city, list)
+                else [new_order.pick_near_city]  # convert single string into list
+            ),
             trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
@@ -319,7 +329,12 @@ async def multicity_confirm(
         return OnewayConfirmResponse(
             order_id=master_order_id,  # Return master order ID instead of new_order.order_id
             trip_status=new_order.trip_status,
-            pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
+            # pick_near_city=",".join(new_order.pick_near_city) if isinstance(new_order.pick_near_city, list) else str(new_order.pick_near_city),
+            pick_near_city=(
+                new_order.pick_near_city
+                if isinstance(new_order.pick_near_city, list)
+                else [new_order.pick_near_city]  # convert single string into list
+            ),
             trip_type = new_order.trip_type,
             fare=FareBreakdown(**fare),
         )
