@@ -33,7 +33,8 @@ from app.crud.order_assignments import (
     get_driver_assigned_orders,
     check_vehicle_owner_balance,
     get_driver_assigned_orders_report,
-    cancel_order_by_vendor
+    cancel_order_by_vendor,
+    get_driver_assigned_orders_completed_trip
 )
 from app.models.order_assignments import AssignmentStatusEnum
 
@@ -371,6 +372,17 @@ async def get_driver_assigned_orders_endpoint(
     driver_id = str(current_driver.id)
     assigned_orders = get_driver_assigned_orders(db, driver_id)
     print("Testing Car")
+    return assigned_orders
+
+@router.get("/driver/assigned/completed-trips", response_model=List[DriverOrderListResponse])
+async def get_driver_assigned_orders_endpoint(
+    db: Session = Depends(get_db),
+    current_driver=Depends(get_current_driver)
+):
+    """Get all ASSIGNED orders for the authenticated driver"""
+    driver_id = str(current_driver.id)
+    assigned_orders = get_driver_assigned_orders_completed_trip(db, driver_id)
+    print("DRIVER Car TRIPS")
     return assigned_orders
 
 

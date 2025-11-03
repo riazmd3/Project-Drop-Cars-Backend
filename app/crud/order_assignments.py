@@ -435,6 +435,46 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
     
     return result
 
+def get_driver_assigned_orders_completed_trip(db: Session, driver_id: str) -> List[dict]:
+    """Get all ASSIGNED orders for a specific driver"""
+    assignments = db.query(OrderAssignment).filter(
+        OrderAssignment.driver_id == driver_id,
+        # OrderAssignment.assignment_status == AssignmentStatusEnum.ASSIGNED
+        OrderAssignment.assignment_status.in_([AssignmentStatusEnum.COMPLETED])
+    ).order_by(desc(OrderAssignment.assigned_at)).all()
+    
+    result = []
+    for assignment in assignments:
+        # Get order details
+        order = db.query(Order).filter(Order.id == assignment.order_id).first()
+        vendor_detail_show = db.query(VendorDetails).filter(VendorDetails.vendor_id == order.vendor_id).first()
+        
+        if order:
+            result.append({
+                "id": assignment.id,
+                "order_id": assignment.order_id,
+                "assignment_status": assignment.assignment_status,
+                "customer_name": order.customer_name if order.data_visibility_vehicle_owner else "Hidden",
+                "customer_number": order.customer_number if order.data_visibility_vehicle_owner else "Hidden",
+                "vendor_name" : vendor_detail_show.full_name,
+                "vendor_primary_number" : vendor_detail_show.primary_number,
+                "vendor_secondary_number" : vendor_detail_show.secondary_number,
+                "pickup_drop_location": order.pickup_drop_location,
+                "start_date_time": order.start_date_time,
+                "trip_type": order.trip_type.value if order.trip_type else "Unknown",
+                "car_type": order.car_type.value if order.car_type else "Unknown",
+                "trip_time": order.trip_time,
+                "trip_distance": order.trip_distance,
+                "estimated_price": order.estimated_price,
+                "toll_charge_update": order.toll_charge_update,
+                "data_visibility_vehicle_owner": order.data_visibility_vehicle_owner,
+                "closed_vendor_price": order.vendor_price,
+                "assigned_at": assignment.assigned_at,
+                "created_at": assignment.created_at
+            })
+    
+    return result
+
 def get_driver_assigned_orders_report(db: Session, driver_id: str, order_id : int) -> List[dict]:
     """Get all ASSIGNED orders for a specific driver"""
     assignment = db.query(OrderAssignment).filter(
