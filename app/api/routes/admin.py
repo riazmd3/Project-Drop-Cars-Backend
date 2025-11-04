@@ -397,7 +397,7 @@ async def add_money_to_vehicle_owner(
 
 # ============ VENDOR MANAGEMENT ENDPOINTS ============
 
-@router.get("/admin/vendors", response_model=VendorListOut)
+@router.get("/admin-vendor/vendors", response_model=VendorListOut)
 async def list_all_vendors(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of records to return"),
@@ -578,7 +578,7 @@ async def update_vendor_document_status_route(
 
 # ============ VEHICLE OWNER MANAGEMENT ENDPOINTS ============
 
-@router.get("/admin/vehicle-owners", response_model=VehicleOwnerListOut)
+@router.get("/admin-vehcile-owner/vehicle-owners", response_model=VehicleOwnerListOut)
 async def list_all_vehicle_owners(
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Number of records to return"),
