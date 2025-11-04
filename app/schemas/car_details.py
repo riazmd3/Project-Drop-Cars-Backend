@@ -73,6 +73,7 @@ class CarDetailsOut(BaseModel):
     insurance_img_url: Optional[str]
     fc_img_url: Optional[str]
     car_img_url: Optional[str]
+    permit_img_url: Optional[str]
     created_at: datetime
 
     class Config:
@@ -89,6 +90,7 @@ class CarDetailsOut(BaseModel):
                 "insurance_img_url": "https://example.com/insurance.jpg",
                 "fc_img_url": "https://example.com/fc.jpg",
                 "car_img_url": "https://example.com/car.jpg",
+                "permit_img_url": "https://example.com/permit.jpg",
                 "created_at": "2025-08-13T12:00:00Z"
             }
         }

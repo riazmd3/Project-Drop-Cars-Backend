@@ -40,6 +40,8 @@ class CarDetails(Base):
     fc_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     car_img_url = Column(String, nullable=True, unique=True)  # GCS public URL
     car_img_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
+    permit_img_url = Column(String, nullable=True, unique=True)  # GCS public URL
+    permit_status = Column(SqlEnum(DocumentStatusEnum, name="document_status_enum"), nullable=True, default=DocumentStatusEnum.PENDING)
     
     car_status = Column(
         SqlEnum(CarStatusEnum, name="car_status_enum"),

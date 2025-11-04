@@ -69,6 +69,9 @@ def update_car_images(db: Session, car_id: UUID, image_urls: dict) -> CarDetails
     if 'car_img_url' in image_urls:
         car_details.car_img_url = image_urls['car_img_url']
         car_details.car_img_status = DocumentStatusEnum.PENDING
+    if 'permit_img_url' in image_urls:
+        car_details.permit_img_url = image_urls['permit_img_url']
+        car_details.permit_status = DocumentStatusEnum.PENDING
     
     db.commit()
     db.refresh(car_details)

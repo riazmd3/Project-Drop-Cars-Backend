@@ -20,6 +20,7 @@ async def signup_car_details(
     insurance_img: UploadFile = File(..., description="Insurance image file"),
     fc_img: UploadFile = File(..., description="FC image file"),
     car_img: UploadFile = File(..., description="Car image file"),
+    permit_img: UploadFile = File(..., description="Permit image file"),
     current_user: VehicleOwnerCredentials = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -34,7 +35,8 @@ async def signup_car_details(
         'rc_back_img': rc_back_img,
         'insurance_img': insurance_img,
         'fc_img': fc_img,
-        'car_img': car_img
+        'car_img': car_img,
+        'permit_img': permit_img
     }
     
     for field_name, image_file in image_files.items():
@@ -212,6 +214,13 @@ def get_car_document_status(
             "image_url": car.car_img_url,
             "updated_at": None
         }
+    if car.permit_img_url:
+        documents["permit"] = {
+            "document_type": "permit",
+            "status": car.permit_status.value if car.permit_status else "Pending",
+            "image_url": car.permit_img_url,
+            "updated_at": None
+        }
     
     return DocumentStatusListResponse(
         entity_id=car.id,
@@ -256,6 +265,8 @@ def update_car_document_status(
         car.fc_status = status_update.status
     elif document_type == "car_img":
         car.car_img_status = status_update.status
+    elif document_type == "permit":
+        car.permit_status = status_update.status
     else:
         raise HTTPException(status_code=400, detail="Invalid document type")
     
@@ -295,7 +306,7 @@ async def update_car_document(
     if car.vehicle_owner_id != current_user.vehicle_owner_id:
         raise HTTPException(status_code=403, detail="Access denied. You can only view your own cars.")
     
-    valid_document_types = ["rc_front", "rc_back", "insurance", "fc", "car"]
+    valid_document_types = ["rc_front", "rc_back", "insurance", "fc", "car", "permit"]
     if document_type not in valid_document_types:
         raise HTTPException(
             status_code=400,
@@ -391,6 +402,13 @@ def get_all_cars_document_status(
                 "document_type": "car_img",
                 "status": car.car_img_status.value if car.car_img_status else "Pending",
                 "image_url": car.car_img_url,
+                "updated_at": None
+            }
+        if car.permit_img_url:
+            documents["permit"] = {
+                "document_type": "permit",
+                "status": car.permit_status.value if car.permit_status else "Pending",
+                "image_url": car.permit_img_url,
                 "updated_at": None
             }
         

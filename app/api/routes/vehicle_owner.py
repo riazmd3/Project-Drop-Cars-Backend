@@ -325,7 +325,13 @@ def get_all_document_statuses(
                 "image_url": car.car_img_url,
                 "updated_at": None
             }
-        
+        if car.permit_img_url:
+            car_documents["permit"] = {
+                "document_type": "permit",
+                "status": car.permit_status.value if car.permit_status else "Pending",
+                "image_url": car.permit_img_url,
+                "updated_at": None
+            }
         all_statuses.append(DocumentStatusListResponse(
             entity_id=car.id,
             entity_type="car",
