@@ -238,6 +238,14 @@ class VehicleOwnerOrderDetailResponse(BaseModel):
     max_time_to_assign_order : Optional[datetime] = None
     pickup_notes : Optional[str] = None
 
+    # Pricing fields for frontend display
+    price_per_km: Optional[int] = None
+    driver_allowance: Optional[int] = None
+    permit_charge: Optional[int] = None
+    hills_charge: Optional[int] = None
+    toll_charge: Optional[int] = None
+    waiting_charge: Optional[int] = None
+
     # Assignment information for this vehicle owner
     assignment_id: int
     assignment_status: AssignmentStatusEnum
