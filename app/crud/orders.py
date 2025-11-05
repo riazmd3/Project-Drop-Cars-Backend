@@ -14,7 +14,7 @@ from app.crud.notification import send_push_notifications_vehicle_owner
 import asyncio
 
 
-def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15, toll_charge_update: bool = False) -> Order:
+def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_assign_order: int = 15, toll_charge_update: bool = False, *, night_charges: int | None = None) -> Order:
     master = Order(
         source=OrderSourceEnum.NEW_ORDERS,
         source_order_id=new_order.order_id,
@@ -33,7 +33,8 @@ def create_master_from_new_order(db: Session, new_order: NewOrder, max_time_to_a
         vendor_price=new_order.vendor_price,
         platform_fees_percent=new_order.platform_fees_percent,
         max_time_to_assign_order=(datetime.utcnow() + timedelta(minutes=max_time_to_assign_order)),
-        toll_charge_update=toll_charge_update
+        toll_charge_update=toll_charge_update,
+        night_charges=night_charges
     )
     db.add(master)
     db.commit()
