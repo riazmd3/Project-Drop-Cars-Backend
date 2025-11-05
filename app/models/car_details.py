@@ -13,12 +13,19 @@ class CarStatusEnum(enum.Enum):
     PROCESSING = "PROCESSING"
     
 class CarTypeEnum(enum.Enum):
-    SEDAN = "SEDAN"
-    SUV = "SUV"
-    INNOVA = "INNOVA"
-    NEW_SEDAN = "NEW_SEDAN"
     HATCHBACK = "HATCHBACK"
-    INNOVA_CRYSTA = "INNOVA_CRYSTA"
+    SEDAN_4_PLUS_1 = "SEDAN(4+1)"
+    NEW_SEDAN_2022_MODEL = "NEW_SEDAN (2022+ MODEL)"
+    ETIOS_4_PLUS_1 = "ETIOS (4+1)"
+    SUV = "SUV"
+    SUV_6_PLUS_1 = "SUV (6+1)"
+    SUV_7_PLUS_1 = "SUV (7+1)"
+    INNOVA = "INNOVA"
+    INNOVA_6_PLUS_1 = "INNOVA(6+1)"
+    INNOVA_7_PLUS_1 = "INNOVA(7+1)"
+    INNOVA_CRYSTA = "INNOVA CRYSTA"
+    INNOVA_CRYSTA_6_PLUS_1 = "INNOVA CRYSTA (6+1)"
+    INNOVA_CRYSTA_7_PLUS_1 = "INNOVA CRYSTA (7+1)"
 
 class CarDetails(Base):
     __tablename__ = "car_details"

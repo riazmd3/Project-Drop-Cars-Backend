@@ -7,8 +7,10 @@ from uuid import UUID
 
 def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
     """Create a new car details record in the database"""
-    
+    print("car function check")
     # Check for duplicate car number
+    print("Car Type is ",car_data.car_type)
+    
     existing_car = db.query(CarDetails).filter(
         CarDetails.car_number == car_data.car_number
     ).first()
@@ -20,6 +22,7 @@ def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
         )
 
     # Create car details object
+    print("Car Type is ",car_data.car_name)
     car_details = CarDetails(
         vehicle_owner_id=car_data.vehicle_owner_id,
         car_name=car_data.car_name,

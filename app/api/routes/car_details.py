@@ -38,6 +38,7 @@ async def signup_car_details(
         'car_img': car_img,
         'permit_img': permit_img
     }
+    print("Car is going to checck")
     
     for field_name, image_file in image_files.items():
         if not image_file.content_type or not image_file.content_type.startswith('image/'):
@@ -56,9 +57,12 @@ async def signup_car_details(
     # Step 2: Create car details in database first (without images)
     # Set vehicle_owner_id from authenticated user
     car_form.vehicle_owner_id = car_form.vehicle_owner_id
-    
+    print(car_form.car_type)
     try:
+        print("Working 1")
         db_car = create_car_details(db, car_form)
+        print("Working 2")
+        
     except HTTPException:
         # Re-raise HTTP exceptions (like duplicate car number, etc.)
         raise
