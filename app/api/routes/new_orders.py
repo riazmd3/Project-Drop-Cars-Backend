@@ -113,6 +113,7 @@ async def oneway_confirm(
             pick_near_city=pick_near_city,
             max_time_to_assign_order=payload.max_time_to_assign_order,
             toll_charge_update=payload.toll_charge_update,
+            night_charges=payload.night_charges if hasattr(payload, 'night_charges') else None,
         )
         print(fare)
 
@@ -219,6 +220,7 @@ async def roundtrip_confirm(
             pick_near_city=pick_near_city,
             max_time_to_assign_order=payload.max_time_to_assign_order,
             toll_charge_update=payload.toll_charge_update,
+            night_charges=payload.night_charges if hasattr(payload, 'night_charges') else None,
         )
 
         return OnewayConfirmResponse(
@@ -324,6 +326,7 @@ async def multicity_confirm(
             pick_near_city=pick_near_city,
             max_time_to_assign_order=payload.max_time_to_assign_order,
             toll_charge_update=payload.toll_charge_update,
+            night_charges=payload.night_charges if hasattr(payload, 'night_charges') else None,
         )
 
         return OnewayConfirmResponse(

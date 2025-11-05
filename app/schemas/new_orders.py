@@ -236,6 +236,7 @@ class OnewayConfirmRequest(OnewayQuoteRequest):
     near_city: Optional[List[str]] = Field(
         default=None, description="City name when send_to is NEAR_CITY"
     )
+    night_charges: Optional[int] = Field(default=None, description="Optional night charges applied at creation")
 
 
 class RoundTripQuoteRequest(OnewayQuoteRequest):
