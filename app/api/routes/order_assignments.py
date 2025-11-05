@@ -437,6 +437,7 @@ async def end_trip(
     end_km: int = Form(...),
     toll_charge_update: bool = Form(False),
     updated_toll_charges: int | None = Form(None),
+    waiting_time: int | None = Form(None),
     close_speedometer_img: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_driver=Depends(get_current_driver)
@@ -464,7 +465,8 @@ async def end_trip(
             end_km=end_km,
             # toll_charge_update=toll_charge_update,
             updated_toll_charges=updated_toll_charges,
-            close_speedometer_image_url=close_speedometer_img_url
+            close_speedometer_image_url=close_speedometer_img_url,
+            waiting_time=waiting_time
         )
         
         return {

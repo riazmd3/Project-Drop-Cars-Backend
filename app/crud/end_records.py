@@ -73,7 +73,8 @@ async def update_end_trip_record(
     *,
     # toll_charge_update: bool = False,
     updated_toll_charges: int | None = None,
-    close_speedometer_image_url: str = None
+    close_speedometer_image_url: str = None,
+    waiting_time: int | None = None
 ) -> dict:
     """Update end trip record and calculate fare"""
     # Get the trip record
@@ -171,6 +172,13 @@ async def update_end_trip_record(
         # order.toll_charge_update = False
         order.updated_toll_charges = None
     
+    # If waiting time provided and trip type is Multy City, store it
+    if waiting_time is not None and order.trip_type == OrderTypeEnum.MULTY_CITY:
+        try:
+            order.waiting_time = int(waiting_time)
+        except Exception:
+            order.waiting_time = None
+
     # Update order with final amounts, profits, and status
 
     # order.closed_vendor_price = int(calculated_fare)

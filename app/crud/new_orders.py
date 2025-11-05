@@ -119,6 +119,7 @@ def create_oneway_order(
     pick_near_city: list,
     max_time_to_assign_order: int = 15,
     toll_charge_update: bool = False,
+    night_charges: int | None = None,
 ) -> Tuple[NewOrder, int]:
     new_order = NewOrder(
         vendor_id=vendor_id,
@@ -150,7 +151,7 @@ def create_oneway_order(
     db.commit()
     db.refresh(new_order)
     # Also create/refresh master order row
-    master_order = create_master_from_new_order(db, new_order, max_time_to_assign_order, toll_charge_update)
+    master_order = create_master_from_new_order(db, new_order, max_time_to_assign_order, toll_charge_update, night_charges=night_charges)
     return new_order, master_order.id
 
 

@@ -428,6 +428,33 @@ def get_vehicle_owner_orders_by_assignment_status(
             hourly_rental = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
             if hourly_rental:
                 pickup_notes = hourly_rental.pickup_notes
+        # Source-specific pricing fields
+        price_per_km = None
+        driver_allowance_val = None
+        permit_charge_val = None
+        hills_charge_val = None
+        toll_charge_val = None
+        waiting_charge_val = None
+
+        # Populate pricing fields based on source
+        if order.source == "NEW_ORDERS":
+            new_order = db.query(NewOrder).filter(NewOrder.order_id == order.source_order_id).first()
+            print("checck new order")
+            if new_order:
+                pickup_notes = new_order.pickup_notes
+                price_per_km = new_order.cost_per_km
+                driver_allowance_val = new_order.driver_allowance
+                permit_charge_val = new_order.permit_charges
+                hills_charge_val = new_order.hill_charges
+                toll_charge_val = new_order.toll_charges
+                # waiting_charge not defined for NEW_ORDERS; leave None
+        elif order.source == "HOURLY_RENTAL":
+            hourly_rental = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+            if hourly_rental:
+                pickup_notes = hourly_rental.pickup_notes
+                # If you want to map waiting charge for hourly rental, consider extra_cost_per_hour
+                waiting_charge_val = hourly_rental.extra_cost_per_hour
+
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -453,6 +480,14 @@ def get_vehicle_owner_orders_by_assignment_status(
             created_at=order.created_at,
             max_time_to_assign_order=order.max_time_to_assign_order,
             pickup_notes = pickup_notes,
+
+            # Pricing additions
+            price_per_km=price_per_km,
+            driver_allowance=driver_allowance_val,
+            permit_charge=permit_charge_val,
+            hills_charge=hills_charge_val,
+            toll_charge=toll_charge_val,
+            waiting_charge=waiting_charge_val,
             
             # Assignment information
             assignment_id=assignment.id,

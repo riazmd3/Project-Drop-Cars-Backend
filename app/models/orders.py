@@ -63,6 +63,10 @@ class Order(Base):
     driver_profit = Column(Integer, nullable=True)
     admin_profit = Column(Integer, nullable=True)
 
+    # Additional charges/metrics
+    night_charges = Column(Integer, nullable=True)
+    waiting_time = Column(Integer, nullable=True)
+
     # Cancellation tracking
     cancelled_by = Column(SqlEnum(CancelledByEnum, name="cancelled_by_enum"), nullable=True)
 
