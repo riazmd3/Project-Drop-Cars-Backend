@@ -4,6 +4,7 @@ import os
 from fastapi import UploadFile
 from datetime import timedelta
 
+# GCS_CREDENTIALS = "app/core/drop-cars-468718-d08441443ada.json"
 GCS_CREDENTIALS = "app\core\drop-cars-473714-b5e0ebd5f0ab.json"
 GCS_BUCKET_NAME = "drop-cars-test-bucket"
 
