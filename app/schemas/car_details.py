@@ -7,18 +7,18 @@ from enum import Enum
 
 class CarTypeEnum(str, Enum):
     HATCHBACK = "HATCHBACK"
-    SEDAN_4_PLUS_1 = "SEDAN(4+1)"
-    NEW_SEDAN_2022_MODEL = "NEW_SEDAN (2022+ MODEL)"
-    ETIOS_4_PLUS_1 = "ETIOS (4+1)"
+    SEDAN_4_PLUS_1 = "SEDAN_4_PLUS_1"
+    NEW_SEDAN_2022_MODEL = "NEW_SEDAN_2022_MODEL"
+    ETIOS_4_PLUS_1 = "ETIOS_4_PLUS_1"
     SUV = "SUV"
-    SUV_6_PLUS_1 = "SUV (6+1)"
-    SUV_7_PLUS_1 = "SUV (7+1)"
+    SUV_6_PLUS_1 = "SUV_6_PLUS_1"
+    SUV_7_PLUS_1 = "SUV_7_PLUS_1"
     INNOVA = "INNOVA"
-    INNOVA_6_PLUS_1 = "INNOVA(6+1)"
-    INNOVA_7_PLUS_1 = "INNOVA(7+1)"
-    INNOVA_CRYSTA = "INNOVA CRYSTA"
-    INNOVA_CRYSTA_6_PLUS_1 = "INNOVA CRYSTA (6+1)"
-    INNOVA_CRYSTA_7_PLUS_1 = "INNOVA CRYSTA (7+1)"
+    INNOVA_6_PLUS_1 = "INNOVA_6_PLUS_1"
+    INNOVA_7_PLUS_1 = "INNOVA_7_PLUS_1"
+    INNOVA_CRYSTA = "INNOVA_CRYSTA"
+    INNOVA_CRYSTA_6_PLUS_1 = "INNOVA_CRYSTA_6_PLUS_1"
+    INNOVA_CRYSTA_7_PLUS_1 = "INNOVA_CRYSTA_7_PLUS_1"
 
 class CarDetailsForm(BaseModel):
     vehicle_owner_id: Optional[UUID] = Field(None, description="Vehicle owner ID (auto-set from token)")

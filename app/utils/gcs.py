@@ -4,7 +4,9 @@ import os
 from fastapi import UploadFile
 from datetime import timedelta
 
-GCS_CREDENTIALS = "app\core\drop-cars-473714-b5e0ebd5f0ab.json"
+
+
+GCS_CREDENTIALS = "app/core/drop-cars-468718-d08441443ada.json"
 GCS_BUCKET_NAME = "drop-cars-test-bucket"
 
 client = storage.Client.from_service_account_json(GCS_CREDENTIALS)
@@ -39,25 +41,89 @@ def delete_gcs_file_by_url(public_url: str) -> None:
         # Best-effort cleanup; ignore failures
         return
 
+def generate_signed_url_from_gcs(public_url: str, expiry_minutes: int = 2) -> str:
+    """Generate a signed URL for a private GCS file given its public-style URL."""
+    prefix = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/"
+    if not public_url.startswith(prefix):
+        raise ValueError("Invalid GCS URL format")
 
-def generate_signed_url_from_gcs(path_or_url: str, expires_minutes: int = 60) -> str:
-    """Generate a time-limited signed URL for a GCS object.
-
-    Accepts either a blob path (e.g., "folder/file.png"), a public URL
-    like "https://storage.googleapis.com/<bucket>/<blob>", or a gs:// URL.
-    """
-    if not path_or_url:
-        return path_or_url
-
-    http_prefix = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/"
-    gs_prefix = f"gs://{GCS_BUCKET_NAME}/"
-
-    if path_or_url.startswith(http_prefix):
-        blob_name = path_or_url[len(http_prefix):]
-    elif path_or_url.startswith(gs_prefix):
-        blob_name = path_or_url[len(gs_prefix):]
-    else:
-        blob_name = path_or_url.lstrip('/')
-
+    blob_name = public_url[len(prefix):]
     blob = bucket.blob(blob_name)
-    return blob.generate_signed_url(expiration=timedelta(minutes=expires_minutes), method="GET")
+
+    # Generate a temporary signed URL (GET access)
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=expiry_minutes),
+        method="GET",
+    )
+
+    return signed_url
+
+# from google.cloud import storage
+# from google.auth import default
+# from google.auth import impersonated_credentials
+# from datetime import timedelta
+# import os
+# from fastapi import UploadFile
+# import uuid
+
+# GCS_BUCKET_NAME = "drop-cars-test-bucket"
+# GCS_SIGNER_SERVICE_ACCOUNT = os.getenv("GCS_SIGNER_SERVICE_ACCOUNT")  # should be gcs-access-sa@drop-cars-473714.iam.gserviceaccount.com
+
+# # Get default credentials (Cloud Run service account or local user)
+# source_credentials, project = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+
+# # If signer SA is provided, impersonate it
+# if GCS_SIGNER_SERVICE_ACCOUNT:
+#     creds = impersonated_credentials.Credentials(
+#         source_credentials=source_credentials,
+#         target_principal=GCS_SIGNER_SERVICE_ACCOUNT,
+#         target_scopes=["https://www.googleapis.com/auth/cloud-platform"],
+#         lifetime=3600
+#     )
+# else:
+#     creds = source_credentials
+
+# # Initialize client with credentials (works locally and on Cloud Run)
+# client = storage.Client(credentials=creds)
+# bucket = client.bucket(GCS_BUCKET_NAME)
+
+
+# def upload_image_to_gcs(file: UploadFile, folder: str = "vehicle_owner_details/aadhar") -> str:
+#     ext = os.path.splitext(file.filename)[-1]
+#     filename = f"{folder}/{uuid.uuid4()}{ext}"
+
+#     blob = bucket.blob(filename)
+#     blob.upload_from_file(file.file, content_type=file.content_type)
+#     return f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{filename}"
+
+
+# def delete_gcs_file_by_url(public_url: str) -> None:
+#     try:
+#         prefix = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/"
+#         if not public_url.startswith(prefix):
+#             return
+#         blob_name = public_url[len(prefix):]
+#         if not blob_name:
+#             return
+#         blob = bucket.blob(blob_name)
+#         blob.delete()
+#     except Exception:
+#         return
+
+
+# def generate_signed_url_from_gcs(public_url: str, expiry_minutes: int = 2) -> str:
+#     prefix = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/"
+#     if not public_url.startswith(prefix):
+#         raise ValueError("Invalid GCS URL format")
+
+#     blob_name = public_url[len(prefix):]
+#     blob = bucket.blob(blob_name)
+
+#     signed_url = blob.generate_signed_url(
+#         version="v4",
+#         expiration=timedelta(minutes=expiry_minutes),
+#         method="GET"
+#     )
+
+#     return signed_url

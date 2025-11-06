@@ -22,11 +22,11 @@ def create_car_details(db: Session, car_data: CarDetailsForm) -> CarDetails:
         )
 
     # Create car details object
-    print("Car Type is ",car_data.car_name)
+    print("Car Type is ",car_data.car_type)
     car_details = CarDetails(
         vehicle_owner_id=car_data.vehicle_owner_id,
         car_name=car_data.car_name,
-        car_type=car_data.car_type,
+        car_type=car_data.car_type.value,
         car_number=car_data.car_number,
         year_of_the_car=car_data.year_of_the_car,
         rc_front_img_url=None,  # Will be updated after GCS upload
