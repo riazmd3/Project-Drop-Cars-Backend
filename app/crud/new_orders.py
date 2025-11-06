@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Dict, Any, List, Tuple
-
+import os
 from app.models.new_orders import NewOrder, OrderTypeEnum, CarTypeEnum
 from app.utils.maps import get_distance_km_between_locations
 from app.crud.orders import create_master_from_new_order
+
+admin_commession_env = os.getenv("ADMIN_COMMESSION_ENV")
 
 
 def _origin_and_destination_from_index_map(index_map: Dict[str, str]) -> (str, str):
@@ -41,7 +43,7 @@ def calculate_oneway_fare(pickup_drop_location: Dict[str, str], cost_per_km: int
         "hill_charges": int(hill_charges),
         "toll_charges": int(toll_charges),
         "total_amount": int(total_amount),
-        "Commission_percent": 10,
+        "Commission_percent": admin_commession_env,
     }
 
 
@@ -90,7 +92,7 @@ def calculate_multisegment_fare(pickup_drop_location: Dict[str, str], cost_per_k
         "hill_charges": int(hill_charges),
         "toll_charges": int(toll_charges),
         "total_amount": int(total_amount),
-        "Commission_percent": 10,
+        "Commission_percent": admin_commession_env,
     }
 
 
@@ -140,7 +142,7 @@ def create_oneway_order(
         pickup_notes=pickup_notes,
         trip_distance = trip_distance,
         trip_time = trip_time,
-        platform_fees_percent = 10,
+        platform_fees_percent = admin_commession_env,
         trip_status="PENDING",
         estimated_price = (cost_per_km * trip_distance) + driver_allowance + hill_charges + permit_charges + toll_charges,
         vendor_price = ((cost_per_km + extra_cost_per_km) * trip_distance) + (driver_allowance + extra_driver_allowance) + (permit_charges + extra_permit_charges) + hill_charges + toll_charges,
