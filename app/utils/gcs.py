@@ -4,7 +4,7 @@ import os
 from fastapi import UploadFile
 from datetime import timedelta
 
-GCS_CREDENTIALS = "app\core\drop-cars-473714-b5e0ebd5f0ab.json"
+GCS_CREDENTIALS = r"app\\core\\drop-cars-473714-b5e0ebd5f0ab.json"
 GCS_BUCKET_NAME = "drop-cars-test-bucket"
 
 client = storage.Client.from_service_account_json(GCS_CREDENTIALS)
