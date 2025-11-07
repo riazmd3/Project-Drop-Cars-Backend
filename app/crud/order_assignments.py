@@ -429,6 +429,8 @@ def get_driver_assigned_orders(db: Session, driver_id: str) -> List[dict]:
                 "toll_charge_update": order.toll_charge_update,
                 "data_visibility_vehicle_owner": order.data_visibility_vehicle_owner,
                 "closed_vendor_price": order.vendor_price,
+                "night_charges": order.night_charges,
+                "waiting_time": order.waiting_time,
                 "assigned_at": assignment.assigned_at,
                 "created_at": assignment.created_at
             })
@@ -469,6 +471,8 @@ def get_driver_assigned_orders_completed_trip(db: Session, driver_id: str) -> Li
                 "toll_charge_update": order.toll_charge_update,
                 "data_visibility_vehicle_owner": order.data_visibility_vehicle_owner,
                 "closed_vendor_price": order.vendor_price,
+                "night_charges": order.night_charges,
+                "waiting_time": order.waiting_time,
                 "assigned_at": assignment.assigned_at,
                 "created_at": assignment.created_at
             })
@@ -560,6 +564,8 @@ def get_driver_assigned_orders_report(db: Session, driver_id: str, order_id : in
                 "hill_charges": new_order.hill_charges,
                 "pickup_notes": new_order.pickup_notes,
                 "updated_toll_charge": order.updated_toll_charges,
+                "night_charges": order.night_charges,
+                "waiting_time": order.waiting_time,
                 "total_km": total_km if total_km > 0 else 0,
                 "assigned_at": assignment.assigned_at,
                 "created_at": order.created_at,

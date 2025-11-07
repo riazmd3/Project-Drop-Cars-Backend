@@ -160,6 +160,8 @@ class DriverOrderListResponse(BaseModel):
     data_visibility_vehicle_owner: Optional[bool] = None
     closed_vendor_price: Optional[int] = None
     estimated_price: Optional[int] = None
+    night_charges: Optional[int] = None
+    waiting_time: Optional[int] = None
     assigned_at: Optional[datetime] = None
     created_at: datetime
 
@@ -229,3 +231,6 @@ class DriverOrderReport(BaseModel):
 
     # Additional toll field for clarity/debugging if needed
     updated_toll_charge: Optional[float] = None
+    # Additional charges
+    night_charges: Optional[int] = None
+    waiting_time: Optional[int] = None

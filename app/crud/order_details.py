@@ -566,6 +566,16 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
 
         # Apply vendor-controlled visibility for customer data
         show_customer = bool(order.data_visibility_vehicle_owner)
+        # Source-specific waiting charge mapping
+        waiting_charge_val = None
+        try:
+            if order.source.value == "HOURLY_RENTAL":
+                hourly = db.query(HourlyRental).filter(HourlyRental.id == order.source_order_id).first()
+                if hourly:
+                    waiting_charge_val = hourly.extra_cost_per_hour
+        except Exception:
+            waiting_charge_val = None
+
         result = VehicleOwnerOrderDetailResponse(
             # Order information
             id=order.id,
@@ -590,6 +600,9 @@ def get_vehicle_owner_non_pending_orders(db: Session, vehicle_owner_id: str) -> 
             commision_amount=order.commision_amount,
             created_at=order.created_at,
             cancelled_by = order.cancelled_by,
+            # Pricing additions
+            waiting_charge=waiting_charge_val,
+            night_charges=order.night_charges,
             
             # Assignment information
             assignment_id=assignment.id,

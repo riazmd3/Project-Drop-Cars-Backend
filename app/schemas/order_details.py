@@ -245,6 +245,7 @@ class VehicleOwnerOrderDetailResponse(BaseModel):
     hills_charge: Optional[int] = None
     toll_charge: Optional[int] = None
     waiting_charge: Optional[int] = None
+    night_charges: Optional[int] = None
 
     # Assignment information for this vehicle owner
     assignment_id: int
