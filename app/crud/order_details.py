@@ -223,6 +223,82 @@ def get_admin_order_details(db: Session, order_id: int) -> Optional[AdminOrderDe
     )
 
 
+def get_all_admin_orders(db: Session, skip: int = 0, limit: int = 100) -> tuple[List[AdminOrderDetailResponse], int]:
+    """Get all orders with full details for admin with pagination"""
+    from app.models.orders import Order
+    
+    # Get total count
+    total_count = db.query(Order).count()
+    
+    # Get paginated orders
+    orders = db.query(Order).order_by(Order.created_at.desc()).offset(skip).limit(limit).all()
+    
+    # Build response list
+    order_responses = []
+    for order in orders:
+        # Get vendor information
+        vendor = get_vendor_basic_info(db, str(order.vendor_id))
+        if not vendor:
+            continue  # Skip orders without vendor info
+        
+        # Get assignments
+        assignments = get_order_assignments(db, order.id)
+        
+        # Get end records
+        end_records = get_order_end_records(db, order.id)
+        
+        # Get latest assignment details
+        assigned_driver = None
+        assigned_car = None
+        vehicle_owner = None
+        
+        if assignments:
+            latest_assignment = assignments[-1]  # Most recent assignment
+            
+            if latest_assignment.driver_id:
+                assigned_driver = get_driver_basic_info(db, str(latest_assignment.driver_id))
+            
+            if latest_assignment.car_id:
+                assigned_car = get_car_basic_info(db, str(latest_assignment.car_id))
+            
+            if latest_assignment.vehicle_owner_id:
+                vehicle_owner = get_vehicle_owner_basic_info(db, str(latest_assignment.vehicle_owner_id))
+        
+        order_response = AdminOrderDetailResponse(
+            id=order.id,
+            source=order.source,
+            source_order_id=order.source_order_id,
+            vendor_id=order.vendor_id,
+            trip_type=order.trip_type,
+            car_type=order.car_type,
+            pickup_drop_location=order.pickup_drop_location,
+            start_date_time=order.start_date_time,
+            customer_name=order.customer_name,
+            customer_number=order.customer_number,
+            trip_status=order.trip_status,
+            pick_near_city=order.pick_near_city,
+            trip_distance=order.trip_distance,
+            trip_time=order.trip_time,
+            estimated_price=order.estimated_price,
+            vendor_price=order.vendor_price,
+            platform_fees_percent=order.platform_fees_percent,
+            closed_vendor_price=order.closed_vendor_price,
+            closed_driver_price=order.closed_driver_price,
+            commision_amount=order.commision_amount,
+            created_at=order.created_at,
+            vendor=vendor,
+            assignments=assignments,
+            end_records=end_records,
+            assigned_driver=assigned_driver,
+            assigned_car=assigned_car,
+            vehicle_owner=vehicle_owner
+        )
+        
+        order_responses.append(order_response)
+    
+    return order_responses, total_count
+
+
 def get_vendor_order_details(db: Session, order_id: int, vendor_id: str) -> Optional[VendorOrderDetailResponse]:
     """Get limited order details for vendor (excludes sensitive user data)"""
     order = get_order_by_id(db, order_id)

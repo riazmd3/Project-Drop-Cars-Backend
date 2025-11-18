@@ -22,6 +22,8 @@ from app.schemas.admin_management import (
     AccountDocumentsResponse, DocumentItem, DocumentStatusUpdateResponse,
     CarListItem
 )
+from app.schemas.order_details import AdminOrdersListResponse
+from app.crud.order_details import get_all_admin_orders
 from app.core.security import create_access_token, get_current_admin
 from app.database.session import get_db
 from app.utils.gcs import upload_image_to_gcs, generate_signed_url_from_gcs
@@ -259,6 +261,50 @@ async def list_admins(
 
 # ============ UNIFIED ACCOUNT MANAGEMENT ENDPOINTS ============
 # NOTE: These routes must come BEFORE /admin/{admin_id} to avoid route conflicts
+
+@router.get("/admin/orders", response_model=AdminOrdersListResponse)
+async def list_all_orders(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Number of records to return"),
+    current_admin = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Get All Orders (Admin Only)
+    
+    Returns a paginated list of all orders in the system with complete details including:
+    - Order information (id, source, trip type, car type, customer details, pricing, etc.)
+    - Vendor information (full vendor details)
+    - Assignment history (all assignments for the order)
+    - End records (trip completion records)
+    - Driver information (if assigned)
+    - Car information (if assigned)
+    - Vehicle owner information (if assigned)
+    
+    Requires admin authentication.
+    
+    Returns:
+        - List of orders with full details
+        - Total count of orders
+        - Pagination info (skip, limit)
+    """
+    try:
+        orders, total_count = get_all_admin_orders(db, skip=skip, limit=limit)
+        
+        return AdminOrdersListResponse(
+            orders=orders,
+            total_count=total_count,
+            skip=skip,
+            limit=limit
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
 
 @router.get("/admin/cars", response_model=CarListResponse)
 async def list_all_cars(

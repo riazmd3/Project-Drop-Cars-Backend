@@ -268,3 +268,14 @@ class VehicleOwnerOrderDetailResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AdminOrdersListResponse(BaseModel):
+    """Response model for admin orders list with pagination"""
+    orders: List[AdminOrderDetailResponse]
+    total_count: int
+    skip: int
+    limit: int
+
+    class Config:
+        from_attributes = True
